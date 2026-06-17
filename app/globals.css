@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+/**
+ * SPC brand tokens. Navy base, teal/green accent, orange CTA.
+ * Real type + final shades get dialed in during the design phase — this is the
+ * working foundation so nothing ships looking like a default template.
+ */
+@theme {
+  --color-navy: #0f2438;
+  --color-navy-light: #1c3a57;
+  --color-teal: #2bb3a3;
+  --color-teal-dark: #1f8a7e;
+  --color-orange: #f2812f;
+  --color-orange-dark: #d96d1f;
+  --color-sand: #f6f4ef;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: var(--color-navy);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
