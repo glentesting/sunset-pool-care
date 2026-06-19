@@ -12,6 +12,7 @@ export default function SectionFiltration() {
         singular="Filter"
         addLabel="+ Add Another Filter"
         photoSlots={["Filter", "Serial number", "Pressure Gauge"]}
+        ensureOne
       />
     </SectionShell>
   );

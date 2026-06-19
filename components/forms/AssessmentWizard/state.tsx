@@ -36,7 +36,17 @@ export type RecItem = {
   item: string;
   investment: string;
   timeframe: string;
+  /** true while this item is auto-generated from a flagged rating (un-edited). */
+  auto?: boolean;
+  /** links an auto item back to its source, e.g. "section:pump" / "chem:ph". */
+  sourceKey?: string;
 };
+
+/** A flagged source that should seed a recommendation. */
+export type DesiredAutoRec = { sourceKey: string; text: string };
+
+/** Chemistry reading + rating; `auto` marks the rating as an un-overridden suggestion. */
+export type ChemistryEntry = { reading: string; rating?: Rating; auto?: boolean };
 
 export type Unit = { id: string; label: string };
 
@@ -78,12 +88,18 @@ export type AssessmentState = {
   /** keyed by SECTIONS config id */
   sections: Record<string, SectionState>;
   /** keyed by CHEMISTRY_PARAMS key */
-  chemistry: Record<string, { reading: string; rating?: Rating }>;
+  chemistry: Record<string, ChemistryEntry>;
   lights: Unit[];
   filters: Unit[];
   pumps: Unit[];
   spaType: string;
-  recommendations: { p1: RecItem[]; p2: RecItem[]; overallNotes: string };
+  recommendations: {
+    p1: RecItem[];
+    p2: RecItem[];
+    overallNotes: string;
+    /** sourceKeys the tech removed — never auto-regenerate these. */
+    dismissed: string[];
+  };
   certification: { inspectorName: string; date: string; certified: boolean };
   submitting: boolean;
   submitted: boolean;
@@ -110,7 +126,7 @@ type Action =
   | { type: "rateSection"; id: string; rating: Rating }
   | { type: "setSectionNotes"; id: string; notes: string }
   | { type: "setSectionPhoto"; id: string; slot: string; dataUrl: string | null }
-  | { type: "setChemistry"; key: string; patch: Partial<{ reading: string; rating?: Rating }> }
+  | { type: "setChemistry"; key: string; patch: Partial<ChemistryEntry> }
   | { type: "addUnit"; list: ListKey; label: string }
   | { type: "updateUnit"; list: ListKey; id: string; label: string }
   | { type: "removeUnit"; list: ListKey; id: string }
@@ -118,6 +134,7 @@ type Action =
   | { type: "addRec"; tier: RecTier }
   | { type: "updateRec"; tier: RecTier; id: string; patch: Partial<RecItem> }
   | { type: "removeRec"; tier: RecTier; id: string }
+  | { type: "syncAutoRecs"; p1: DesiredAutoRec[]; p2: DesiredAutoRec[] }
   | { type: "setOverallNotes"; notes: string }
   | { type: "setCertification"; patch: Partial<AssessmentState["certification"]> }
   | { type: "submitStart" }
@@ -158,7 +175,7 @@ export function initialState(): AssessmentState {
     filters: [],
     pumps: [],
     spaType: "",
-    recommendations: { p1: [], p2: [], overallNotes: "" },
+    recommendations: { p1: [], p2: [], overallNotes: "", dismissed: [] },
     certification: { inspectorName: "", date: "", certified: false },
     submitting: false,
     submitted: false,
@@ -310,18 +327,62 @@ function reducer(s: AssessmentState, a: Action): AssessmentState {
         recommendations: {
           ...s.recommendations,
           [a.tier]: s.recommendations[a.tier].map((r) =>
-            r.id === a.id ? { ...r, ...a.patch } : r
+            // Editing an auto item promotes it to manual so it sticks and won't
+            // be regenerated or wiped on the next sync.
+            r.id === a.id ? { ...r, ...a.patch, auto: false } : r
           ),
         },
       };
-    case "removeRec":
+    case "removeRec": {
+      const removed = s.recommendations[a.tier].find((r) => r.id === a.id);
+      const dismissed =
+        removed?.auto && removed.sourceKey
+          ? [...s.recommendations.dismissed, removed.sourceKey]
+          : s.recommendations.dismissed;
       return {
         ...s,
         recommendations: {
           ...s.recommendations,
+          dismissed,
           [a.tier]: s.recommendations[a.tier].filter((r) => r.id !== a.id),
         },
       };
+    }
+    case "syncAutoRecs": {
+      const norm = (t: string) => t.trim().toLowerCase();
+      const mergeTier = (tier: RecTier, desired: DesiredAutoRec[]): RecItem[] => {
+        const current = s.recommendations[tier];
+        // Keep everything the tech owns; rebuild auto items from current ratings.
+        const manual = current.filter((r) => !r.auto);
+        const manualKeys = new Set(manual.map((r) => r.sourceKey).filter(Boolean));
+        const manualTexts = new Set(manual.map((r) => norm(r.item)));
+        const defaultTimeframe = tier === "p1" ? "Within 30 days" : "Monitor";
+        const fresh = desired
+          .filter(
+            (d) =>
+              !s.recommendations.dismissed.includes(d.sourceKey) &&
+              !manualKeys.has(d.sourceKey) &&
+              !manualTexts.has(norm(d.text))
+          )
+          .map((d) => ({
+            id: uid(),
+            item: d.text,
+            investment: "",
+            timeframe: defaultTimeframe,
+            auto: true,
+            sourceKey: d.sourceKey,
+          }));
+        return [...manual, ...fresh];
+      };
+      return {
+        ...s,
+        recommendations: {
+          ...s.recommendations,
+          p1: mergeTier("p1", a.p1),
+          p2: mergeTier("p2", a.p2),
+        },
+      };
+    }
     case "setOverallNotes":
       return { ...s, recommendations: { ...s.recommendations, overallNotes: a.notes } };
 
@@ -348,7 +409,11 @@ function loadDraft(): AssessmentState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<AssessmentState>;
     // Merge over a fresh base so older drafts missing new keys don't crash.
-    const draft = { ...initialState(), ...parsed };
+    const base = initialState();
+    const draft = { ...base, ...parsed };
+    // recommendations is nested — make sure newer keys (dismissed) survive a
+    // resume of a pre-v2 draft.
+    draft.recommendations = { ...base.recommendations, ...parsed.recommendations };
     // A finished submission is not a resumable draft.
     if (draft.submitted) return null;
     return draft;

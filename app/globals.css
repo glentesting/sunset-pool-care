@@ -1,9 +1,24 @@
 @import "tailwindcss";
 
 /**
- * SPC brand tokens. Navy base, teal/green accent, orange CTA.
- * Real type + final shades get dialed in during the design phase — this is the
- * working foundation so nothing ships looking like a default template.
+ * SPC brand tokens — single source for the design system.
+ *
+ * Palette intent:
+ *   navy   → structure, text, dark surfaces
+ *   teal   → active/selected states + the progress bar (the "brand accent")
+ *   orange → the PRIMARY ACTION button only (do not reuse for status/ratings)
+ *   sand   → soft neutral surface
+ *   good / monitor / attention → semantic RATING colors (green / amber / red),
+ *     kept distinct from teal & orange so status never reads as "brand" or "CTA"
+ *
+ * Fonts: Bricolage Grotesque for display/headings, Inter for body. The actual
+ * font files are wired via next/font in app/layout.tsx (sets --font-bricolage /
+ * --font-inter); these theme keys just map them to `font-display` / `font-sans`.
+ *
+ * Never hardcode these values elsewhere — use the generated utilities
+ * (bg-teal, text-attention, font-display, shadow-card, …). PDF colors live in
+ * lib/pdf-generator.tsx because @react-pdf can't read CSS variables; they mirror
+ * these on purpose — keep the two in sync.
  */
 @theme {
   --color-navy: #0f2438;
@@ -13,6 +28,22 @@
   --color-orange: #f2812f;
   --color-orange-dark: #d96d1f;
   --color-sand: #f6f4ef;
+  --color-sand-dark: #ece8df;
+
+  /* Semantic rating colors */
+  --color-good: #1f9d57;
+  --color-good-dark: #157a42;
+  --color-monitor: #e0991b;
+  --color-monitor-dark: #b9760a;
+  --color-attention: #dc2626;
+  --color-attention-dark: #b91c1c;
+  --color-stone: #8a94a0;
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-card: 0 1px 2px rgb(15 36 56 / 0.06), 0 6px 16px rgb(15 36 56 / 0.08);
+  --shadow-lift: 0 2px 6px rgb(15 36 56 / 0.18);
 }
 
 :root {
@@ -23,5 +54,37 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* Headings use the display face by default — keeps a consistent type scale
+   without sprinkling font-family on every heading. */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+/* Subtle step transition — feels like a native app, not a page reload. */
+@keyframes spc-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.spc-step-anim {
+  animation: spc-step-in 0.28s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spc-step-anim {
+    animation: none;
+  }
 }

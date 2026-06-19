@@ -12,6 +12,7 @@ export default function SectionPump() {
         singular="Pump"
         addLabel="+ Add Another Pump"
         photoSlots={["Pump", "Serial", "Display"]}
+        ensureOne
       />
     </SectionShell>
   );
