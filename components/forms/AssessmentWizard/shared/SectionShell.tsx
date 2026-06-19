@@ -69,7 +69,7 @@ export default function SectionShell({
       </div>
 
       {needsPhoto && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600">
+        <p className="rounded-lg bg-attention/10 px-3 py-2 text-sm font-medium text-attention">
           A {sec.rating} rating needs at least one photo before you can submit.
         </p>
       )}

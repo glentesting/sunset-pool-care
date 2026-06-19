@@ -4,9 +4,16 @@
  * This is a LIB FUNCTION, not an API route — it's called inside
  * /api/submit-assessment, not exposed publicly on its own.
  *
- * v1 is TEXT-ONLY by design (photos come in a later pass) which also keeps the
- * serverless function light: no custom fonts (built-in Helvetica only), so no
- * font-fetch cold-start or extra memory on Vercel.
+ * v2 — premium customer-facing report: branded header, color-coded condition
+ * dashboard, per-section ratings in color, chemistry pass/fail table, priority-
+ * styled recommendations, certification block, and EMBEDDED section photos.
+ *
+ * Fonts: built-in Helvetica only (no next/font here, no font registration) to
+ * keep the serverless function light — @react-pdf font fetching adds cold-start
+ * weight. So the PDF face differs from the on-screen Bricolage/Inter by design.
+ *
+ * Colors below MIRROR the CSS tokens in app/globals.css — @react-pdf can't read
+ * CSS variables, so keep these in sync if the brand palette changes.
  *
  * Branding (name, NAP) is pulled from content/site.ts — never hardcoded here.
  */
@@ -16,89 +23,89 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { SITE } from "@/content/site";
 import type { AssessmentData } from "@/lib/validation/assessment";
 
+// Mirror of globals.css @theme tokens.
 const NAVY = "#0f2438";
 const TEAL = "#1f8a7e";
-const ORANGE = "#d96d1f";
-const RED = "#dc2626";
+const GOOD = "#1f9d57";
+const MONITOR = "#b9760a";
+const ATTENTION = "#dc2626";
+const STONE = "#8a94a0";
+const SAND = "#f6f4ef";
 const GREY = "#6b7280";
 
 const RATING_COLOR: Record<string, string> = {
-  GOOD: TEAL,
-  MONITOR: ORANGE,
-  ATTENTION: RED,
-  "N/A": GREY,
+  GOOD,
+  MONITOR,
+  ATTENTION,
+  "N/A": STONE,
+};
+const RATING_SHORT: Record<string, string> = {
+  GOOD: "GOOD",
+  MONITOR: "MONITOR",
+  ATTENTION: "ATTN",
+  "N/A": "N/A",
+};
+const OVERALL_COLOR: Record<string, string> = {
+  "not-rated": STONE,
+  good: GOOD,
+  monitor: MONITOR,
+  attention: ATTENTION,
 };
 
 const s = StyleSheet.create({
-  page: { padding: 36, fontSize: 10, color: NAVY, lineHeight: 1.4 },
-  headerBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    borderBottomWidth: 2,
-    borderBottomColor: TEAL,
-    paddingBottom: 8,
-    marginBottom: 14,
-  },
-  brand: { fontSize: 20, fontWeight: "bold", color: NAVY },
-  brandSub: { fontSize: 9, color: GREY },
-  docTitle: { fontSize: 12, fontWeight: "bold", color: TEAL },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: NAVY,
-    marginTop: 14,
-    marginBottom: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-    paddingBottom: 3,
-  },
+  page: { paddingTop: 0, paddingBottom: 48, paddingHorizontal: 0, fontSize: 10, color: NAVY, fontFamily: "Helvetica" },
+  body: { paddingHorizontal: 36 },
+
+  // Header band
+  header: { backgroundColor: NAVY, color: "#fff", paddingHorizontal: 36, paddingVertical: 22 },
+  brand: { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#fff" },
+  brandSub: { fontSize: 8, color: "#9fb2c4", marginTop: 2 },
+  docTitle: { fontSize: 11, fontFamily: "Helvetica-Bold", color: TEAL, marginTop: 10 },
+
+  // Dashboard
+  dash: { flexDirection: "row", marginTop: 16, gap: 10 },
+  overallCard: { flex: 1, borderRadius: 6, borderWidth: 1, borderColor: "#e5e7eb", padding: 12, justifyContent: "center" },
+  overallKicker: { fontSize: 8, color: GREY, textTransform: "uppercase", letterSpacing: 1 },
+  overallLabel: { fontSize: 18, fontFamily: "Helvetica-Bold", marginTop: 2 },
+  chips: { flexDirection: "row", gap: 6 },
+  chip: { borderRadius: 6, paddingVertical: 8, paddingHorizontal: 4, alignItems: "center", width: 58 },
+  chipNum: { fontSize: 18, fontFamily: "Helvetica-Bold", color: "#fff" },
+  chipLabel: { fontSize: 7, fontFamily: "Helvetica-Bold", color: "#fff", marginTop: 1 },
+
+  sectionTitle: { fontSize: 12, fontFamily: "Helvetica-Bold", color: NAVY, marginTop: 18, marginBottom: 6, borderBottomWidth: 2, borderBottomColor: TEAL, paddingBottom: 3 },
+
   row: { flexDirection: "row", marginBottom: 2 },
   label: { width: 130, color: GREY },
   value: { flex: 1 },
-  sectionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 3,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#eee",
-  },
-  badge: { fontWeight: "bold" },
-  note: { color: GREY, fontStyle: "italic", marginTop: 1 },
-  recItem: { marginBottom: 4 },
-  overallBox: {
-    backgroundColor: NAVY,
-    color: "#fff",
-    padding: 10,
-    borderRadius: 4,
-    marginBottom: 6,
-  },
-  overallLabel: { fontSize: 16, fontWeight: "bold", color: "#fff" },
-  certBox: {
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 4,
-    padding: 10,
-  },
-  footer: {
-    position: "absolute",
-    bottom: 24,
-    left: 36,
-    right: 36,
-    fontSize: 8,
-    color: GREY,
-    textAlign: "center",
-    borderTopWidth: 0.5,
-    borderTopColor: "#e5e7eb",
-    paddingTop: 6,
-  },
+
+  secRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 5, borderBottomWidth: 0.5, borderBottomColor: "#eee" },
+  pill: { color: "#fff", fontSize: 8, fontFamily: "Helvetica-Bold", paddingVertical: 2, paddingHorizontal: 6, borderRadius: 8 },
+  note: { color: GREY, fontStyle: "italic", marginTop: 2, marginBottom: 2 },
+
+  photoWrap: { flexDirection: "row", flexWrap: "wrap", marginTop: 4, marginBottom: 4 },
+  photoBox: { width: 150, marginRight: 8, marginBottom: 8 },
+  photo: { width: 150, height: 110, objectFit: "cover", borderRadius: 4, borderWidth: 1, borderColor: "#e5e7eb" },
+  photoCaption: { fontSize: 7, color: GREY, marginTop: 2 },
+
+  // chemistry table
+  tHead: { flexDirection: "row", backgroundColor: SAND, paddingVertical: 4, paddingHorizontal: 6, borderRadius: 4 },
+  tHeadCell: { fontSize: 8, fontFamily: "Helvetica-Bold", color: NAVY },
+  tRow: { flexDirection: "row", paddingVertical: 5, paddingHorizontal: 6, borderBottomWidth: 0.5, borderBottomColor: "#eee", alignItems: "center" },
+
+  recCard: { borderLeftWidth: 3, borderRadius: 4, backgroundColor: SAND, padding: 8, marginBottom: 5 },
+  recTitle: { fontFamily: "Helvetica-Bold", fontSize: 11, marginTop: 8, marginBottom: 4 },
+  recMeta: { fontSize: 8, color: GREY, marginTop: 2 },
+
+  certBox: { marginTop: 16, borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 4, padding: 10 },
+
+  footer: { position: "absolute", bottom: 22, left: 36, right: 36, fontSize: 8, color: GREY, textAlign: "center", borderTopWidth: 0.5, borderTopColor: "#e5e7eb", paddingTop: 6 },
 });
 
 function Info({ label, value }: { label: string; value?: string }) {
@@ -111,141 +118,166 @@ function Info({ label, value }: { label: string; value?: string }) {
   );
 }
 
+function Photos({ photos }: { photos: { label: string; dataUrl: string }[] }) {
+  if (!photos.length) return null;
+  return (
+    <View style={s.photoWrap}>
+      {photos.map((p, i) => (
+        <View key={i} style={s.photoBox} wrap={false}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
+          <Image src={p.dataUrl} style={s.photo} />
+          <Text style={s.photoCaption}>{p.label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function AssessmentReport({ data }: { data: AssessmentData }) {
-  const { property, details, config, sections, chemistry, recommendations, overall, certification } =
-    data;
+  const { property, details, config, configPhotos, sections, chemistry, recommendations, overall, certification } = data;
+  const order: ("GOOD" | "MONITOR" | "ATTENTION" | "N/A")[] = ["GOOD", "MONITOR", "ATTENTION", "N/A"];
 
   return (
     <Document title={`${SITE.shortName} Pool Assessment — ${property.customerName}`}>
       <Page size="A4" style={s.page}>
-        <View style={s.headerBar}>
-          <View>
-            <Text style={s.brand}>{SITE.name}</Text>
-            <Text style={s.brandSub}>
-              {SITE.address.city}, {SITE.address.state} · {SITE.phone} · {SITE.domain}
-            </Text>
-          </View>
-          <Text style={s.docTitle}>Pool Condition Assessment</Text>
-        </View>
-
-        <View style={s.overallBox}>
-          <Text style={{ fontSize: 8, color: "#cbd5e1" }}>OVERALL CONDITION</Text>
-          <Text style={s.overallLabel}>{overall.label}</Text>
-          <Text style={{ fontSize: 9, color: "#cbd5e1" }}>
-            {overall.counts.GOOD} good · {overall.counts.MONITOR} monitor ·{" "}
-            {overall.counts.ATTENTION} attention · {overall.counts["N/A"]} n/a
+        {/* Branded header */}
+        <View style={s.header} fixed={false}>
+          <Text style={s.brand}>{SITE.name}</Text>
+          <Text style={s.brandSub}>
+            {SITE.address.street}, {SITE.address.city}, {SITE.address.state} {SITE.address.zip} · {SITE.phone} · {SITE.domain}
           </Text>
+          <Text style={s.docTitle}>POOL CONDITION ASSESSMENT</Text>
         </View>
 
-        <Text style={s.sectionTitle}>Property</Text>
-        <Info label="Customer" value={property.customerName} />
-        <Info label="Service Address" value={property.serviceAddress} />
-        <Info
-          label="City / ZIP"
-          value={[property.city, property.zip].filter(Boolean).join(" ") || undefined}
-        />
-        <Info label="Primary Pool Type" value={property.poolType} />
-        <Info label="Approx. Size" value={property.poolSize} />
-        <Info
-          label="Last Water Change"
-          value={property.lastWaterChangeUnknown ? "Unknown" : property.lastWaterChange}
-        />
-        {property.additionalBodies.map((b, i) => (
-          <Info
-            key={i}
-            label={`Add'l Body #${i + 1}`}
-            value={[b.poolType, b.size].filter(Boolean).join(" · ") || "—"}
-          />
-        ))}
+        <View style={s.body}>
+          {/* Condition dashboard */}
+          <View style={s.dash}>
+            <View style={s.overallCard}>
+              <Text style={s.overallKicker}>Overall Condition</Text>
+              <Text style={[s.overallLabel, { color: OVERALL_COLOR[overall.key] }]}>{overall.label}</Text>
+            </View>
+            <View style={s.chips}>
+              {order.map((r) => (
+                <View key={r} style={[s.chip, { backgroundColor: RATING_COLOR[r] }]}>
+                  <Text style={s.chipNum}>{overall.counts[r]}</Text>
+                  <Text style={s.chipLabel}>{RATING_SHORT[r]}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
 
-        <Text style={s.sectionTitle}>Inspection Details</Text>
-        <Info label="Session" value={details.session} />
-        <Info
-          label="Date / Time"
-          value={[details.date, details.time].filter(Boolean).join(" ") || undefined}
-        />
-        <Info label="Inspector" value={details.inspectorName} />
+          {/* Property */}
+          <Text style={s.sectionTitle}>Property</Text>
+          <Info label="Customer" value={property.customerName} />
+          <Info label="Service Address" value={property.serviceAddress} />
+          <Info label="City / ZIP" value={[property.city, property.zip].filter(Boolean).join(" ") || undefined} />
+          <Info label="Primary Pool Type" value={property.poolType} />
+          <Info label="Approx. Size" value={property.poolSize} />
+          <Info label="Last Water Change" value={property.lastWaterChangeUnknown ? "Unknown" : property.lastWaterChange} />
+          {property.additionalBodies.map((b, i) => (
+            <Info key={i} label={`Add'l Body #${i + 1}`} value={[b.poolType, b.size].filter(Boolean).join(" · ") || "—"} />
+          ))}
 
-        <Text style={s.sectionTitle}>Configuration</Text>
-        <Info label="Surface" value={config.surfaces.join(", ") || "—"} />
-        <Info label="Sanitization" value={config.sanitization.join(", ") || "—"} />
-        <Info label="Features" value={config.features.join(", ") || "—"} />
+          {/* Inspection details */}
+          <Text style={s.sectionTitle}>Inspection Details</Text>
+          <Info label="Session" value={details.session} />
+          <Info label="Date / Time" value={[details.date, details.time].filter(Boolean).join(" ") || undefined} />
+          <Info label="Inspector" value={details.inspectorName} />
 
-        <Text style={s.sectionTitle}>Inspection Sections</Text>
-        {sections.map((sec) => (
-          <View key={sec.id} wrap={false}>
-            <View style={s.sectionRow}>
-              <Text>{sec.title}</Text>
-              <Text style={[s.badge, { color: RATING_COLOR[sec.rating ?? "N/A"] }]}>
-                {sec.rating ?? "—"}
+          {/* Configuration */}
+          <Text style={s.sectionTitle}>Configuration</Text>
+          <Info label="Surface" value={config.surfaces.join(", ") || "—"} />
+          <Info label="Sanitization" value={config.sanitization.join(", ") || "—"} />
+          <Info label="Features" value={config.features.join(", ") || "—"} />
+          <Photos photos={configPhotos} />
+
+          {/* Inspection sections */}
+          <Text style={s.sectionTitle}>Inspection Sections</Text>
+          {sections.map((sec) => (
+            <View key={sec.id} wrap={false}>
+              <View style={s.secRow}>
+                <Text style={{ fontFamily: "Helvetica-Bold" }}>{sec.title}</Text>
+                <Text style={[s.pill, { backgroundColor: RATING_COLOR[sec.rating ?? "N/A"] }]}>
+                  {sec.rating ? RATING_SHORT[sec.rating] : "—"}
+                </Text>
+              </View>
+              {sec.notes ? <Text style={s.note}>{sec.notes}</Text> : null}
+              <Photos photos={sec.photos} />
+            </View>
+          ))}
+
+          {/* Chemistry table */}
+          <Text style={s.sectionTitle}>Water Chemistry</Text>
+          <View style={s.tHead}>
+            <Text style={[s.tHeadCell, { flex: 2 }]}>Parameter</Text>
+            <Text style={[s.tHeadCell, { flex: 1 }]}>Reading</Text>
+            <Text style={[s.tHeadCell, { flex: 1 }]}>Ideal</Text>
+            <Text style={[s.tHeadCell, { width: 56, textAlign: "right" }]}>Status</Text>
+          </View>
+          {chemistry.map((c) => (
+            <View key={c.key} style={s.tRow}>
+              <Text style={{ flex: 2 }}>{c.label}</Text>
+              <Text style={{ flex: 1, fontFamily: "Helvetica-Bold", color: c.rating ? RATING_COLOR[c.rating] : NAVY }}>
+                {c.reading || "—"}
+              </Text>
+              <Text style={{ flex: 1, color: GREY }}>{c.ideal}</Text>
+              <Text style={{ width: 56, textAlign: "right", fontFamily: "Helvetica-Bold", color: c.rating ? RATING_COLOR[c.rating] : STONE }}>
+                {c.rating ? RATING_SHORT[c.rating] : "—"}
               </Text>
             </View>
-            {sec.notes ? <Text style={s.note}>{sec.notes}</Text> : null}
-          </View>
-        ))}
+          ))}
 
-        <Text style={s.sectionTitle}>Water Chemistry</Text>
-        {chemistry.map((c) => (
-          <View key={c.key} style={s.sectionRow}>
-            <Text style={{ flex: 2 }}>{c.label}</Text>
-            <Text style={{ flex: 1 }}>{c.reading || "—"}</Text>
-            <Text style={{ flex: 1, color: GREY }}>Ideal {c.ideal}</Text>
-            <Text style={[s.badge, { width: 60, textAlign: "right", color: RATING_COLOR[c.rating ?? "N/A"] }]}>
-              {c.rating ?? "—"}
+          {/* Recommendations */}
+          <Text style={s.sectionTitle}>Recommendations</Text>
+          <Text style={[s.recTitle, { color: ATTENTION, marginTop: 2 }]}>Priority 1 — Recommend Promptly</Text>
+          {recommendations.p1.length === 0 ? (
+            <Text style={s.note}>None.</Text>
+          ) : (
+            recommendations.p1.map((r, i) => (
+              <View key={i} style={[s.recCard, { borderLeftColor: ATTENTION }]}>
+                <Text style={{ fontFamily: "Helvetica-Bold" }}>{r.item || "—"}</Text>
+                <Text style={s.recMeta}>
+                  {[r.investment && `Est. ${r.investment}`, r.timeframe].filter(Boolean).join("  ·  ")}
+                </Text>
+              </View>
+            ))
+          )}
+          <Text style={[s.recTitle, { color: MONITOR }]}>Priority 2 — Monitor / Within 90 Days</Text>
+          {recommendations.p2.length === 0 ? (
+            <Text style={s.note}>None.</Text>
+          ) : (
+            recommendations.p2.map((r, i) => (
+              <View key={i} style={[s.recCard, { borderLeftColor: MONITOR }]}>
+                <Text style={{ fontFamily: "Helvetica-Bold" }}>{r.item || "—"}</Text>
+                <Text style={s.recMeta}>
+                  {[r.investment && `Est. ${r.investment}`, r.timeframe].filter(Boolean).join("  ·  ")}
+                </Text>
+              </View>
+            ))
+          )}
+          {recommendations.overallNotes ? (
+            <>
+              <Text style={[s.recTitle, { color: NAVY }]}>Overall Assessment Notes</Text>
+              <Text>{recommendations.overallNotes}</Text>
+            </>
+          ) : null}
+
+          {/* Certification */}
+          <View style={s.certBox} wrap={false}>
+            <Text style={{ fontFamily: "Helvetica-Bold", marginBottom: 3 }}>Inspector Certification</Text>
+            <Text>
+              I certify that this report represents my honest assessment of the pool and equipment at the time
+              of inspection.
+            </Text>
+            <Text style={{ marginTop: 6, fontFamily: "Helvetica-Bold" }}>
+              {certification.inspectorName}
+              {certification.date ? `   ·   ${certification.date}` : ""}
             </Text>
           </View>
-        ))}
-
-        <Text style={s.sectionTitle}>Recommendations</Text>
-        <Text style={{ fontWeight: "bold", color: RED, marginBottom: 3 }}>
-          Priority 1 — Recommend Promptly
-        </Text>
-        {recommendations.p1.length === 0 ? (
-          <Text style={s.note}>None.</Text>
-        ) : (
-          recommendations.p1.map((r, i) => (
-            <Text key={i} style={s.recItem}>
-              • {r.item || "—"}
-              {r.investment ? `  (${r.investment})` : ""}
-              {r.timeframe ? `  — ${r.timeframe}` : ""}
-            </Text>
-          ))
-        )}
-        <Text style={{ fontWeight: "bold", color: ORANGE, marginTop: 6, marginBottom: 3 }}>
-          Priority 2 — Monitor / Within 90 Days
-        </Text>
-        {recommendations.p2.length === 0 ? (
-          <Text style={s.note}>None.</Text>
-        ) : (
-          recommendations.p2.map((r, i) => (
-            <Text key={i} style={s.recItem}>
-              • {r.item || "—"}
-              {r.investment ? `  (${r.investment})` : ""}
-              {r.timeframe ? `  — ${r.timeframe}` : ""}
-            </Text>
-          ))
-        )}
-        {recommendations.overallNotes ? (
-          <>
-            <Text style={{ fontWeight: "bold", marginTop: 6 }}>Overall Assessment Notes</Text>
-            <Text>{recommendations.overallNotes}</Text>
-          </>
-        ) : null}
-
-        <View style={s.certBox}>
-          <Text style={{ fontWeight: "bold", marginBottom: 3 }}>Inspector Certification</Text>
-          <Text>
-            I certify that this report represents my honest assessment of the pool and equipment at
-            the time of inspection.
-          </Text>
-          <Text style={{ marginTop: 6 }}>
-            {certification.inspectorName}
-            {certification.date ? `  ·  ${certification.date}` : ""}
-          </Text>
         </View>
 
         <Text style={s.footer} fixed>
-          {SITE.name} · {SITE.phone} · {SITE.email} — Generated for {property.customerName}
+          {SITE.name} · {SITE.phone} · {SITE.email} — Prepared for {property.customerName}
         </Text>
       </Page>
     </Document>

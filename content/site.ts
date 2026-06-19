@@ -14,14 +14,16 @@ export const WEEKLY_SERVICE_PRICE = 135; // dollars / month — canonical
 export const SITE = {
   name: "Sunset Pool Care",
   shortName: "SPC",
-  // TODO: confirm real phone, email, street address with Brent before launch
-  phone: "(480) 000-0000",
-  email: "hello@sunsetpoolcare.com",
+  phone: "(480) 682-7986",
+  // ⚠️ TODO REAL EMAIL — NOT PROVIDED YET. A customer-facing report (PDF footer,
+  // contact block) cannot ship to customers until this is the real SPC inbox.
+  // Do not treat this placeholder as launch-ready.
+  email: "TODO-REAL-EMAIL@sunsetpoolcare.com",
   address: {
-    street: "TODO street",
+    street: "19015 S. Arizona Ave",
     city: "Chandler",
     state: "AZ",
-    zip: "TODO",
+    zip: "85286",
   },
   domain: "sunsetpoolcare.com",
 } as const;

@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Bricolage_Grotesque, Inter } from "next/font/google";
 import { SITE } from "@/content/site";
 import "./globals.css";
 
-// Placeholder font — real type pairing gets chosen in the design phase.
-const geist = Geist({ variable: "--font-sans", subsets: ["latin"] });
+// SPC type pairing: Bricolage Grotesque (display) + Inter (body). Mapped to
+// --font-display / --font-sans in globals.css via these CSS variables.
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
+  subsets: ["latin"],
+  display: "swap",
+});
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -20,7 +30,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={geist.variable}>{children}</body>
+      <body className={`${bricolage.variable} ${inter.variable}`}>{children}</body>
     </html>
   );
 }

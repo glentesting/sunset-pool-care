@@ -59,7 +59,7 @@ export default function PhotoSlot({
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="absolute right-1 top-1 rounded-full bg-white/90 px-2 py-1 text-xs font-bold text-red-600"
+            className="absolute right-1 top-1 rounded-full bg-white/90 px-2 py-1 text-xs font-bold text-attention"
           >
             Remove
           </button>
@@ -69,7 +69,7 @@ export default function PhotoSlot({
           htmlFor={inputId}
           className={`flex h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed text-center text-sm font-medium ${
             missing
-              ? "border-red-400 bg-red-50 text-red-600"
+              ? "border-attention/50 bg-attention/5 text-attention"
               : "border-navy/25 bg-sand text-navy/60"
           }`}
         >

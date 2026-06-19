@@ -2,14 +2,14 @@
  * Assessment Wizard schema. The client builds this shape from wizard state and
  * the server RE-VALIDATES it (never trust the client) before generating the PDF.
  *
- * NOTE: photo image data is intentionally NOT part of this payload for v1.
- * The PDF is text-only this pass and Drive upload is stubbed, so we send photo
- * COUNTS for reporting and keep the actual images client-side in the draft.
- * (Flagged as a judgment call — see build summary.)
+ * v2: section + config photos (compressed JPEG data URLs) ARE included so the
+ * PDF can embed them. This makes the payload large — see payload.ts.
  */
 import { z } from "zod";
 
 export const ratingSchema = z.enum(["GOOD", "MONITOR", "ATTENTION", "N/A"]);
+
+const photoSchema = z.object({ label: z.string(), dataUrl: z.string() });
 
 const bodyOfWaterSchema = z.object({
   poolType: z.string(),
@@ -24,6 +24,7 @@ const sectionSchema = z.object({
   rating: ratingSchema.optional(),
   notes: z.string(),
   photoCount: z.number().int().nonnegative(),
+  photos: z.array(photoSchema).default([]),
 });
 
 const chemistryRowSchema = z.object({
@@ -64,6 +65,7 @@ export const assessmentSchema = z.object({
     sanitization: z.array(z.string()),
     features: z.array(z.string()),
   }),
+  configPhotos: z.array(photoSchema).default([]),
   sections: z.array(sectionSchema),
   chemistry: z.array(chemistryRowSchema),
   lights: z.array(z.string()),
@@ -76,6 +78,7 @@ export const assessmentSchema = z.object({
     overallNotes: z.string(),
   }),
   overall: z.object({
+    key: z.enum(["not-rated", "good", "monitor", "attention"]),
     label: z.string(),
     counts: z.object({
       GOOD: z.number(),

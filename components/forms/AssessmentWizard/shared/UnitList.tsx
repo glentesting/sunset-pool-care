@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import { useAssessment } from "../state";
 import PhotoSlot from "./PhotoSlot";
 
@@ -15,16 +16,28 @@ export default function UnitList({
   singular,
   addLabel,
   photoSlots,
+  ensureOne = false,
 }: {
   list: "lights" | "filters" | "pumps";
   sectionId: string;
   singular: string;
   addLabel: string;
   photoSlots: string[];
+  /** Start with one unit so its labeled photo slots are visible without a tap. */
+  ensureOne?: boolean;
 }) {
   const { state, dispatch } = useAssessment();
   const units = state[list];
   const sec = state.sections[sectionId] ?? { notes: "", photos: {} };
+
+  // Client-only seed (avoids SSR/client id mismatch) so Filter 1 / Pump 1 and
+  // their labeled slots show by default. Runs once per mount.
+  useEffect(() => {
+    if (ensureOne && units.length === 0) {
+      dispatch({ type: "addUnit", list, label: "" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-3">
