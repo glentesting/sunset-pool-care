@@ -6,51 +6,86 @@ import { upsertContact, createTask } from "@/lib/hubspot";
 import { logAssessmentToSkimmer } from "@/lib/skimmer";
 
 /**
- * Assessment Wizard submit. FOUR outputs fire from this ONE route:
- *   1. Generate PDF
- *   2. Upload PDF to Google Drive
- *   3. Update HubSpot contact + create MONITOR follow-up tasks
- *   4. Fire Make webhook -> Skimmer
+ * Assessment Wizard submit. FOUR outputs are orchestrated from this ONE route:
+ *   1. Generate PDF              ← WIRED in v1 (returned to the tech as download)
+ *   2. Upload PDF to Drive       ← STUBBED (throws, caught)
+ *   3. HubSpot contact + tasks   ← STUBBED (throws, caught)
+ *   4. Make webhook -> Skimmer   ← STUBBED (throws, caught)
  *
- * Each is wrapped independently — a failure in one does NOT kill the others.
- * We report back exactly what landed and what didn't, so the tech standing at
- * the pool knows the real state instead of a generic "done".
+ * Each output is wrapped independently — a failure in one never kills the
+ * others, and crucially never blocks the PDF. We report exactly what landed in
+ * `results` so the tech standing at the pool sees the real state, and stream the
+ * PDF back base64-encoded for an immediate download.
  *
- * TODO (Phase 3): double-submit / idempotency guard so a retry on bad field
- * signal doesn't create duplicate PDFs + duplicate HubSpot tasks.
+ * No env vars / credentials are required for v1 to succeed (PDF only).
  */
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   const parsed = assessmentSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid submission" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid submission", issues: parsed.error.flatten() },
+      { status: 400 }
+    );
   }
   const data = parsed.data;
   const results = { pdf: false, drive: false, hubspot: false, skimmer: false };
 
+  // 1. PDF — the one output that must work in v1.
   let pdf: Buffer | null = null;
   try {
     pdf = await generateAssessmentPdf(data);
     results.pdf = true;
-  } catch (e) { console.error("PDF step failed:", e); }
+  } catch (e) {
+    console.error("PDF step failed:", e);
+  }
 
-  try {
-    if (pdf) { await uploadAssessmentPdf(pdf, `${data.customerName}.pdf`); results.drive = true; }
-  } catch (e) { console.error("Drive step failed:", e); }
+  const safeName = (data.property.customerName || "customer").replace(/[^a-z0-9]+/gi, "-");
+  const filename = `${safeName}-pool-assessment-${data.details.date || "report"}.pdf`;
 
+  // 2. Drive upload — STUB (throws, caught). Does not block the PDF download.
   try {
-    const { id } = await upsertContact({ email: data.customerEmail, firstname: data.customerName });
-    for (const item of data.inspectionItems.filter((i) => i.rating === "MONITOR")) {
+    if (pdf) {
+      await uploadAssessmentPdf(pdf, filename);
+      results.drive = true;
+    }
+  } catch (e) {
+    console.error("Drive step failed (stubbed):", e);
+  }
+
+  // 3. HubSpot contact + MONITOR follow-up tasks — STUB (throws, caught).
+  try {
+    const { id } = await upsertContact({ firstname: data.property.customerName });
+    for (const sec of data.sections.filter((x) => x.rating === "MONITOR")) {
       const due = new Date(Date.now() + 30 * 864e5).toISOString();
-      await createTask(id, `30-day follow-up: ${item.key}`, due);
+      await createTask(id, `30-day follow-up: ${sec.title}`, due);
     }
     results.hubspot = true;
-  } catch (e) { console.error("HubSpot step failed:", e); }
+  } catch (e) {
+    console.error("HubSpot step failed (stubbed):", e);
+  }
 
+  // 4. Skimmer via Make webhook — STUB (throws, caught).
   try {
-    await logAssessmentToSkimmer({ jobId: data.jobId, contactEmail: data.customerEmail, summary: "TODO" });
+    await logAssessmentToSkimmer({
+      jobId: data.jobId,
+      contactEmail: "",
+      summary: `${data.overall.label} — ${data.property.customerName}`,
+    });
     results.skimmer = true;
-  } catch (e) { console.error("Skimmer step failed:", e); }
+  } catch (e) {
+    console.error("Skimmer step failed (stubbed):", e);
+  }
 
   const allOk = Object.values(results).every(Boolean);
-  return NextResponse.json({ ok: allOk, results }, { status: allOk ? 200 : 207 });
+  return NextResponse.json(
+    {
+      ok: allOk,
+      results,
+      filename,
+      pdfBase64: pdf ? pdf.toString("base64") : null,
+    },
+    { status: results.pdf ? 200 : 207 }
+  );
 }

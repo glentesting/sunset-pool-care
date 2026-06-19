@@ -1,0 +1,128 @@
+"use client";
+import { useAssessment, type BodyOfWater } from "../state";
+import { POOL_TYPES } from "../config";
+import { TextField, SelectField } from "../shared/Field";
+
+export default function StepProperty() {
+  const { state, dispatch } = useAssessment();
+  const p = state.property;
+
+  return (
+    <div className="space-y-4">
+      <TextField
+        label="Customer Name"
+        value={p.customerName}
+        onChange={(v) => dispatch({ type: "setProperty", patch: { customerName: v } })}
+      />
+      <TextField
+        label="Service Address"
+        value={p.serviceAddress}
+        onChange={(v) => dispatch({ type: "setProperty", patch: { serviceAddress: v } })}
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <TextField
+          label="City"
+          value={p.city}
+          onChange={(v) => dispatch({ type: "setProperty", patch: { city: v } })}
+        />
+        <TextField
+          label="ZIP"
+          value={p.zip}
+          inputMode="numeric"
+          onChange={(v) => dispatch({ type: "setProperty", patch: { zip: v } })}
+        />
+      </div>
+
+      <SelectField
+        label="Primary Pool Type"
+        value={p.poolType}
+        options={POOL_TYPES}
+        onChange={(v) => dispatch({ type: "setProperty", patch: { poolType: v } })}
+      />
+      <TextField
+        label="Approximate Pool Size"
+        value={p.poolSize}
+        placeholder="e.g. 15,000 gal"
+        onChange={(v) => dispatch({ type: "setProperty", patch: { poolSize: v } })}
+      />
+
+      <div>
+        <TextField
+          label="Last Water Change — Primary Pool"
+          value={p.lastWaterChange}
+          placeholder="e.g. Spring 2024"
+          onChange={(v) => dispatch({ type: "setProperty", patch: { lastWaterChange: v } })}
+        />
+        <label className="mt-2 flex items-center gap-2 text-sm text-navy/70">
+          <input
+            type="checkbox"
+            checked={p.lastWaterChangeUnknown}
+            onChange={(e) =>
+              dispatch({ type: "setProperty", patch: { lastWaterChangeUnknown: e.target.checked } })
+            }
+            className="h-5 w-5 accent-teal"
+          />
+          Unknown
+        </label>
+      </div>
+
+      {p.additionalBodies.map((b, i) => (
+        <AdditionalBody key={b.id} body={b} index={i} />
+      ))}
+
+      <button
+        type="button"
+        onClick={() => dispatch({ type: "addBody" })}
+        className="w-full rounded-xl border-2 border-dashed border-teal/50 py-3 font-semibold text-teal-dark"
+      >
+        + Add Additional Body of Water
+      </button>
+    </div>
+  );
+}
+
+function AdditionalBody({ body, index }: { body: BodyOfWater; index: number }) {
+  const { dispatch } = useAssessment();
+  const update = (patch: Partial<BodyOfWater>) =>
+    dispatch({ type: "updateBody", id: body.id, patch });
+
+  return (
+    <div className="space-y-3 rounded-xl border-2 border-navy/10 bg-sand p-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold text-navy">Additional Body #{index + 1}</h3>
+        <button
+          type="button"
+          onClick={() => dispatch({ type: "removeBody", id: body.id })}
+          className="text-sm font-semibold text-red-600"
+        >
+          Remove
+        </button>
+      </div>
+      <SelectField
+        label="Pool Type"
+        value={body.poolType}
+        options={POOL_TYPES}
+        onChange={(v) => update({ poolType: v })}
+      />
+      <TextField
+        label="Approximate Size"
+        value={body.size}
+        onChange={(v) => update({ size: v })}
+      />
+      <TextField
+        label="Last Water Change"
+        value={body.lastWaterChange}
+        onChange={(v) => update({ lastWaterChange: v })}
+      />
+      <label className="flex items-center gap-2 text-sm text-navy/70">
+        <input
+          type="checkbox"
+          checked={body.lastWaterChangeUnknown}
+          onChange={(e) => update({ lastWaterChangeUnknown: e.target.checked })}
+          className="h-5 w-5 accent-teal"
+        />
+        Unknown
+      </label>
+    </div>
+  );
+}
