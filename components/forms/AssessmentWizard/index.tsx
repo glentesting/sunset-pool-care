@@ -1,31 +1,65 @@
 "use client";
 import { AssessmentProvider, useAssessment } from "./state";
 import { WIZARD_STEPS } from "./steps";
-import RatingStep from "./RatingStep";
-import StepWelcome from "./StepWelcome";
-import StepChemistry from "./StepChemistry";
-import StepEquipment from "./StepEquipment";
-import StepRecommendations from "./StepRecommendations";
-import StepSummary from "./StepSummary";
+import WizardChrome from "./WizardChrome";
+
+import StepWelcome from "./steps/StepWelcome";
+import StepProperty from "./steps/StepProperty";
+import StepInspectionDetails from "./steps/StepInspectionDetails";
+import StepConfiguration from "./steps/StepConfiguration";
+import StepRecommendations from "./steps/StepRecommendations";
+import StepReview from "./steps/StepReview";
+
+import SectionPoolSurface from "./steps/sections/SectionPoolSurface";
+import SectionChemistry from "./steps/sections/SectionChemistry";
+import SectionFiltration from "./steps/sections/SectionFiltration";
+import SectionPump from "./steps/sections/SectionPump";
+import SectionPlumbing from "./steps/sections/SectionPlumbing";
+import SectionAutomation from "./steps/sections/SectionAutomation";
+import SectionCleaning from "./steps/sections/SectionCleaning";
+import SectionSafety from "./steps/sections/SectionSafety";
+import SectionDecking from "./steps/sections/SectionDecking";
+import SectionSpa from "./steps/sections/SectionSpa";
+
+/** Section id (from config) -> its component. */
+const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
+  surface: SectionPoolSurface,
+  chemistry: SectionChemistry,
+  filtration: SectionFiltration,
+  pump: SectionPump,
+  plumbing: SectionPlumbing,
+  automation: SectionAutomation,
+  cleaning: SectionCleaning,
+  safety: SectionSafety,
+  decking: SectionDecking,
+  spa: SectionSpa,
+};
+
+/** Non-section step id -> its component. */
+const STEP_COMPONENTS: Record<string, React.ComponentType> = {
+  welcome: StepWelcome,
+  property: StepProperty,
+  details: StepInspectionDetails,
+  config: StepConfiguration,
+  recommendations: StepRecommendations,
+  review: StepReview,
+};
 
 function CurrentStep() {
   const { state } = useAssessment();
-  const step = WIZARD_STEPS[state.step];
-  if (!step) return <StepSummary />;
-  switch (step.kind) {
-    case "welcome": return <StepWelcome />;
-    case "rating": return <RatingStep itemKey={step.key} label={step.label} />;
-    case "chemistry": return <StepChemistry />;
-    case "equipment": return <StepEquipment />;
-    case "recommendations": return <StepRecommendations />;
-    case "summary": return <StepSummary />;
-  }
+  const step = WIZARD_STEPS[state.step] ?? WIZARD_STEPS[WIZARD_STEPS.length - 1];
+  const Component = step.sectionId
+    ? SECTION_COMPONENTS[step.sectionId]
+    : STEP_COMPONENTS[step.id];
+  return Component ? <Component /> : null;
 }
 
 export default function AssessmentWizard() {
   return (
     <AssessmentProvider>
-      <CurrentStep />
+      <WizardChrome>
+        <CurrentStep />
+      </WizardChrome>
     </AssessmentProvider>
   );
 }
