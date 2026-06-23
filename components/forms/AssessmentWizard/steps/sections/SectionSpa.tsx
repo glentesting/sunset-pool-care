@@ -22,7 +22,7 @@ export default function SectionSpa() {
       />
       {!noSpa && state.spaType !== "" && <SectionShell sectionId="spa" />}
       {noSpa && (
-        <p className="rounded-xl bg-sand p-4 text-sm text-navy/60">
+        <p className="rounded-lg border border-line bg-sand/60 p-4 text-[13px] text-navy/50">
           No spa on this property — nothing else to inspect here.
         </p>
       )}

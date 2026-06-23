@@ -2,37 +2,32 @@
 import { RATINGS, type Rating } from "../config";
 
 /**
- * The GOOD / MONITOR / ATTENTION / N/A control. Used both for section-level
- * ratings (via SectionShell) and per-parameter in water chemistry.
+ * Rating control — a refined SEGMENTED control (four hairline-divided segments
+ * in one pill), used for section ratings and per-parameter chemistry.
  *
- * Tactile: the selected state fills with the rating's semantic color and lifts
- * slightly; unselected is a quiet outline. Unmistakable at a glance, big touch
- * targets — it's used one-handed on a phone in direct AZ sun.
+ * Restraint by design: the selected segment gets a quiet light fill, a small
+ * colored status dot, and colored text; unselected segments stay neutral. No
+ * big filled "candy" buttons. Tap targets stay large for field use.
  */
 
-const STYLES: Record<Rating, { on: string; off: string }> = {
-  GOOD: {
-    on: "border-good bg-good text-white shadow-lift -translate-y-0.5",
-    off: "border-good/40 text-good-dark hover:border-good",
-  },
-  MONITOR: {
-    on: "border-monitor bg-monitor text-white shadow-lift -translate-y-0.5",
-    off: "border-monitor/40 text-monitor-dark hover:border-monitor",
-  },
-  ATTENTION: {
-    on: "border-attention bg-attention text-white shadow-lift -translate-y-0.5",
-    off: "border-attention/40 text-attention hover:border-attention",
-  },
-  "N/A": {
-    on: "border-stone bg-stone text-white shadow-lift -translate-y-0.5",
-    off: "border-stone/40 text-stone hover:border-stone",
-  },
+const SELECTED_TEXT: Record<Rating, string> = {
+  GOOD: "text-good-dark",
+  MONITOR: "text-monitor-dark",
+  ATTENTION: "text-attention-dark",
+  "N/A": "text-stone",
+};
+
+const DOT: Record<Rating, string> = {
+  GOOD: "bg-good",
+  MONITOR: "bg-monitor",
+  ATTENTION: "bg-attention",
+  "N/A": "bg-stone",
 };
 
 const SHORT: Record<Rating, string> = {
-  GOOD: "GOOD",
-  MONITOR: "MONITOR",
-  ATTENTION: "ATTN",
+  GOOD: "Good",
+  MONITOR: "Monitor",
+  ATTENTION: "Attn",
   "N/A": "N/A",
 };
 
@@ -46,20 +41,23 @@ export default function RatingButtons({
   size?: "lg" | "sm";
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <div className="flex divide-x divide-line overflow-hidden rounded-xl border border-line bg-white">
       {RATINGS.map((r) => {
         const active = value === r;
-        const st = STYLES[r];
         return (
           <button
             key={r}
             type="button"
             aria-pressed={active}
             onClick={() => onChange(r)}
-            className={`rounded-xl border-2 font-bold tracking-wide transition-all duration-150 active:scale-95 ${
-              size === "lg" ? "py-4 text-base" : "py-2.5 text-sm"
-            } ${active ? st.on : `bg-white ${st.off}`}`}
+            className={`flex flex-1 items-center justify-center gap-1.5 font-medium transition-colors ${
+              size === "lg" ? "py-3.5 text-sm" : "py-2.5 text-[13px]"
+            } ${active ? `bg-sand ${SELECTED_TEXT[r]}` : "text-navy/45 hover:text-navy/70"}`}
           >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${active ? DOT[r] : "bg-navy/15"}`}
+              aria-hidden
+            />
             {SHORT[r]}
           </button>
         );

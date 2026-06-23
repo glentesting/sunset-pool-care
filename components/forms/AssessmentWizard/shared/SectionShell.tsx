@@ -14,9 +14,10 @@ import AdHocPhotos from "./AdHocPhotos";
  * and the photo slots.
  *
  * Photo enforcement: when a section is rated MONITOR/ATTENTION it must carry at
- * least one photo. The slots turn red and a banner appears until one is added;
- * the Review step blocks submit on the same rule.
+ * least one photo. The slots show a quiet attention outline and a calm note
+ * appears until one is added; the Review step blocks submit on the same rule.
  */
+const groupLabel = "mb-2 text-[11px] font-semibold uppercase tracking-wide text-navy/40";
 export default function SectionShell({
   sectionId,
   children,
@@ -35,11 +36,11 @@ export default function SectionShell({
   const needsPhoto = flagged && photoCount === 0;
 
   return (
-    <div className="space-y-5">
-      {cfg.hint && <p className="text-sm text-navy/60">{cfg.hint}</p>}
+    <div className="space-y-4">
+      {cfg.hint && <p className="text-[13px] leading-relaxed text-navy/50">{cfg.hint}</p>}
 
       <div>
-        <p className="mb-2 text-sm font-semibold text-navy">Section rating</p>
+        <p className={groupLabel}>Section rating</p>
         <RatingButtons
           value={sec.rating}
           onChange={(rating) => dispatch({ type: "rateSection", id: sectionId, rating })}
@@ -49,7 +50,7 @@ export default function SectionShell({
       {children}
 
       <div>
-        <p className="mb-2 text-sm font-semibold text-navy">Photos</p>
+        <p className={groupLabel}>Photos</p>
         {cfg.photos.length > 0 && (
           <div className="mb-3 grid grid-cols-2 gap-3">
             {cfg.photos.map((slot) => (
@@ -69,7 +70,7 @@ export default function SectionShell({
       </div>
 
       {needsPhoto && (
-        <p className="rounded-lg bg-attention/10 px-3 py-2 text-sm font-medium text-attention">
+        <p className="rounded-lg border border-attention/20 bg-attention/5 px-3 py-2 text-[13px] font-medium text-attention">
           A {sec.rating} rating needs at least one photo before you can submit.
         </p>
       )}
