@@ -90,17 +90,17 @@ export default function NotesField({
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
-        <label className="text-sm font-semibold text-navy">{label}</label>
+        <label className="text-[13px] font-medium text-navy/65">{label}</label>
         {supported && (
           <button
             type="button"
             onClick={toggle}
             aria-pressed={listening}
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              listening ? "bg-red-600 text-white" : "bg-teal/10 text-teal-dark"
+            className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+              listening ? "text-attention" : "text-teal-dark hover:bg-teal/10"
             }`}
           >
-            {listening ? "● Stop" : "🎤 Dictate"}
+            {listening ? "● Stop" : "Dictate"}
           </button>
         )}
       </div>
@@ -109,7 +109,7 @@ export default function NotesField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder ?? "Type or dictate notes…"}
         rows={3}
-        className="w-full rounded-xl border-2 border-navy/15 p-3 text-base text-navy focus:border-teal focus:outline-none"
+        className="w-full rounded-lg border border-line p-3 text-base text-navy placeholder:text-navy/30 focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/30"
       />
     </div>
   );

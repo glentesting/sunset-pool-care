@@ -18,18 +18,18 @@ export default function SectionChemistry() {
 
   return (
     <SectionShell sectionId="chemistry">
-      <div className="space-y-4">
-        <p className="text-sm font-semibold text-navy">Readings</p>
+      <div className="space-y-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-navy/40">Readings</p>
         {params.map((p) => {
           const row = state.chemistry[p.key] ?? { reading: "" };
           const autoSuggested = row.auto === true && !!row.rating;
           return (
-            <div key={p.key} className="rounded-2xl border border-navy/10 bg-white p-3 shadow-card">
+            <div key={p.key} className="rounded-xl border border-line p-3.5">
               <div className="flex items-baseline justify-between">
-                <span className="font-semibold text-navy">{p.label}</span>
-                <span className="text-xs text-navy/50">Ideal: {p.ideal}</span>
+                <span className="text-sm font-semibold text-navy">{p.label}</span>
+                <span className="text-xs text-navy/40">Ideal {p.ideal}</span>
               </div>
-              <div className="mt-2 flex items-center gap-2">
+              <div className="mt-2.5 flex items-center gap-2">
                 <input
                   value={row.reading}
                   inputMode="decimal"
@@ -47,16 +47,16 @@ export default function SectionChemistry() {
                       });
                     }
                   }}
-                  className="w-28 rounded-xl border-2 border-navy/15 p-2 text-base text-navy focus:border-teal focus:outline-none"
+                  className="w-24 rounded-lg border border-line p-2 text-base text-navy placeholder:text-navy/30 focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/30"
                 />
-                {p.unit && <span className="text-sm text-navy/50">{p.unit}</span>}
+                {p.unit && <span className="text-[13px] text-navy/40">{p.unit}</span>}
                 {autoSuggested && (
-                  <span className="rounded-full bg-teal/10 px-2 py-0.5 text-xs font-medium text-teal-dark">
-                    auto-suggested · tap to override
+                  <span className="text-[11px] font-medium text-teal-dark">
+                    auto · tap to override
                   </span>
                 )}
               </div>
-              <div className="mt-2">
+              <div className="mt-2.5">
                 <RatingButtons
                   size="sm"
                   value={row.rating}

@@ -53,14 +53,14 @@ export default function StepProperty() {
           placeholder="e.g. Spring 2024"
           onChange={(v) => dispatch({ type: "setProperty", patch: { lastWaterChange: v } })}
         />
-        <label className="mt-2 flex items-center gap-2 text-sm text-navy/70">
+        <label className="mt-2 flex items-center gap-2 text-[13px] text-navy/60">
           <input
             type="checkbox"
             checked={p.lastWaterChangeUnknown}
             onChange={(e) =>
               dispatch({ type: "setProperty", patch: { lastWaterChangeUnknown: e.target.checked } })
             }
-            className="h-5 w-5 accent-teal"
+            className="h-4 w-4 accent-teal"
           />
           Unknown
         </label>
@@ -73,7 +73,7 @@ export default function StepProperty() {
       <button
         type="button"
         onClick={() => dispatch({ type: "addBody" })}
-        className="w-full rounded-xl border-2 border-dashed border-teal/50 py-3 font-semibold text-teal-dark"
+        className="w-full rounded-lg border border-dashed border-line py-2.5 text-sm font-medium text-teal-dark transition-colors hover:bg-sand"
       >
         + Add Additional Body of Water
       </button>
@@ -87,13 +87,13 @@ function AdditionalBody({ body, index }: { body: BodyOfWater; index: number }) {
     dispatch({ type: "updateBody", id: body.id, patch });
 
   return (
-    <div className="space-y-3 rounded-xl border-2 border-navy/10 bg-sand p-4">
+    <div className="space-y-3 rounded-xl border border-line p-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-navy">Additional Body #{index + 1}</h3>
+        <h3 className="text-sm font-semibold text-navy">Additional Body #{index + 1}</h3>
         <button
           type="button"
           onClick={() => dispatch({ type: "removeBody", id: body.id })}
-          className="text-sm font-semibold text-red-600"
+          className="text-[13px] font-medium text-navy/45 transition-colors hover:text-attention"
         >
           Remove
         </button>
@@ -114,12 +114,12 @@ function AdditionalBody({ body, index }: { body: BodyOfWater; index: number }) {
         value={body.lastWaterChange}
         onChange={(v) => update({ lastWaterChange: v })}
       />
-      <label className="flex items-center gap-2 text-sm text-navy/70">
+      <label className="flex items-center gap-2 text-[13px] text-navy/60">
         <input
           type="checkbox"
           checked={body.lastWaterChangeUnknown}
           onChange={(e) => update({ lastWaterChangeUnknown: e.target.checked })}
-          className="h-5 w-5 accent-teal"
+          className="h-4 w-4 accent-teal"
         />
         Unknown
       </label>

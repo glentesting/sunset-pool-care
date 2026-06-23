@@ -25,25 +25,29 @@
   --color-navy-light: #1c3a57;
   --color-teal: #2bb3a3;
   --color-teal-dark: #1f8a7e;
-  --color-orange: #f2812f;
-  --color-orange-dark: #d96d1f;
-  --color-sand: #f6f4ef;
-  --color-sand-dark: #ece8df;
+  /* Rich sunset orange — reserved for the single primary action. Not neon. */
+  --color-orange: #d9692e;
+  --color-orange-dark: #bd571f;
+  --color-sand: #f7f6f3;
+  --color-sand-dark: #eceae4;
+  /* Hairline border tint used across surfaces */
+  --color-line: #e7e9ec;
 
-  /* Semantic rating colors */
+  /* Semantic rating colors — used sparingly (dots / quiet text), never big fills */
   --color-good: #1f9d57;
   --color-good-dark: #157a42;
-  --color-monitor: #e0991b;
-  --color-monitor-dark: #b9760a;
-  --color-attention: #dc2626;
+  --color-monitor: #d4920f;
+  --color-monitor-dark: #a8730a;
+  --color-attention: #d64545;
   --color-attention-dark: #b91c1c;
   --color-stone: #8a94a0;
 
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-  --shadow-card: 0 1px 2px rgb(15 36 56 / 0.06), 0 6px 16px rgb(15 36 56 / 0.08);
-  --shadow-lift: 0 2px 6px rgb(15 36 56 / 0.18);
+  /* Very soft depth only — premium reads through whitespace, not shadows */
+  --shadow-card: 0 1px 2px rgb(15 36 56 / 0.04);
+  --shadow-lift: 0 1px 3px rgb(15 36 56 / 0.1);
 }
 
 :root {
@@ -64,7 +68,8 @@ h2,
 h3,
 h4 {
   font-family: var(--font-display);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.021em;
+  font-weight: 600;
 }
 
 /* Subtle step transition — feels like a native app, not a page reload. */

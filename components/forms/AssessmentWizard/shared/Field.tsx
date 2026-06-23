@@ -3,12 +3,14 @@ import { useId } from "react";
 
 /**
  * Small labeled form primitives shared across the bespoke steps. Mobile-first:
- * 16px text (prevents iOS zoom-on-focus), big tap targets, consistent styling
- * so the step files stay about content, not class soup.
+ * 16px text (prevents iOS zoom-on-focus), hairline borders, generous padding,
+ * quiet teal focus — so step files stay about content, not class soup.
  */
 
 const inputCls =
-  "w-full rounded-xl border-2 border-navy/15 p-3 text-base text-navy focus:border-teal focus:outline-none";
+  "w-full rounded-lg border border-line bg-white p-3 text-base text-navy placeholder:text-navy/30 focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/30";
+
+const labelCls = "mb-1 block text-[13px] font-medium text-navy/65";
 
 export function TextField({
   label,
@@ -28,7 +30,7 @@ export function TextField({
   const id = useId();
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block text-sm font-semibold text-navy">
+      <label htmlFor={id} className={labelCls}>
         {label}
       </label>
       <input
@@ -60,7 +62,7 @@ export function SelectField({
   const id = useId();
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block text-sm font-semibold text-navy">
+      <label htmlFor={id} className={labelCls}>
         {label}
       </label>
       <select
@@ -95,10 +97,10 @@ export function Chip({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`rounded-full border-2 px-4 py-2 text-sm font-semibold transition-colors ${
+      className={`rounded-full border px-3.5 py-2 text-sm font-medium transition-colors ${
         active
-          ? "border-teal bg-teal text-white"
-          : "border-navy/20 bg-white text-navy/70"
+          ? "border-teal/40 bg-teal/10 text-teal-dark"
+          : "border-line bg-white text-navy/60 hover:border-navy/25"
       }`}
     >
       {label}

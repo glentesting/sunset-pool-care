@@ -22,7 +22,7 @@ export default function StepRecommendations() {
 
   return (
     <div className="space-y-8">
-      <p className="rounded-2xl bg-sand px-4 py-3 text-sm text-navy/70">
+      <p className="rounded-lg border border-line bg-sand px-4 py-3 text-[13px] leading-relaxed text-navy/55">
         {autoCount > 0
           ? `${autoCount} item${autoCount === 1 ? "" : "s"} pre-filled from your flagged ratings. Edit, reword, or remove any of them.`
           : "Add anything the customer should act on. Flagged ratings auto-fill here."}
@@ -33,7 +33,7 @@ export default function StepRecommendations() {
         heading="Priority 1 — Recommend Promptly"
         items={r.p1}
         timeframes={P1_TIMEFRAMES}
-        accent="text-attention"
+        accent="text-attention-dark"
       />
       <RecGroup
         tier="p2"
@@ -67,23 +67,21 @@ function RecGroup({
   const { dispatch } = useAssessment();
   return (
     <div>
-      <h3 className={`mb-3 font-display font-bold ${accent}`}>{heading}</h3>
-      <div className="space-y-4">
+      <h3 className={`mb-3 font-display text-[15px] font-semibold ${accent}`}>{heading}</h3>
+      <div className="space-y-3">
         {items.length === 0 && (
-          <p className="rounded-2xl border-2 border-dashed border-navy/15 p-4 text-center text-sm text-navy/40">
+          <p className="rounded-lg border border-dashed border-line p-4 text-center text-[13px] text-navy/35">
             Nothing here yet.
           </p>
         )}
         {items.map((item) => (
-          <div key={item.id} className="space-y-3 rounded-2xl border border-navy/10 bg-white p-4 shadow-card">
+          <div key={item.id} className="space-y-3 rounded-xl border border-line p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
                 <div className="mb-1 flex items-center gap-2">
-                  <label className="text-sm font-semibold text-navy">Item</label>
+                  <label className="text-[13px] font-medium text-navy/65">Item</label>
                   {item.auto && (
-                    <span className="rounded-full bg-teal/10 px-2 py-0.5 text-xs font-medium text-teal-dark">
-                      auto
-                    </span>
+                    <span className="text-[11px] font-medium text-teal-dark">auto</span>
                   )}
                 </div>
                 <input
@@ -91,13 +89,13 @@ function RecGroup({
                   onChange={(e) =>
                     dispatch({ type: "updateRec", tier, id: item.id, patch: { item: e.target.value } })
                   }
-                  className="w-full rounded-xl border-2 border-navy/15 p-3 text-base text-navy focus:border-teal focus:outline-none"
+                  className="w-full rounded-lg border border-line p-3 text-base text-navy placeholder:text-navy/30 focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/30"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => dispatch({ type: "removeRec", tier, id: item.id })}
-                className="mt-7 text-sm font-semibold text-attention"
+                className="mt-6 text-[13px] font-medium text-navy/45 transition-colors hover:text-attention"
               >
                 Remove
               </button>
@@ -127,7 +125,7 @@ function RecGroup({
       <button
         type="button"
         onClick={() => dispatch({ type: "addRec", tier })}
-        className="mt-3 w-full rounded-xl border-2 border-dashed border-teal/50 py-3 font-semibold text-teal-dark"
+        className="mt-3 w-full rounded-lg border border-dashed border-line py-2.5 text-sm font-medium text-teal-dark transition-colors hover:bg-sand"
       >
         + Add Item
       </button>

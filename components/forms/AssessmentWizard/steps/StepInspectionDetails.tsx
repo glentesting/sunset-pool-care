@@ -10,7 +10,7 @@ export default function StepInspectionDetails() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-navy/60">Auto-filled from this device — edit if needed.</p>
+      <p className="text-[13px] text-navy/45">Auto-filled from this device — edit if needed.</p>
       <TextField label="Session" value={d.session} onChange={(v) => set({ session: v })} />
       <div className="grid grid-cols-2 gap-3">
         <TextField label="Date" type="date" value={d.date} onChange={(v) => set({ date: v })} />

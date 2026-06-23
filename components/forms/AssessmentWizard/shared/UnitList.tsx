@@ -42,10 +42,10 @@ export default function UnitList({
   return (
     <div className="space-y-3">
       {units.map((u, i) => (
-        <div key={u.id} className="space-y-3 rounded-xl border-2 border-navy/10 bg-sand p-4">
+        <div key={u.id} className="space-y-3 rounded-xl border border-line p-4">
           <div className="flex items-end gap-2">
             <div className="flex-1">
-              <label className="mb-1 block text-sm font-semibold text-navy">
+              <label className="mb-1 block text-[13px] font-medium text-navy/65">
                 {singular} #{i + 1}
               </label>
               <input
@@ -54,13 +54,13 @@ export default function UnitList({
                 onChange={(e) =>
                   dispatch({ type: "updateUnit", list, id: u.id, label: e.target.value })
                 }
-                className="w-full rounded-xl border-2 border-navy/15 p-3 text-base text-navy focus:border-teal focus:outline-none"
+                className="w-full rounded-lg border border-line p-3 text-base text-navy placeholder:text-navy/30 focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/30"
               />
             </div>
             <button
               type="button"
               onClick={() => dispatch({ type: "removeUnit", list, id: u.id })}
-              className="rounded-xl border-2 border-red-200 px-3 py-3 text-sm font-semibold text-red-600"
+              className="rounded-lg px-3 py-3 text-[13px] font-medium text-navy/45 transition-colors hover:text-attention"
             >
               Remove
             </button>
@@ -85,7 +85,7 @@ export default function UnitList({
       <button
         type="button"
         onClick={() => dispatch({ type: "addUnit", list, label: "" })}
-        className="w-full rounded-xl border-2 border-dashed border-teal/50 py-3 font-semibold text-teal-dark"
+        className="w-full rounded-lg border border-dashed border-line py-2.5 text-sm font-medium text-teal-dark transition-colors hover:bg-sand"
       >
         {addLabel}
       </button>

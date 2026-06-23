@@ -5,8 +5,21 @@ import { compressImage } from "@/lib/image-compress";
 /**
  * A single photo slot: opens the phone camera (capture attribute), compresses
  * the shot client-side, and shows a thumbnail with a remove button. `required`
- * slots show a red outline until filled so the tech sees what's outstanding.
+ * slots show a quiet attention outline until filled.
  */
+function CameraGlyph() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M4 8.5A1.5 1.5 0 0 1 5.5 7h1.8l.9-1.5h7.6L16.7 7h1.8A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
 export default function PhotoSlot({
   label,
   value,
@@ -50,16 +63,16 @@ export default function PhotoSlot({
         onChange={handleFile}
       />
       {value ? (
-        <div className="relative overflow-hidden rounded-xl border-2 border-teal/40">
+        <div className="relative overflow-hidden rounded-lg border border-line">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt={label} className="h-32 w-full object-cover" />
-          <span className="absolute left-0 top-0 bg-navy/80 px-2 py-1 text-xs font-medium text-white">
+          <img src={value} alt={label} className="h-28 w-full object-cover" />
+          <span className="absolute inset-x-0 bottom-0 bg-navy/70 px-2 py-1 text-[11px] font-medium text-white">
             {label}
           </span>
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="absolute right-1 top-1 rounded-full bg-white/90 px-2 py-1 text-xs font-bold text-attention"
+            className="absolute right-1.5 top-1.5 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-medium text-navy/70 shadow-card"
           >
             Remove
           </button>
@@ -67,19 +80,19 @@ export default function PhotoSlot({
       ) : (
         <label
           htmlFor={inputId}
-          className={`flex h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed text-center text-sm font-medium ${
+          className={`flex h-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-center text-[13px] font-medium transition-colors ${
             missing
-              ? "border-attention/50 bg-attention/5 text-attention"
-              : "border-navy/25 bg-sand text-navy/60"
+              ? "border-attention/40 text-attention"
+              : "border-line bg-sand/60 text-navy/45 hover:border-navy/25"
           }`}
         >
           {busy ? (
             <span>Processing…</span>
           ) : (
             <>
-              <span className="text-2xl leading-none">📷</span>
-              <span className="mt-1 px-2">{label}</span>
-              {required && <span className="mt-0.5 text-xs">Required</span>}
+              <CameraGlyph />
+              <span className="px-2">{label}</span>
+              {required && <span className="text-[11px] text-navy/35">Required</span>}
             </>
           )}
         </label>

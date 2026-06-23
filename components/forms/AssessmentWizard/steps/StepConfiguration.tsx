@@ -70,19 +70,19 @@ export default function StepConfiguration() {
           value={newFeature}
           onChange={(e) => setNewFeature(e.target.value)}
           placeholder="Add additional feature…"
-          className="flex-1 rounded-xl border-2 border-navy/15 p-3 text-base text-navy focus:border-teal focus:outline-none"
+          className="flex-1 rounded-lg border border-line p-3 text-base text-navy placeholder:text-navy/30 focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/30"
         />
         <button
           type="button"
           onClick={addFeature}
-          className="rounded-xl border-2 border-teal/50 px-4 font-semibold text-teal-dark"
+          className="rounded-lg border border-line px-4 text-sm font-medium text-teal-dark transition-colors hover:bg-sand"
         >
-          + Add
+          Add
         </button>
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-semibold text-navy">Required Photos</p>
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-navy/40">Required Photos</p>
         <div className="grid grid-cols-2 gap-3">
           {photoSlots.map((slot) => (
             <PhotoSlot
@@ -102,7 +102,7 @@ export default function StepConfiguration() {
 function Group({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-2 text-sm font-semibold text-navy">{label}</p>
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-navy/40">{label}</p>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
