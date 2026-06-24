@@ -1,5 +1,4 @@
 "use client";
-import { useEffect } from "react";
 import { useAssessment, clearDraft, type SubmitResults } from "../state";
 import { canSubmit, overallCondition, sectionRollup, type OverallKey } from "../summary";
 import { buildSubmitPayload } from "../payload";
@@ -35,15 +34,7 @@ const ORDER: Rating[] = ["GOOD", "MONITOR", "ATTENTION", "N/A"];
 export default function StepReview() {
   const { state, dispatch } = useAssessment();
   const cert = state.certification;
-
-  // Prefill certification from the inspection details once.
-  useEffect(() => {
-    const patch: Partial<typeof cert> = {};
-    if (!cert.inspectorName && state.details.inspectorName) patch.inspectorName = state.details.inspectorName;
-    if (!cert.date) patch.date = state.details.date;
-    if (Object.keys(patch).length) dispatch({ type: "setCertification", patch });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { inspectorName, date } = state.details;
 
   if (state.submitted && state.results) {
     return <SubmittedScreen results={state.results} />;
@@ -129,26 +120,19 @@ export default function StepReview() {
         </ul>
       </div>
 
-      {/* Certification */}
+      {/* Certification — inspector + date captured once on Property & Inspection */}
       <div className="space-y-3 rounded-xl border border-line p-4">
         <h3 className="text-sm font-semibold text-navy">Inspector Certification</h3>
-        <div>
-          <label className="mb-1 block text-[13px] font-medium text-navy/65">Inspector Name</label>
-          <input
-            value={cert.inspectorName}
-            onChange={(e) => dispatch({ type: "setCertification", patch: { inspectorName: e.target.value } })}
-            className="w-full rounded-lg border border-line p-3 text-base text-navy focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/30"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-[13px] font-medium text-navy/65">Date</label>
-          <input
-            type="date"
-            value={cert.date}
-            onChange={(e) => dispatch({ type: "setCertification", patch: { date: e.target.value } })}
-            className="w-full rounded-lg border border-line p-3 text-base text-navy focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/30"
-          />
-        </div>
+        <dl className="grid grid-cols-2 gap-3">
+          <div>
+            <dt className="text-[10px] font-medium uppercase tracking-wide text-navy/40">Inspector</dt>
+            <dd className="mt-0.5 text-sm font-medium text-navy">{inspectorName || "—"}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-medium uppercase tracking-wide text-navy/40">Date</dt>
+            <dd className="mt-0.5 text-sm font-medium text-navy">{date || "—"}</dd>
+          </div>
+        </dl>
         <label className="flex items-start gap-3 text-[13px] leading-relaxed text-navy/70">
           <input
             type="checkbox"

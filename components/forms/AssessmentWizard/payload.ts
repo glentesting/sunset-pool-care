@@ -7,8 +7,8 @@
  * watch-item in the summary; if it ever bites, add a cap here (and log drops).
  */
 import type { AssessmentData } from "@/lib/validation/assessment";
-import { CHEMISTRY_PARAMS, SALT_SANITIZER, SECTIONS } from "./config";
-import { overallCondition } from "./summary";
+import { CHEMISTRY_PARAMS, SALT_SANITIZER, SECTIONS, SPA_NA } from "./config";
+import { derivedSpaType, isSpaPresent, overallCondition } from "./summary";
 import type { AssessmentState } from "./state";
 
 /** Human label for a stored photo slot key (handles fixed / per-unit / ad-hoc). */
@@ -27,8 +27,13 @@ function photosOf(map: Record<string, string>): { label: string; dataUrl: string
 
 export function buildSubmitPayload(state: AssessmentState): AssessmentData {
   const usesSalt = state.config.sanitization.includes(SALT_SANITIZER);
+  const spaPresent = isSpaPresent(state);
 
   const sections = SECTIONS.map((s) => {
+    // Auto-skipped spa is reported as N/A with nothing attached.
+    if (s.id === "spa" && !spaPresent) {
+      return { id: s.id, title: s.title, rating: "N/A" as const, notes: "", photoCount: 0, photos: [] };
+    }
     const sec = state.sections[s.id];
     const photos = sec ? photosOf(sec.photos) : [];
     return {
@@ -67,7 +72,7 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
     lights: state.lights.map((l) => l.label),
     filters: state.filters.map((f) => f.label),
     pumps: state.pumps.map((p) => p.label),
-    spaType: state.spaType,
+    spaType: spaPresent ? state.spaType || derivedSpaType(state) : SPA_NA,
     recommendations: {
       p1: state.recommendations.p1.map(({ item, investment, timeframe }) => ({
         item,
@@ -83,8 +88,8 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
     },
     overall: overallCondition(state),
     certification: {
-      inspectorName: state.certification.inspectorName,
-      date: state.certification.date,
+      inspectorName: state.details.inspectorName,
+      date: state.details.date,
       certified: state.certification.certified as true,
     },
   };

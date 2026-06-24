@@ -2,7 +2,8 @@
 import type { ReactNode } from "react";
 import { SITE } from "@/content/site";
 import { useAssessment } from "./state";
-import { WIZARD_STEPS, TOTAL_STEPS, PHASES, type Phase } from "./steps";
+import { getActiveSteps } from "./summary";
+import { PHASES, type Phase } from "./steps";
 
 /**
  * The persistent frame around every step: a quiet branded header (SPC wordmark +
@@ -44,8 +45,10 @@ function BrandMark() {
 
 export default function WizardChrome({ children }: { children: ReactNode }) {
   const { state, dispatch } = useAssessment();
-  const idx = state.step;
-  const step = WIZARD_STEPS[idx];
+  const steps = getActiveSteps(state);
+  const total = steps.length;
+  const idx = Math.min(state.step, total - 1);
+  const step = steps[idx];
   const isWelcome = step?.id === "welcome";
   const isReview = step?.id === "review";
   const currentPhaseIdx = step ? PHASES.indexOf(step.phase) : 0;
@@ -61,7 +64,7 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
             </span>
           </div>
           <span className="text-xs font-medium tabular-nums text-navy/45">
-            {idx + 1} / {TOTAL_STEPS}
+            {idx + 1} / {total}
           </span>
         </div>
 
