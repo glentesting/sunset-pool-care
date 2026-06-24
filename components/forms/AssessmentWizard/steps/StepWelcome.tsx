@@ -19,7 +19,7 @@ export default function StepWelcome() {
       </h2>
 
       <div>
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-navy/40">
+        <p className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-navy/70">
           How it works
         </p>
         <ol className="divide-y divide-line border-y border-line">
@@ -35,7 +35,7 @@ export default function StepWelcome() {
       </div>
 
       <div>
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-navy/40">
+        <p className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-navy/70">
           Rating legend
         </p>
         <ul className="space-y-2.5">
@@ -45,7 +45,7 @@ export default function StepWelcome() {
               <span className="w-20 shrink-0 font-medium text-navy">
                 {l.rating === "ATTENTION" ? "Attention" : l.rating === "N/A" ? "N/A" : l.rating.charAt(0) + l.rating.slice(1).toLowerCase()}
               </span>
-              <span className="text-navy/50">{l.meaning}</span>
+              <span className="text-navy/70">{l.meaning}</span>
             </li>
           ))}
         </ul>

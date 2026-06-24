@@ -36,9 +36,9 @@ const TEAL = "#1f8a7e";
 const GOOD = "#1f9d57";
 const MONITOR = "#a8730a";
 const ATTENTION = "#b91c1c";
-const STONE = "#8a94a0";
-const GREY = "#6b7280";
-const LINE = "#e7e9ec";
+const STONE = "#586573"; // darkened for legible "N/A" + secondary text on white
+const GREY = "#44505f"; // labels / notes / captions — strong dark-on-white, not faint
+const LINE = "#cdd2d8"; // table + section rules, clearly visible
 
 const RATING_COLOR: Record<string, string> = { GOOD, MONITOR, ATTENTION, "N/A": STONE };
 const RATING_LABEL: Record<string, string> = {

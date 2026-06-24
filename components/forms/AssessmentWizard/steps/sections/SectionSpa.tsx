@@ -24,9 +24,9 @@ export default function SectionSpa() {
 
   return (
     <div className="space-y-4">
-      <p className="rounded-lg bg-sand/70 px-3 py-2 text-[13px] text-navy/60">
-        Spa type: <span className="font-medium text-navy">{spaType || "—"}</span>
-        <span className="text-navy/40"> · from setup</span>
+      <p className="rounded-lg border border-line bg-sand/70 px-3 py-2 text-[13px] text-navy/80">
+        Spa type: <span className="font-semibold text-navy">{spaType || "—"}</span>
+        <span className="text-navy/60"> · from setup</span>
       </p>
       <SectionShell sectionId="spa" />
     </div>

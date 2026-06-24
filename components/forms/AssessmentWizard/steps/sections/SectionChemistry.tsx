@@ -19,7 +19,7 @@ export default function SectionChemistry() {
   return (
     <SectionShell sectionId="chemistry">
       <div className="space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-navy/40">Readings</p>
+        <p className="text-[12px] font-semibold uppercase tracking-wide text-navy/70">Readings</p>
         {params.map((p) => {
           const row = state.chemistry[p.key] ?? { reading: "" };
           const autoSuggested = row.auto === true && !!row.rating;
@@ -27,7 +27,7 @@ export default function SectionChemistry() {
             <div key={p.key} className="rounded-xl border border-line p-3.5">
               <div className="flex items-baseline justify-between">
                 <span className="text-sm font-semibold text-navy">{p.label}</span>
-                <span className="text-xs text-navy/40">Ideal {p.ideal}</span>
+                <span className="text-xs font-medium text-navy/60">Ideal {p.ideal}</span>
               </div>
               <div className="mt-2.5 flex items-center gap-2">
                 <input
@@ -47,9 +47,9 @@ export default function SectionChemistry() {
                       });
                     }
                   }}
-                  className="w-24 rounded-lg border border-line p-2 text-base text-navy placeholder:text-navy/30 focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/30"
+                  className="w-24 rounded-lg border border-field p-2 text-base text-navy placeholder:text-navy/50 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30"
                 />
-                {p.unit && <span className="text-[13px] text-navy/40">{p.unit}</span>}
+                {p.unit && <span className="text-[13px] font-medium text-navy/60">{p.unit}</span>}
                 {autoSuggested && (
                   <span className="text-[11px] font-medium text-teal-dark">
                     auto · tap to override

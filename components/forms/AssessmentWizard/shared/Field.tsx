@@ -8,9 +8,9 @@ import { useId } from "react";
  */
 
 const inputCls =
-  "w-full rounded-lg border border-line bg-white p-3 text-base text-navy placeholder:text-navy/30 focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/30";
+  "w-full rounded-lg border border-field bg-white p-3 text-base text-navy placeholder:text-navy/50 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30";
 
-const labelCls = "mb-1 block text-[13px] font-medium text-navy/65";
+const labelCls = "mb-1 block text-[13px] font-medium text-navy";
 
 export function TextField({
   label,
@@ -99,8 +99,8 @@ export function Chip({
       onClick={onClick}
       className={`rounded-full border px-3.5 py-2 text-sm font-medium transition-colors ${
         active
-          ? "border-teal/40 bg-teal/10 text-teal-dark"
-          : "border-line bg-white text-navy/60 hover:border-navy/25"
+          ? "border-teal bg-teal/15 text-teal-dark"
+          : "border-field bg-white text-navy/80 hover:border-navy/40"
       }`}
     >
       {label}

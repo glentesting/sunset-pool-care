@@ -14,7 +14,7 @@ const RATING_TEXT: Record<Rating, string> = {
   GOOD: "text-good-dark",
   MONITOR: "text-monitor-dark",
   ATTENTION: "text-attention-dark",
-  "N/A": "text-stone",
+  "N/A": "text-stone-dark",
 };
 const RATING_LABEL: Record<Rating, string> = {
   GOOD: "Good",
@@ -23,7 +23,7 @@ const RATING_LABEL: Record<Rating, string> = {
   "N/A": "N/A",
 };
 const OVERALL_ACCENT: Record<OverallKey, string> = {
-  "not-rated": "text-stone",
+  "not-rated": "text-stone-dark",
   good: "text-good-dark",
   monitor: "text-monitor-dark",
   attention: "text-attention-dark",
@@ -76,7 +76,7 @@ export default function StepReview() {
     <div className="space-y-7">
       {/* Condition dashboard — calm, type-led */}
       <div className="rounded-xl border border-line p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-navy/40">
+        <p className="text-[12px] font-semibold uppercase tracking-wide text-navy/70">
           Overall Condition
         </p>
         <p className={`mt-1 font-display text-[26px] font-semibold leading-tight ${OVERALL_ACCENT[overall.key]}`}>
@@ -90,8 +90,8 @@ export default function StepReview() {
                 {overall.counts[r]}
               </div>
               <div className="mt-1 flex items-center justify-center gap-1.5">
-                <span className={`h-1.5 w-1.5 rounded-full ${RATING_DOT[r]}`} aria-hidden />
-                <span className="text-[11px] font-medium text-navy/45">{RATING_LABEL[r]}</span>
+                <span className={`h-2 w-2 rounded-full ${RATING_DOT[r]}`} aria-hidden />
+                <span className="text-[11px] font-semibold text-navy/70">{RATING_LABEL[r]}</span>
               </div>
             </div>
           ))}
@@ -100,20 +100,20 @@ export default function StepReview() {
 
       {/* Per-section ratings in color (quiet) */}
       <div>
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-navy/40">
+        <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-navy/70">
           Section ratings
         </p>
         <ul className="divide-y divide-line border-y border-line">
           {rollup.map((s) => (
             <li key={s.id} className="flex items-center justify-between py-2.5">
-              <span className="text-sm text-navy/75">{s.title}</span>
+              <span className="text-sm text-navy">{s.title}</span>
               {s.rating ? (
-                <span className={`flex items-center gap-1.5 text-[13px] font-medium ${RATING_TEXT[s.rating]}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${RATING_DOT[s.rating]}`} aria-hidden />
+                <span className={`flex items-center gap-1.5 text-[13px] font-semibold ${RATING_TEXT[s.rating]}`}>
+                  <span className={`h-2 w-2 rounded-full ${RATING_DOT[s.rating]}`} aria-hidden />
                   {RATING_LABEL[s.rating]}
                 </span>
               ) : (
-                <span className="text-[13px] text-navy/30">Not rated</span>
+                <span className="text-[13px] font-medium text-navy/55">Not rated</span>
               )}
             </li>
           ))}
@@ -125,15 +125,15 @@ export default function StepReview() {
         <h3 className="text-sm font-semibold text-navy">Inspector Certification</h3>
         <dl className="grid grid-cols-2 gap-3">
           <div>
-            <dt className="text-[10px] font-medium uppercase tracking-wide text-navy/40">Inspector</dt>
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-navy/60">Inspector</dt>
             <dd className="mt-0.5 text-sm font-medium text-navy">{inspectorName || "—"}</dd>
           </div>
           <div>
-            <dt className="text-[10px] font-medium uppercase tracking-wide text-navy/40">Date</dt>
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-navy/60">Date</dt>
             <dd className="mt-0.5 text-sm font-medium text-navy">{date || "—"}</dd>
           </div>
         </dl>
-        <label className="flex items-start gap-3 text-[13px] leading-relaxed text-navy/70">
+        <label className="flex items-start gap-3 text-[13px] leading-relaxed text-navy/85">
           <input
             type="checkbox"
             checked={cert.certified}
@@ -185,7 +185,7 @@ function SubmittedScreen({ results }: { results: SubmitResults }) {
       </div>
       <div>
         <h2 className="font-display text-2xl font-semibold text-navy">Report Generated</h2>
-        <p className="mt-1 text-sm text-navy/55">Your PDF should be downloading now.</p>
+        <p className="mt-1 text-sm text-navy/70">Your PDF should be downloading now.</p>
       </div>
       <ul className="divide-y divide-line border-y border-line text-left">
         {rows.map((r) => (
@@ -193,9 +193,9 @@ function SubmittedScreen({ results }: { results: SubmitResults }) {
             <span className={results[r.key] ? "text-good-dark" : "text-navy/30"}>
               {results[r.key] ? "✓" : "○"}
             </span>
-            <span className="flex-1 text-[13px] text-navy/75">{r.label}</span>
+            <span className="flex-1 text-[13px] text-navy">{r.label}</span>
             {r.stubbed && !results[r.key] && (
-              <span className="text-[11px] text-navy/40">pending setup</span>
+              <span className="text-[11px] font-medium text-navy/60">pending setup</span>
             )}
           </li>
         ))}
@@ -203,7 +203,7 @@ function SubmittedScreen({ results }: { results: SubmitResults }) {
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="w-full rounded-lg border border-line py-3 text-sm font-medium text-navy/70 transition-colors hover:bg-sand"
+        className="w-full rounded-lg border border-field py-3 text-sm font-semibold text-navy transition-colors hover:bg-sand"
       >
         Start New Assessment
       </button>

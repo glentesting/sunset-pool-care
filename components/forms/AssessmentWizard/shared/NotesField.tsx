@@ -90,7 +90,7 @@ export default function NotesField({
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
-        <label className="text-[13px] font-medium text-navy/65">{label}</label>
+        <label className="text-[13px] font-medium text-navy">{label}</label>
         {supported && (
           <button
             type="button"
@@ -109,7 +109,7 @@ export default function NotesField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder ?? "Type or dictate notes…"}
         rows={3}
-        className="w-full rounded-lg border border-line p-3 text-base text-navy placeholder:text-navy/30 focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/30"
+        className="w-full rounded-lg border border-field p-3 text-base text-navy placeholder:text-navy/50 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30"
       />
     </div>
   );
