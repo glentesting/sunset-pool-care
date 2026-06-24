@@ -13,20 +13,10 @@ const LEGEND_DOT: Record<string, string> = {
 export default function StepWelcome() {
   const { dispatch } = useAssessment();
   return (
-    <div className="space-y-8">
-      {/* Restrained hero — type carries it */}
-      <div>
-        <p className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-teal-dark">
-          Pool Condition Assessment
-        </p>
-        <h2 className="mt-2 font-display text-[28px] font-semibold leading-[1.1] text-navy">
-          Inspect, rate, and generate a customer report — from your phone.
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-navy/55">
-          Walk the property through four short phases. Ratings and photos flow
-          straight into a branded PDF for the customer.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <h2 className="font-display text-2xl font-semibold text-navy">
+        Pool Condition Assessment
+      </h2>
 
       <div>
         <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-navy/40">
