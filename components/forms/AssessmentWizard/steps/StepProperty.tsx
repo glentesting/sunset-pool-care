@@ -54,7 +54,7 @@ export default function StepProperty() {
           placeholder="e.g. Spring 2024"
           onChange={(v) => dispatch({ type: "setProperty", patch: { lastWaterChange: v } })}
         />
-        <label className="mt-2 flex items-center gap-2 text-[13px] text-navy/60">
+        <label className="mt-2 flex items-center gap-2 text-[13px] text-navy/80">
           <input
             type="checkbox"
             checked={p.lastWaterChangeUnknown}
@@ -74,14 +74,14 @@ export default function StepProperty() {
       <button
         type="button"
         onClick={() => dispatch({ type: "addBody" })}
-        className="w-full rounded-lg border border-dashed border-line py-2.5 text-sm font-medium text-teal-dark transition-colors hover:bg-sand"
+        className="w-full rounded-lg border border-dashed border-field py-2.5 text-sm font-semibold text-teal-dark transition-colors hover:bg-sand"
       >
         + Add Additional Body of Water
       </button>
 
       {/* Inspection — inspector entered once here, reused on the certification */}
       <div className="border-t border-line pt-5">
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-navy/40">
+        <p className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-navy/70">
           Inspection
         </p>
         <TextField
@@ -94,7 +94,7 @@ export default function StepProperty() {
           <Meta label="Date" value={d.date} />
           <Meta label="Time" value={d.time} />
         </dl>
-        <p className="mt-1.5 text-[11px] text-navy/35">Auto-filled from this device.</p>
+        <p className="mt-1.5 text-[12px] text-navy/60">Auto-filled from this device.</p>
       </div>
     </div>
   );
@@ -103,8 +103,8 @@ export default function StepProperty() {
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[10px] font-medium uppercase tracking-wide text-navy/40">{label}</dt>
-      <dd className="mt-0.5 truncate text-[13px] font-medium text-navy" title={value}>
+      <dt className="text-[11px] font-semibold uppercase tracking-wide text-navy/60">{label}</dt>
+      <dd className="mt-0.5 truncate text-[13px] font-semibold text-navy" title={value}>
         {value || "—"}
       </dd>
     </div>
@@ -123,7 +123,7 @@ function AdditionalBody({ body, index }: { body: BodyOfWater; index: number }) {
         <button
           type="button"
           onClick={() => dispatch({ type: "removeBody", id: body.id })}
-          className="text-[13px] font-medium text-navy/45 transition-colors hover:text-attention"
+          className="text-[13px] font-medium text-navy/70 transition-colors hover:text-attention"
         >
           Remove
         </button>
@@ -144,7 +144,7 @@ function AdditionalBody({ body, index }: { body: BodyOfWater; index: number }) {
         value={body.lastWaterChange}
         onChange={(v) => update({ lastWaterChange: v })}
       />
-      <label className="flex items-center gap-2 text-[13px] text-navy/60">
+      <label className="flex items-center gap-2 text-[13px] text-navy/80">
         <input
           type="checkbox"
           checked={body.lastWaterChangeUnknown}

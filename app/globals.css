@@ -30,8 +30,10 @@
   --color-orange-dark: #bd571f;
   --color-sand: #f7f6f3;
   --color-sand-dark: #eceae4;
-  /* Hairline border tint used across surfaces */
-  --color-line: #e7e9ec;
+  /* Surface hairlines / dividers — darkened for outdoor legibility (still calm) */
+  --color-line: #d3d8de;
+  /* Input/select/textarea borders — clearly visible medium border for glare */
+  --color-field: #8d99a7;
 
   /* Semantic rating colors — used sparingly (dots / quiet text), never big fills */
   --color-good: #1f9d57;
@@ -41,6 +43,7 @@
   --color-attention: #d64545;
   --color-attention-dark: #b91c1c;
   --color-stone: #8a94a0;
+  --color-stone-dark: #586573;
 
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;

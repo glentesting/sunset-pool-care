@@ -82,8 +82,8 @@ export default function PhotoSlot({
           htmlFor={inputId}
           className={`flex h-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-center text-[13px] font-medium transition-colors ${
             missing
-              ? "border-attention/40 text-attention"
-              : "border-line bg-sand/60 text-navy/45 hover:border-navy/25"
+              ? "border-attention bg-attention/5 text-attention-dark"
+              : "border-field bg-sand/60 text-navy/70 hover:border-navy/40"
           }`}
         >
           {busy ? (
@@ -92,7 +92,7 @@ export default function PhotoSlot({
             <>
               <CameraGlyph />
               <span className="px-2">{label}</span>
-              {required && <span className="text-[11px] text-navy/35">Required</span>}
+              {required && <span className="text-[11px] text-navy/60">Required</span>}
             </>
           )}
         </label>

@@ -63,14 +63,14 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
               {SITE.name}
             </span>
           </div>
-          <span className="text-xs font-medium tabular-nums text-navy/45">
+          <span className="text-xs font-semibold tabular-nums text-navy/70">
             {idx + 1} / {total}
           </span>
         </div>
 
         <div className="mt-3 flex items-baseline justify-between">
           <h1 className="text-lg font-semibold text-navy">{step?.title}</h1>
-          <span className="text-[11px] font-medium uppercase tracking-wide text-teal-dark">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-teal-dark">
             {step ? PHASE_SHORT[step.phase] : ""}
           </span>
         </div>
@@ -80,8 +80,8 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
           {PHASES.map((phase, i) => (
             <div
               key={phase}
-              className={`h-0.5 flex-1 rounded-full transition-colors ${
-                i <= currentPhaseIdx ? "bg-teal" : "bg-navy/10"
+              className={`h-1 flex-1 rounded-full transition-colors ${
+                i <= currentPhaseIdx ? "bg-teal" : "bg-navy/20"
               }`}
             />
           ))}
@@ -98,7 +98,7 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => dispatch({ type: "back" })}
-              className="rounded-lg border border-line px-5 py-3 text-sm font-medium text-navy/70 transition-colors hover:bg-sand"
+              className="rounded-lg border border-field px-5 py-3 text-sm font-semibold text-navy transition-colors hover:bg-sand"
             >
               Back
             </button>

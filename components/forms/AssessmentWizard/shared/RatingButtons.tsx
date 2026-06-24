@@ -2,26 +2,20 @@
 import { RATINGS, type Rating } from "../config";
 
 /**
- * Rating control — a refined SEGMENTED control (four hairline-divided segments
- * in one pill), used for section ratings and per-parameter chemistry.
+ * Rating control — a refined SEGMENTED control (four divided segments in one
+ * pill), used for section ratings and per-parameter chemistry.
  *
- * Restraint by design: the selected segment gets a quiet light fill, a small
- * colored status dot, and colored text; unselected segments stay neutral. No
- * big filled "candy" buttons. Tap targets stay large for field use.
+ * Outdoor-legible: the SELECTED segment fills with the rating's deep/muted color
+ * and white bold text (high contrast, unmistakable in glare — not a neon "candy"
+ * pill); unselected segments are clearly readable dark navy on white. Large tap
+ * targets throughout.
  */
 
-const SELECTED_TEXT: Record<Rating, string> = {
-  GOOD: "text-good-dark",
-  MONITOR: "text-monitor-dark",
-  ATTENTION: "text-attention-dark",
-  "N/A": "text-stone",
-};
-
-const DOT: Record<Rating, string> = {
-  GOOD: "bg-good",
-  MONITOR: "bg-monitor",
-  ATTENTION: "bg-attention",
-  "N/A": "bg-stone",
+const SELECTED_FILL: Record<Rating, string> = {
+  GOOD: "bg-good-dark text-white",
+  MONITOR: "bg-monitor-dark text-white",
+  ATTENTION: "bg-attention-dark text-white",
+  "N/A": "bg-stone-dark text-white",
 };
 
 const SHORT: Record<Rating, string> = {
@@ -41,7 +35,7 @@ export default function RatingButtons({
   size?: "lg" | "sm";
 }) {
   return (
-    <div className="flex divide-x divide-line overflow-hidden rounded-xl border border-line bg-white">
+    <div className="flex divide-x divide-field overflow-hidden rounded-xl border border-field bg-white">
       {RATINGS.map((r) => {
         const active = value === r;
         return (
@@ -50,14 +44,10 @@ export default function RatingButtons({
             type="button"
             aria-pressed={active}
             onClick={() => onChange(r)}
-            className={`flex flex-1 items-center justify-center gap-1.5 font-medium transition-colors ${
+            className={`flex-1 font-semibold transition-colors ${
               size === "lg" ? "py-3.5 text-sm" : "py-2.5 text-[13px]"
-            } ${active ? `bg-sand ${SELECTED_TEXT[r]}` : "text-navy/45 hover:text-navy/70"}`}
+            } ${active ? SELECTED_FILL[r] : "bg-white text-navy/75 hover:bg-sand"}`}
           >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${active ? DOT[r] : "bg-navy/15"}`}
-              aria-hidden
-            />
             {SHORT[r]}
           </button>
         );
