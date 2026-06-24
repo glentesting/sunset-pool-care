@@ -1,11 +1,10 @@
 "use client";
 import { AssessmentProvider, useAssessment } from "./state";
-import { WIZARD_STEPS } from "./steps";
+import { getActiveSteps } from "./summary";
 import WizardChrome from "./WizardChrome";
 
 import StepWelcome from "./steps/StepWelcome";
 import StepProperty from "./steps/StepProperty";
-import StepInspectionDetails from "./steps/StepInspectionDetails";
 import StepConfiguration from "./steps/StepConfiguration";
 import StepRecommendations from "./steps/StepRecommendations";
 import StepReview from "./steps/StepReview";
@@ -39,7 +38,6 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
 const STEP_COMPONENTS: Record<string, React.ComponentType> = {
   welcome: StepWelcome,
   property: StepProperty,
-  details: StepInspectionDetails,
   config: StepConfiguration,
   recommendations: StepRecommendations,
   review: StepReview,
@@ -47,7 +45,8 @@ const STEP_COMPONENTS: Record<string, React.ComponentType> = {
 
 function CurrentStep() {
   const { state } = useAssessment();
-  const step = WIZARD_STEPS[state.step] ?? WIZARD_STEPS[WIZARD_STEPS.length - 1];
+  const steps = getActiveSteps(state);
+  const step = steps[state.step] ?? steps[steps.length - 1];
   const Component = step.sectionId
     ? SECTION_COMPONENTS[step.sectionId]
     : STEP_COMPONENTS[step.id];

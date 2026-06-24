@@ -6,6 +6,7 @@ import { TextField, SelectField } from "../shared/Field";
 export default function StepProperty() {
   const { state, dispatch } = useAssessment();
   const p = state.property;
+  const d = state.details;
 
   return (
     <div className="space-y-4">
@@ -77,6 +78,35 @@ export default function StepProperty() {
       >
         + Add Additional Body of Water
       </button>
+
+      {/* Inspection — inspector entered once here, reused on the certification */}
+      <div className="border-t border-line pt-5">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-navy/40">
+          Inspection
+        </p>
+        <TextField
+          label="Inspector Name"
+          value={d.inspectorName}
+          onChange={(v) => dispatch({ type: "setDetails", patch: { inspectorName: v } })}
+        />
+        <dl className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-sand/70 p-3 text-center">
+          <Meta label="Session" value={d.session} />
+          <Meta label="Date" value={d.date} />
+          <Meta label="Time" value={d.time} />
+        </dl>
+        <p className="mt-1.5 text-[11px] text-navy/35">Auto-filled from this device.</p>
+      </div>
+    </div>
+  );
+}
+
+function Meta({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-[10px] font-medium uppercase tracking-wide text-navy/40">{label}</dt>
+      <dd className="mt-0.5 truncate text-[13px] font-medium text-navy" title={value}>
+        {value || "—"}
+      </dd>
     </div>
   );
 }

@@ -69,7 +69,7 @@ export const SALT_SANITIZER = "Salt System";
 
 // --- Water chemistry (section 2) --------------------------------------------
 //
-// ⚠️⚠️ JUDGMENT CALL — CHEMISTRY BANDS NEED BRENT/BRIAN DOMAIN INPUT ⚠️⚠️
+// CHEMISTRY BANDS — CONFIRMED CLIENT TARGETS (v3).
 //
 // These bands drive the AUTO-RATING suggestion (reading -> GOOD/MONITOR/ATTN).
 // They are deliberately the ONLY place thresholds live — tune them here, nothing
@@ -77,14 +77,7 @@ export const SALT_SANITIZER = "Salt System";
 //   reading inside `good`                 -> GOOD
 //   inside `monitor` but outside `good`   -> MONITOR
 //   outside `monitor`                     -> ATTENTION
-// For "lower is better" params (phosphates) the low end is just 0.
-//
-// The defaults below are reasonable AZ-pool starting points, BUT:
-//   • pH is intentionally TIGHT (7.4–7.6 good, 7.2–7.8 monitor). A percentage
-//     band would misbehave here, which is exactly why bands are explicit/absolute.
-//   • Every number here is a guess until Brent/Brian confirm. Edit freely.
-// The tech always overrides the suggestion, so wrong bands are never fatal —
-// but confirm before this goes customer-facing.
+// The tech always overrides the suggestion, so a reading can still be set by hand.
 
 export type ChemistryBands = {
   /** reading within [min,max] -> GOOD */
@@ -104,20 +97,16 @@ export type ChemistryParam = {
 };
 
 export const CHEMISTRY_PARAMS: ChemistryParam[] = [
-  { key: "free_chlorine", label: "Free Chlorine", unit: "ppm", ideal: "1–3 ppm",
-    bands: { good: [1, 3], monitor: [0.5, 5] } },
-  { key: "ph", label: "pH", unit: "", ideal: "7.4–7.6",
-    bands: { good: [7.4, 7.6], monitor: [7.2, 7.8] } },
+  { key: "free_chlorine", label: "Free Chlorine", unit: "ppm", ideal: "3–5 ppm",
+    bands: { good: [3, 5], monitor: [2, 6] } },
+  { key: "ph", label: "pH", unit: "", ideal: "7.2–7.6",
+    bands: { good: [7.2, 7.6], monitor: [7.0, 7.8] } },
   { key: "total_alkalinity", label: "Total Alkalinity", unit: "ppm", ideal: "80–120 ppm",
     bands: { good: [80, 120], monitor: [60, 160] } },
-  { key: "cyanuric_acid", label: "Cyanuric Acid", unit: "ppm", ideal: "30–50 ppm",
-    bands: { good: [30, 50], monitor: [20, 80] } },
-  { key: "calcium_hardness", label: "Calcium Hardness", unit: "ppm", ideal: "200–400 ppm",
-    bands: { good: [200, 400], monitor: [150, 600] } },
-  { key: "salt", label: "Salt", unit: "ppm", ideal: "2700–3400 ppm", saltOnly: true,
-    bands: { good: [2700, 3400], monitor: [2400, 3800] } },
-  { key: "phosphates", label: "Phosphates", unit: "ppb", ideal: "Below 100 ppb",
-    bands: { good: [0, 100], monitor: [0, 500] } },
+  { key: "cyanuric_acid", label: "Cyanuric Acid / Stabilizer", unit: "ppm", ideal: "30–100 ppm",
+    bands: { good: [30, 100], monitor: [20, 120] } },
+  { key: "salt", label: "Salt", unit: "ppm", ideal: "2600–3600 ppm", saltOnly: true,
+    bands: { good: [2600, 3600], monitor: [2500, 3700] } },
 ];
 
 /**
@@ -144,6 +133,20 @@ export const SPA_TYPES = [
 ] as const;
 
 export const SPA_NA = "N/A — No Spa";
+
+/**
+ * Spa presence is derived from setup answers (NOT asked a third time in the spa
+ * section). A spa is present when:
+ *   - the primary pool type implies one (Pool/Spa, or a stand-alone hot tub), or
+ *   - "Attached Spa" is selected in configuration features.
+ * Detection + the spa-type pre-fill live in summary.ts (isSpaPresent /
+ * derivedSpaType) so the wizard, payload, and PDF all agree.
+ */
+export const SPA_POOL_TYPES: string[] = ["Pool/Spa", "Hot Tub — Stand Alone"];
+export const ATTACHED_SPA_FEATURE = "Attached Spa";
+export const SPA_TYPE_STANDALONE = "Stand-Alone";
+export const SPA_TYPE_ATTACHED = "Attached (shared water)";
+export const STANDALONE_HOT_TUB = "Hot Tub — Stand Alone";
 
 // --- Recommendations step ---------------------------------------------------
 

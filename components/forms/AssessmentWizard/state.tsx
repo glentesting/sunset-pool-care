@@ -100,7 +100,9 @@ export type AssessmentState = {
     /** sourceKeys the tech removed — never auto-regenerate these. */
     dismissed: string[];
   };
-  certification: { inspectorName: string; date: string; certified: boolean };
+  // Inspector name + date are captured once on Property & Inspection (in
+  // `details`) and reused on the certification — only the checkbox lives here.
+  certification: { certified: boolean };
   submitting: boolean;
   submitted: boolean;
   results: SubmitResults | null;
@@ -176,7 +178,7 @@ export function initialState(): AssessmentState {
     pumps: [],
     spaType: "",
     recommendations: { p1: [], p2: [], overallNotes: "", dismissed: [] },
-    certification: { inspectorName: "", date: "", certified: false },
+    certification: { certified: false },
     submitting: false,
     submitted: false,
     results: null,
@@ -414,6 +416,9 @@ function loadDraft(): AssessmentState | null {
     // recommendations is nested — make sure newer keys (dismissed) survive a
     // resume of a pre-v2 draft.
     draft.recommendations = { ...base.recommendations, ...parsed.recommendations };
+    // certification slimmed to { certified } in v3 — keep only that from older
+    // drafts (which also carried inspectorName/date, now sourced from details).
+    draft.certification = { certified: Boolean(parsed.certification?.certified) };
     // A finished submission is not a resumable draft.
     if (draft.submitted) return null;
     return draft;

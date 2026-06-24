@@ -32,17 +32,17 @@ const sectionSteps: WizardStep[] = SECTIONS.map((s) => ({
   sectionId: s.id,
 }));
 
+// Property + Inspection Details are one merged step now. The Spa section is
+// dropped at runtime when no spa is present, so the real total is dynamic —
+// compute it from getActiveSteps(state) in summary.ts, never hardcode it.
 export const WIZARD_STEPS: WizardStep[] = [
   { id: "welcome", title: "Welcome", phase: "Property & Inspection" },
-  { id: "property", title: "Property Information", phase: "Property & Inspection" },
-  { id: "details", title: "Inspection Details", phase: "Property & Inspection" },
+  { id: "property", title: "Property & Inspection", phase: "Property & Inspection" },
   { id: "config", title: "Pool Configuration", phase: "Configuration" },
   ...sectionSteps,
   { id: "recommendations", title: "Recommendations", phase: "Recommendations & Submit" },
   { id: "review", title: "Review & Submit", phase: "Recommendations & Submit" },
 ];
-
-export const TOTAL_STEPS = WIZARD_STEPS.length; // 16
 
 export const PHASES: Phase[] = [
   "Property & Inspection",

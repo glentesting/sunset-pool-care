@@ -27,11 +27,13 @@ export default function StepConfiguration() {
     ...cfg.features.filter((f) => !FEATURE_OPTIONS.includes(f as (typeof FEATURE_OPTIONS)[number])),
   ];
 
-  // Photo slots: two fixed + one per selected feature (excluding "None").
+  // Photo slots: Sanitation + one per selected feature (excluding "None").
+  // The pool-surface shot is captured once, in the Pool Surface section — not
+  // duplicated here.
   const featurePhotoSlots = cfg.features
     .filter((f) => f !== "None")
     .map((f) => `Feature: ${f}`);
-  const photoSlots = ["Pool Surface", "Sanitation", ...featurePhotoSlots];
+  const photoSlots = ["Sanitation", ...featurePhotoSlots];
 
   function addFeature() {
     const v = newFeature.trim();
