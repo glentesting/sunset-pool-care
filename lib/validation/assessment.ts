@@ -92,6 +92,15 @@ export const assessmentSchema = z.object({
     date: z.string(),
     certified: z.literal(true, { message: "Inspector must certify the report" }),
   }),
+  // Presentation-only WORDING (never findings). Normally filled server-side by
+  // the Claude step; the ?demo=1 path pre-fills it so the sample report shows
+  // the AI features with no API key. Optional — absence triggers AI/fallback.
+  presentation: z
+    .object({
+      summary: z.string().optional(),
+      polishedNotes: z.record(z.string(), z.string()).optional(),
+    })
+    .optional(),
 });
 
 export type AssessmentData = z.infer<typeof assessmentSchema>;

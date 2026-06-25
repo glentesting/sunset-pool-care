@@ -32,6 +32,7 @@ import {
 } from "@react-pdf/renderer";
 import { SITE } from "@/content/site";
 import type { AssessmentData } from "@/lib/validation/assessment";
+import type { ReportPresentation } from "@/lib/report-presentation";
 
 // Load a logo from public/ once as a data URL (most reliable src across
 // react-pdf versions / serverless). Returns null if unreadable so the report
@@ -106,6 +107,9 @@ const s = StyleSheet.create({
   metaRow: { flexDirection: "row" },
   metaCol: { flex: 1 },
   metaColGap: { width: 18 },
+
+  // AI overview paragraph under the condition band
+  summary: { fontSize: 9.5, color: NAVY, lineHeight: 1.45, marginBottom: 12 },
 
   sectionTitle: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: GREY, textTransform: "uppercase", letterSpacing: 1, marginTop: 13, marginBottom: 4 },
   colTitle: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: GREY, textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 },
@@ -192,7 +196,7 @@ function isNotable(sec: Section): boolean {
   return sec.rating === "MONITOR" || sec.rating === "ATTENTION" || !!sec.notes || sec.photos.length > 0;
 }
 
-function AssessmentReport({ data }: { data: AssessmentData }) {
+function AssessmentReport({ data, presentation }: { data: AssessmentData; presentation: ReportPresentation }) {
   const { property, details, config, configPhotos, sections, chemistry, recommendations, overall, certification } = data;
   const order: ("GOOD" | "MONITOR" | "ATTENTION" | "N/A")[] = ["GOOD", "MONITOR", "ATTENTION", "N/A"];
 
@@ -243,6 +247,9 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
             ))}
           </View>
         </View>
+
+        {/* AI overview paragraph (from structured findings only); omitted on fallback */}
+        {presentation.summary ? <Text style={s.summary}>{presentation.summary}</Text> : null}
 
         {/* Two-column meta: Property | Inspection + Configuration */}
         <View style={s.metaRow}>
@@ -297,20 +304,24 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
         {notable.length > 0 && plain.length > 0 && (
           <Text style={s.subLabel}>Items needing attention or with notes</Text>
         )}
-        {notable.map((sec) => (
-          <View key={sec.id} style={s.detail} wrap={false}>
-            <View style={s.detailRow}>
-              <View style={s.detailMain}>
-                <View style={s.detailHead}>
-                  <Text style={{ fontFamily: "Helvetica-Bold" }}>{sec.title}</Text>
-                  <RatingTag rating={sec.rating} />
+        {notable.map((sec) => {
+          // Polished (homeowner-facing) note when available, else the raw note.
+          const note = presentation.polishedNotes[sec.id] || sec.notes;
+          return (
+            <View key={sec.id} style={s.detail} wrap={false}>
+              <View style={s.detailRow}>
+                <View style={s.detailMain}>
+                  <View style={s.detailHead}>
+                    <Text style={{ fontFamily: "Helvetica-Bold" }}>{sec.title}</Text>
+                    <RatingTag rating={sec.rating} />
+                  </View>
+                  {note ? <Text style={s.note}>{note}</Text> : null}
                 </View>
-                {sec.notes ? <Text style={s.note}>{sec.notes}</Text> : null}
+                <Thumbs photos={sec.photos} />
               </View>
-              <Thumbs photos={sec.photos} />
             </View>
-          </View>
-        ))}
+          );
+        })}
 
         {/* Chemistry table */}
         <Text style={s.sectionTitle}>Water Chemistry</Text>
@@ -389,6 +400,9 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
   );
 }
 
-export async function generateAssessmentPdf(data: AssessmentData): Promise<Buffer> {
-  return renderToBuffer(<AssessmentReport data={data} />);
+export async function generateAssessmentPdf(
+  data: AssessmentData,
+  presentation: ReportPresentation = { polishedNotes: {} }
+): Promise<Buffer> {
+  return renderToBuffer(<AssessmentReport data={data} presentation={presentation} />);
 }

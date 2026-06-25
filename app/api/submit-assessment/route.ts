@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { assessmentSchema } from "@/lib/validation/assessment";
+import { buildReportPresentation } from "@/lib/report-presentation";
 import { generateAssessmentPdf } from "@/lib/pdf-generator";
 import { uploadAssessmentPdf } from "@/lib/google-drive";
 import { upsertContact, createTask } from "@/lib/hubspot";
@@ -33,9 +34,13 @@ export async function POST(req: NextRequest) {
   const results = { pdf: false, drive: false, hubspot: false, skimmer: false };
 
   // 1. PDF — the one output that must work in v1.
+  //    First build the customer-facing WORDING (Claude polish + summary). This
+  //    is presentation-only and never throws — on any failure it returns raw
+  //    notes and no summary, so the report is never blocked.
   let pdf: Buffer | null = null;
   try {
-    pdf = await generateAssessmentPdf(data);
+    const presentation = await buildReportPresentation(data);
+    pdf = await generateAssessmentPdf(data, presentation);
     results.pdf = true;
   } catch (e) {
     console.error("PDF step failed:", e);

@@ -1,6 +1,7 @@
 "use client";
 import SectionShell from "../../shared/SectionShell";
 import RatingButtons from "../../shared/RatingButtons";
+import InfoDot from "../../shared/InfoDot";
 import { useAssessment } from "../../state";
 import { CHEMISTRY_PARAMS, SALT_SANITIZER, suggestRating } from "../../config";
 
@@ -19,7 +20,10 @@ export default function SectionChemistry() {
   return (
     <SectionShell sectionId="chemistry">
       <div className="space-y-3">
-        <p className="text-[12px] font-semibold uppercase tracking-wide text-wiz-ink/70">Readings</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-wiz-ink/70">Readings</p>
+          <InfoDot text="Readings are automatically rated against your target ranges." />
+        </div>
         {params.map((p) => {
           const row = state.chemistry[p.key] ?? { reading: "" };
           const autoSuggested = row.auto === true && !!row.rating;

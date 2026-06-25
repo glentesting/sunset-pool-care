@@ -92,5 +92,8 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
       date: state.details.date,
       certified: state.certification.certified as true,
     },
+    // Demo pre-fills this so the sample report shows the AI features without a
+    // key; normal use leaves it undefined and the server generates it.
+    presentation: state.presentation,
   };
 }
