@@ -5,6 +5,7 @@ import { P1_TIMEFRAMES, P2_TIMEFRAMES } from "../config";
 import { buildDesiredAutoRecs } from "../summary";
 import { TextField, SelectField } from "../shared/Field";
 import NotesField from "../shared/NotesField";
+import InfoDot from "../shared/InfoDot";
 
 export default function StepRecommendations() {
   const { state, dispatch } = useAssessment();
@@ -22,11 +23,19 @@ export default function StepRecommendations() {
 
   return (
     <div className="space-y-8">
-      <p className="rounded-lg border border-wiz-line bg-wiz-surface px-4 py-3 text-[13px] leading-relaxed text-wiz-ink/75">
-        {autoCount > 0
-          ? `${autoCount} item${autoCount === 1 ? "" : "s"} pre-filled from your flagged ratings. Edit, reword, or remove any of them.`
-          : "Add anything the customer should act on. Flagged ratings auto-fill here."}
-      </p>
+      <div>
+        <div className="mb-2 flex items-center gap-1.5">
+          <span className="text-[12px] font-semibold uppercase tracking-wide text-wiz-ink/70">
+            Recommendations
+          </span>
+          <InfoDot text="Your notes get cleaned up into clear, customer-friendly language on the final report — your ratings never change." />
+        </div>
+        <p className="rounded-lg border border-wiz-line bg-wiz-surface px-4 py-3 text-[13px] leading-relaxed text-wiz-ink/75">
+          {autoCount > 0
+            ? `${autoCount} item${autoCount === 1 ? "" : "s"} pre-filled from your flagged ratings. Edit, reword, or remove any of them.`
+            : "Add anything the customer should act on. Flagged ratings auto-fill here."}
+        </p>
+      </div>
 
       <RecGroup
         tier="p1"

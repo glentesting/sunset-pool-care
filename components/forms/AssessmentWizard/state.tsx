@@ -103,6 +103,10 @@ export type AssessmentState = {
   // Inspector name + date are captured once on Property & Inspection (in
   // `details`) and reused on the certification — only the checkbox lives here.
   certification: { certified: boolean };
+  // Presentation-only report WORDING (never findings). Only set by the ?demo=1
+  // loader (pre-written sample text); normal use leaves this undefined and the
+  // server fills it via the Claude step.
+  presentation?: { summary?: string; polishedNotes?: Record<string, string> };
   submitting: boolean;
   submitted: boolean;
   results: SubmitResults | null;
