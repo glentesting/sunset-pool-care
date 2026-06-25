@@ -44,8 +44,7 @@ export default function Hero() {
             Chandler · Gilbert · The East Valley
           </p>
           <h1 className="mt-5 font-display text-5xl font-semibold leading-[1.04] text-white sm:text-6xl">
-            A pool you <span className="italic text-orange">never</span> have to
-            think about.
+            Your pool, <span className="italic text-orange">handled</span>.
           </h1>
           <p className="mt-6 max-w-lg text-lg leading-relaxed text-white/90">
             Weekly pool service, repairs, and remodels across the East Valley —

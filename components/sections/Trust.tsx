@@ -24,7 +24,7 @@ export default function Trust() {
     <section className="bg-sand py-16 sm:py-20">
       <div className="mx-auto max-w-6xl px-6">
         <div className="max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-dark">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-dark">
             Why homeowners stay
           </p>
           <h2 className="mt-3 font-display text-3xl font-semibold leading-tight text-navy sm:text-4xl">
@@ -39,7 +39,7 @@ export default function Trust() {
         <div className="mt-12 grid gap-8 sm:grid-cols-3 sm:gap-10">
           {POINTS.map((p) => (
             <div key={p.title}>
-              <span className="block h-1 w-12 rounded-full bg-teal" aria-hidden />
+              <span className="block h-1 w-12 rounded-full bg-gradient-to-r from-orange to-gold" aria-hidden />
               <h3 className="mt-5 font-display text-xl font-semibold text-navy">{p.title}</h3>
               <p className="mt-2 leading-relaxed text-navy/80">{p.body}</p>
             </div>

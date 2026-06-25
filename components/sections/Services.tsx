@@ -86,7 +86,7 @@ export default function Services() {
                   <span
                     className={`inline-flex items-center justify-center rounded-full transition ${
                       n.emphasized
-                        ? "h-28 w-28 bg-teal text-white shadow-lift ring-4 ring-teal/25"
+                        ? "h-28 w-28 bg-gradient-to-br from-orange to-gold text-white shadow-lift ring-4 ring-orange/20"
                         : "h-24 w-24 bg-teal/12 text-teal-dark shadow-card ring-2 ring-teal/40 group-hover:bg-teal/20 group-hover:ring-teal"
                     }`}
                   >
