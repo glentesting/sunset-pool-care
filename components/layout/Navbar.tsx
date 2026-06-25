@@ -6,16 +6,17 @@ import Logo from "./Logo";
 import MobileMenu from "./MobileMenu";
 
 /**
- * Sticky top nav. Bright and airy: solid white (slightly translucent + blur),
- * navy sunset wordmark, aqua link hovers, one coral CTA. Stays clean and
- * legible over the warm hero photo below it.
+ * Sticky top nav, pinned flush to the very top. Solid white with a real shadow
+ * so it reads as a layer floating ABOVE the page (content scrolls under it),
+ * never merging into the hero or cards behind it. Navy sunset wordmark, aqua
+ * link hovers, one coral CTA.
  */
 export default function Navbar() {
   return (
-    <header className="sticky top-0 z-50 border-b border-line/50 bg-white/90 shadow-card backdrop-blur">
+    <header className="sticky top-0 z-50 bg-white shadow-[0_4px_16px_rgba(15,36,56,0.10)]">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" aria-label={`${SITE.name} — home`} className="flex items-center">
-          <Logo tone="navy" />
+          <Logo tone="navy" className="h-11 w-auto" />
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">

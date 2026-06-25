@@ -73,7 +73,7 @@ export default function Hero() {
         {/* Quote capture */}
         <div className="w-full rounded-3xl bg-white p-6 shadow-lift sm:p-7">
           <h2 className="font-display text-xl font-semibold text-navy">Get your free quote</h2>
-          <p className="mt-1 text-sm text-navy/60">A 2-minute estimate — no obligation.</p>
+          <p className="mt-1 text-sm text-navy/70">A 2-minute estimate — no obligation.</p>
 
           <form action="/quote" className="mt-4 flex flex-col gap-3 sm:flex-row">
             <label htmlFor="hero-zip" className="sr-only">
@@ -93,7 +93,7 @@ export default function Hero() {
             </button>
           </form>
 
-          <p className="mt-4 text-center text-sm text-navy/60">
+          <p className="mt-4 text-center text-sm text-navy/70">
             or call{" "}
             <a href={telHref(SITE.phone)} className="font-semibold text-teal-dark hover:underline">
               {SITE.phone}

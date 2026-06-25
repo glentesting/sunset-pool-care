@@ -13,8 +13,9 @@
  *            states, the highlighted service node, the map, water bands
  *   orange → SUNSET CORAL: primary action buttons + warm accent moments
  *   gold   → amber partner to coral, so warm bands read as a gradient not a slab
- *   sand   → warm cream — the dominant light surface, alternating with white
- *   water  → soft aqua surface tint for water/map bands
+ *   sand   → soft aqua water-tint — the recurring ALTERNATE surface (white is
+ *            primary). Reads like clean water; the warmth stays in the accents.
+ *   water  → slightly deeper aqua for map/blob fills
  *   good / monitor / attention → semantic RATING colors (green / amber / red),
  *     kept distinct so status never reads as "brand" or "CTA". Stars use amber.
  *
@@ -40,10 +41,12 @@
   /* Gold/amber — coral's partner for warm sunset gradients. */
   --color-gold: #f3a838;
   --color-gold-dark: #d98e26;
-  /* Warm cream — the dominant light surface, alternating with white. */
-  --color-sand: #faf7f1;
-  --color-sand-dark: #f1ebe0;
-  /* Soft aqua water tint — map / water bands. */
+  /* Soft aqua water-tint — the recurring ALTERNATE surface (white stays
+     primary). Swapped from warm cream so the page reads like clean water with
+     sunset-warm accents. One-token revert: restore #faf7f1 / #f1ebe0. */
+  --color-sand: #e9f6f9;
+  --color-sand-dark: #d6edf1;
+  /* Slightly deeper aqua — map / blob fills. */
   --color-water: #e6f5f7;
   /* Surface hairlines / dividers — warm, calm (used sparingly). */
   --color-line: #e4ddce;

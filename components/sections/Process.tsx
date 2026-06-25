@@ -34,7 +34,7 @@ export default function Process() {
                   {s.n}
                 </span>
                 <h3 className="mt-5 font-display text-lg font-semibold text-white">{s.title}</h3>
-                <p className="mt-2 max-w-[14rem] text-sm text-white/70">{s.desc}</p>
+                <p className="mt-2 max-w-[14rem] text-sm text-white/85">{s.desc}</p>
               </li>
             ))}
           </ol>

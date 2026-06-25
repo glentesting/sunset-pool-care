@@ -27,7 +27,7 @@ export default function ServiceAreas() {
           <h2 className="mt-4 font-display text-4xl font-semibold leading-tight text-navy sm:text-5xl">
             Proudly serving the East Valley
           </h2>
-          <p className="mt-5 max-w-md text-lg text-navy/75">
+          <p className="mt-5 max-w-md text-lg text-navy/80">
             Local, licensed, and minutes from your backyard — with the same crew
             on your pool each week.
           </p>

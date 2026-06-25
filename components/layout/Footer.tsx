@@ -32,7 +32,7 @@ export default function Footer() {
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           {/* NAP */}
           <div>
-            <Logo tone="white" className="h-12 w-auto" />
+            <Logo tone="white" className="h-14 w-auto" />
             <address className="mt-5 not-italic leading-relaxed">
               <a href={telHref(SITE.phone)} className="font-semibold text-white transition-colors hover:text-teal">
                 {SITE.phone}

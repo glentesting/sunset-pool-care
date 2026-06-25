@@ -107,7 +107,7 @@ export default function Services() {
                   <span className="mt-4 font-display text-base font-semibold text-navy group-hover:text-teal-dark">
                     {n.label}
                   </span>
-                  <span className="mt-1 max-w-[12rem] text-sm leading-snug text-navy/65">
+                  <span className="mt-1 max-w-[12rem] text-sm leading-snug text-navy/80">
                     {n.desc}
                   </span>
                 </Link>

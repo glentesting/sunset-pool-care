@@ -4,6 +4,8 @@ import Services from "@/components/sections/Services";
 import ServiceAreas from "@/components/sections/ServiceAreas";
 import Process from "@/components/sections/Process";
 import Reviews from "@/components/sections/Reviews";
+import Trust from "@/components/sections/Trust";
+import FAQ from "@/components/sections/FAQ";
 import CTABanner from "@/components/sections/CTABanner";
 import Wave from "@/components/sections/Wave";
 
@@ -32,6 +34,8 @@ export default function Home() {
       </div>
 
       <Reviews />
+      <Trust />
+      <FAQ />
       <CTABanner />
     </main>
   );

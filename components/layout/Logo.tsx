@@ -1,6 +1,6 @@
 /**
  * SPC sunset wordmark — a lightweight inline SVG mark used in page chrome
- * (navbar + footer). A gradient half-sun (coral → gold) over two aqua water
+ * (navbar + footer). A bold gradient half-sun (coral → gold) over two aqua water
  * lines, beside the "SUNSET POOL CARE" wordmark. Scales crisply at any size.
  *
  * `tone="navy"` → dark wordmark for light surfaces (navbar).
@@ -10,7 +10,7 @@
  */
 export default function Logo({
   tone = "navy",
-  className = "h-9 w-auto",
+  className = "h-11 w-auto",
 }: {
   tone?: "navy" | "white";
   className?: string;
@@ -20,7 +20,7 @@ export default function Logo({
 
   return (
     <svg
-      viewBox="0 0 250 56"
+      viewBox="0 0 168 60"
       className={className}
       role="img"
       aria-label="Sunset Pool Care"
@@ -33,16 +33,16 @@ export default function Logo({
         </linearGradient>
       </defs>
 
-      {/* mark */}
-      <path d="M9 30 A15 15 0 0 1 39 30 Z" fill="url(#spcSun)" />
-      <path d="M7 36h34" className="stroke-teal" strokeWidth="3.4" strokeLinecap="round" />
-      <path d="M13 42h22" className="stroke-teal" strokeWidth="3.4" strokeLinecap="round" />
+      {/* mark — a bold half-sun over two water lines */}
+      <path d="M5 33 A21 21 0 0 1 47 33 Z" fill="url(#spcSun)" />
+      <path d="M5 40h44" className="stroke-teal" strokeWidth="4.5" strokeLinecap="round" />
+      <path d="M14 47h26" className="stroke-teal" strokeWidth="4.5" strokeLinecap="round" />
 
       {/* wordmark */}
-      <text x="56" y="27" className={`font-display ${word}`} fontSize="19" fontWeight="700" letterSpacing="1.5">
+      <text x="60" y="32" className={`font-display ${word}`} fontSize="21" fontWeight="700" letterSpacing="1.5">
         SUNSET
       </text>
-      <text x="57" y="44" className={`font-display ${sub}`} fontSize="10.5" fontWeight="600" letterSpacing="4">
+      <text x="61" y="48" className={`font-display ${sub}`} fontSize="11" fontWeight="600" letterSpacing="3.6">
         POOL CARE
       </text>
     </svg>

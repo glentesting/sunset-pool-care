@@ -52,9 +52,9 @@ function ReportMock() {
       <div className="mt-4 flex items-baseline justify-between">
         <div>
           <p className="font-display text-base font-semibold text-navy">{SITE.name}</p>
-          <p className="text-xs font-medium text-navy/60">Service report · Mon, Jun 22</p>
+          <p className="text-xs font-medium text-navy/70">Service report · Mon, Jun 22</p>
         </div>
-        <span className="rounded-full bg-sand-dark px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-navy/60">
+        <span className="rounded-full bg-sand-dark px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-navy/70">
           Sample
         </span>
       </div>
@@ -65,7 +65,7 @@ function ReportMock() {
           <div key={r.label} className="rounded-xl bg-sand px-3 py-2">
             <div className="flex items-center gap-1.5">
               <span className={`h-1.5 w-1.5 rounded-full ${DOT[r.status]}`} aria-hidden />
-              <span className="text-[11px] font-medium text-navy/60">{r.label}</span>
+              <span className="text-[11px] font-medium text-navy/70">{r.label}</span>
             </div>
             <p className="mt-0.5 text-sm font-semibold tabular-nums text-navy">{r.value}</p>
           </div>
@@ -84,7 +84,7 @@ function ReportMock() {
         ))}
       </ul>
 
-      <p className="mt-4 border-t border-line pt-3 text-center text-xs font-medium text-navy/55">
+      <p className="mt-4 border-t border-line pt-3 text-center text-xs font-medium text-navy/70">
         Sent to your inbox after every visit
       </p>
     </div>
@@ -104,12 +104,28 @@ export default function WeeklyReport() {
           <h2 className="mt-4 font-display text-4xl font-semibold leading-tight text-navy sm:text-5xl">
             After every visit, you get the receipt.
           </h2>
-          <p className="mt-6 max-w-lg text-lg leading-relaxed text-navy/75">
+          <p className="mt-6 max-w-lg text-lg leading-relaxed text-navy/80">
             We don&apos;t just clean and leave. After each weekly service you get
             an email with a photo of your pool, your exact chemical readings, and
             everything we did. You&apos;ll know your pool&apos;s taken care of
             without ever having to check.
           </p>
+
+          <ul className="mt-8 space-y-3">
+            {[
+              "A fresh photo of your pool",
+              "Your exact chemical readings",
+              "Every task we completed that visit",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-3 font-medium text-navy">
+                <svg width="22" height="22" viewBox="0 0 20 20" fill="none" aria-hidden className="shrink-0 text-teal-dark">
+                  <circle cx="10" cy="10" r="9" className="fill-teal/15" />
+                  <path d="M6 10.5l2.5 2.5L14 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="relative lg:-mr-4">
