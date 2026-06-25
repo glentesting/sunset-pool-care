@@ -7,7 +7,7 @@ export default function SectionPoolSurface() {
   return (
     <SectionShell sectionId="surface">
       <div>
-        <p className="mb-2 text-sm font-semibold text-navy">Interior Lights</p>
+        <p className="mb-2 text-sm font-semibold text-wiz-ink">Interior Lights</p>
         <UnitList
           list="lights"
           sectionId="surface"

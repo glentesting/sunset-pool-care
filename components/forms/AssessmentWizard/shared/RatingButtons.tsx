@@ -35,7 +35,7 @@ export default function RatingButtons({
   size?: "lg" | "sm";
 }) {
   return (
-    <div className="flex divide-x divide-field overflow-hidden rounded-xl border border-field bg-white">
+    <div className="flex divide-x divide-wiz-field overflow-hidden rounded-xl border border-wiz-field bg-white">
       {RATINGS.map((r) => {
         const active = value === r;
         return (
@@ -46,7 +46,7 @@ export default function RatingButtons({
             onClick={() => onChange(r)}
             className={`flex-1 font-semibold transition-colors ${
               size === "lg" ? "py-3.5 text-sm" : "py-2.5 text-[13px]"
-            } ${active ? SELECTED_FILL[r] : "bg-white text-navy/75 hover:bg-sand"}`}
+            } ${active ? SELECTED_FILL[r] : "bg-white text-wiz-ink/75 hover:bg-wiz-surface"}`}
           >
             {SHORT[r]}
           </button>

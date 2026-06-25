@@ -60,6 +60,25 @@
   --color-stone: #8a94a0;
   --color-stone-dark: #586573;
 
+  /* ─────────────────────────────────────────────────────────────────────────
+   * WIZARD TOKENS — FROZEN, OWNED BY THE ASSESSMENT MODULE.
+   * The marketing site must NEVER change these. They are frozen copies of the
+   * wizard's original brand values so the marketing reskin (which retunes the
+   * shared navy/teal/sand/orange/line/field tokens above) can't repaint the
+   * Assessment Wizard. Only the assessment module's files reference wiz-*.
+   * (Semantic status colors — good/monitor/attention/stone — stay shared.)
+   * ───────────────────────────────────────────────────────────────────────── */
+  --color-wiz-ink: #0f2438;        /* was navy — text / structure */
+  --color-wiz-ink-light: #1c3a57;  /* was navy-light */
+  --color-wiz-accent: #2bb3a3;     /* was teal — active / selected / progress */
+  --color-wiz-accent-dark: #1f8a7e;/* was teal-dark */
+  --color-wiz-surface: #f7f6f3;    /* was sand — soft surface */
+  --color-wiz-surface-dark: #eceae4;/* was sand-dark */
+  --color-wiz-action: #d9692e;     /* was orange — wizard primary button */
+  --color-wiz-action-dark: #bd571f;/* was orange-dark */
+  --color-wiz-line: #d3d8de;       /* was line — hairlines / dividers */
+  --color-wiz-field: #8d99a7;      /* was field — input borders */
+
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 

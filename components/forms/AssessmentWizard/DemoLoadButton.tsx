@@ -59,7 +59,7 @@ export default function DemoLoadButton({ floating = false }: { floating?: boolea
       <button
         type="button"
         onClick={load}
-        className="fixed bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-full border border-field bg-white/95 px-4 py-2 text-xs font-semibold text-navy shadow-card backdrop-blur transition-colors hover:bg-sand"
+        className="fixed bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-full border border-wiz-field bg-white/95 px-4 py-2 text-xs font-semibold text-wiz-ink shadow-card backdrop-blur transition-colors hover:bg-wiz-surface"
       >
         Load sample data
       </button>
@@ -70,7 +70,7 @@ export default function DemoLoadButton({ floating = false }: { floating?: boolea
     <button
       type="button"
       onClick={load}
-      className="w-full rounded-lg border border-dashed border-field py-2.5 text-sm font-semibold text-navy/70 transition-colors hover:bg-sand"
+      className="w-full rounded-lg border border-dashed border-wiz-field py-2.5 text-sm font-semibold text-wiz-ink/70 transition-colors hover:bg-wiz-surface"
     >
       Load sample data (demo)
     </button>

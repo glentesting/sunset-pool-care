@@ -33,20 +33,20 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col bg-white">
-      <header className="sticky top-0 z-10 border-b border-line bg-white/90 px-5 pb-2.5 pt-3.5 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-wiz-line bg-white/90 px-5 pb-2.5 pt-3.5 backdrop-blur">
         <div className="flex items-center justify-between">
           {/* Real current SPC logo (colorful badge). Square — kept compact to
               fit the header height cleanly. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/spc-logo-color.png" alt={SITE.name} className="h-10 w-auto" />
-          <span className="text-xs font-semibold tabular-nums text-navy/70">
+          <span className="text-xs font-semibold tabular-nums text-wiz-ink/70">
             {idx + 1} / {total}
           </span>
         </div>
 
         <div className="mt-3 flex items-baseline justify-between">
-          <h1 className="text-lg font-semibold text-navy">{step?.title}</h1>
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-teal-dark">
+          <h1 className="text-lg font-semibold text-wiz-ink">{step?.title}</h1>
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-wiz-accent-dark">
             {step ? PHASE_SHORT[step.phase] : ""}
           </span>
         </div>
@@ -57,7 +57,7 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
             <div
               key={phase}
               className={`h-1 flex-1 rounded-full transition-colors ${
-                i <= currentPhaseIdx ? "bg-teal" : "bg-navy/20"
+                i <= currentPhaseIdx ? "bg-wiz-accent" : "bg-wiz-ink/20"
               }`}
             />
           ))}
@@ -73,12 +73,12 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
       {!isWelcome && !state.submitted && <DemoLoadButton floating />}
 
       {!state.submitted && (
-        <footer className="sticky bottom-0 flex gap-3 border-t border-line bg-white/95 px-5 py-3 backdrop-blur">
+        <footer className="sticky bottom-0 flex gap-3 border-t border-wiz-line bg-white/95 px-5 py-3 backdrop-blur">
           {!isWelcome && (
             <button
               type="button"
               onClick={() => dispatch({ type: "back" })}
-              className="rounded-lg border border-field px-5 py-3 text-sm font-semibold text-navy transition-colors hover:bg-sand"
+              className="rounded-lg border border-wiz-field px-5 py-3 text-sm font-semibold text-wiz-ink transition-colors hover:bg-wiz-surface"
             >
               Back
             </button>
@@ -87,7 +87,7 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => dispatch({ type: "next" })}
-              className="flex-1 rounded-lg bg-orange py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-dark"
+              className="flex-1 rounded-lg bg-wiz-action py-3 text-sm font-semibold text-white transition-colors hover:bg-wiz-action-dark"
             >
               Next
             </button>

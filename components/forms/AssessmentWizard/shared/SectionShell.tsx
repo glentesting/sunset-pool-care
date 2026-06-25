@@ -17,7 +17,7 @@ import AdHocPhotos from "./AdHocPhotos";
  * least one photo. The slots show a quiet attention outline and a calm note
  * appears until one is added; the Review step blocks submit on the same rule.
  */
-const groupLabel = "mb-2 text-[12px] font-semibold uppercase tracking-wide text-navy/70";
+const groupLabel = "mb-2 text-[12px] font-semibold uppercase tracking-wide text-wiz-ink/70";
 export default function SectionShell({
   sectionId,
   children,
@@ -37,7 +37,7 @@ export default function SectionShell({
 
   return (
     <div className="space-y-4">
-      {cfg.hint && <p className="text-[13px] leading-relaxed text-navy/70">{cfg.hint}</p>}
+      {cfg.hint && <p className="text-[13px] leading-relaxed text-wiz-ink/70">{cfg.hint}</p>}
 
       <div>
         <p className={groupLabel}>Section rating</p>
