@@ -15,10 +15,7 @@ export const SITE = {
   name: "Sunset Pool Care",
   shortName: "SPC",
   phone: "(480) 682-7986",
-  // ⚠️ TODO REAL EMAIL — NOT PROVIDED YET. A customer-facing report (PDF footer,
-  // contact block) cannot ship to customers until this is the real SPC inbox.
-  // Do not treat this placeholder as launch-ready.
-  email: "TODO-REAL-EMAIL@sunsetpoolcare.com",
+  email: "service@sunsetpoolcare.com",
   address: {
     street: "19015 S. Arizona Ave",
     city: "Chandler",

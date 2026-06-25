@@ -4,13 +4,14 @@
  * This is a LIB FUNCTION, not an API route — it's called inside
  * /api/submit-assessment, not exposed publicly on its own.
  *
- * Premium customer-facing report, restrained re-skin: clean white surfaces,
- * navy + minimal accent, generous whitespace, hairline rules, color used only
- * as small dots / quiet text (no filled "candy" chips). Section photos embedded.
+ * Premium customer-facing report — DENSE ~2-page layout: compact condition band,
+ * two-column property/inspection meta, a SINGLE pass over sections (plain
+ * Good/N-A systems list compactly; only flagged-or-noted sections get an
+ * expanded block), and small photo thumbnails placed INLINE beside the section
+ * text rather than as full-width blocks. Clean, legible dark-on-white kept.
  *
  * Fonts: built-in Helvetica only (no font registration) for serverless
- * reliability + light cold-start. So the PDF face differs from the on-screen
- * Bricolage/Inter by design.
+ * reliability + light cold-start.
  *
  * Colors below MIRROR the CSS tokens in app/globals.css — @react-pdf can't read
  * CSS variables, so keep these in sync if the brand palette changes.
@@ -54,55 +55,74 @@ const OVERALL_COLOR: Record<string, string> = {
   attention: ATTENTION,
 };
 
+type Section = AssessmentData["sections"][number];
+
 const s = StyleSheet.create({
-  page: { paddingTop: 40, paddingBottom: 52, paddingHorizontal: 44, fontSize: 10, color: NAVY, fontFamily: "Helvetica", lineHeight: 1.5 },
+  page: { paddingTop: 34, paddingBottom: 42, paddingHorizontal: 40, fontSize: 9.5, color: NAVY, fontFamily: "Helvetica", lineHeight: 1.32 },
 
   // Header
-  header: { borderBottomWidth: 1.5, borderBottomColor: TEAL, paddingBottom: 10, marginBottom: 18 },
-  brand: { fontSize: 19, fontFamily: "Helvetica-Bold", color: NAVY },
-  brandSub: { fontSize: 8, color: GREY, marginTop: 3 },
-  docTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", color: TEAL, letterSpacing: 1.5, marginTop: 8 },
+  header: { borderBottomWidth: 1.5, borderBottomColor: TEAL, paddingBottom: 7, marginBottom: 10 },
+  brand: { fontSize: 18, fontFamily: "Helvetica-Bold", color: NAVY },
+  brandSub: { fontSize: 7.5, color: GREY, marginTop: 2 },
+  docTitle: { fontSize: 7.5, fontFamily: "Helvetica-Bold", color: TEAL, letterSpacing: 1.5, marginTop: 5 },
 
-  // Dashboard
-  dash: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", borderWidth: 1, borderColor: LINE, borderRadius: 6, padding: 14, marginBottom: 8 },
-  kicker: { fontSize: 7.5, color: GREY, textTransform: "uppercase", letterSpacing: 1 },
-  overallLabel: { fontSize: 17, fontFamily: "Helvetica-Bold", marginTop: 2 },
+  // Compact condition band
+  dash: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: LINE, borderRadius: 5, paddingVertical: 7, paddingHorizontal: 11, marginBottom: 12 },
+  kicker: { fontSize: 7, color: GREY, textTransform: "uppercase", letterSpacing: 1 },
+  overallLabel: { fontSize: 14, fontFamily: "Helvetica-Bold", marginTop: 1 },
   counts: { flexDirection: "row" },
-  countCell: { alignItems: "center", width: 50 },
-  countNum: { fontSize: 15, fontFamily: "Helvetica-Bold", color: NAVY },
-  countRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
+  countCell: { alignItems: "center", width: 46 },
+  countNum: { fontSize: 13, fontFamily: "Helvetica-Bold", color: NAVY },
+  countRow: { flexDirection: "row", alignItems: "center", marginTop: 1 },
   dot: { width: 4, height: 4, borderRadius: 2, marginRight: 3 },
-  countLabel: { fontSize: 7, color: GREY },
+  countLabel: { fontSize: 6.5, color: GREY },
 
-  sectionTitle: { fontSize: 9, fontFamily: "Helvetica-Bold", color: GREY, textTransform: "uppercase", letterSpacing: 1, marginTop: 22, marginBottom: 8 },
+  // Two-column meta
+  metaRow: { flexDirection: "row" },
+  metaCol: { flex: 1 },
+  metaColGap: { width: 18 },
 
-  row: { flexDirection: "row", marginBottom: 3 },
-  label: { width: 120, color: GREY },
+  sectionTitle: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: GREY, textTransform: "uppercase", letterSpacing: 1, marginTop: 13, marginBottom: 4 },
+  colTitle: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: GREY, textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 },
+
+  row: { flexDirection: "row", marginBottom: 1 },
+  label: { width: 74, color: GREY },
   value: { flex: 1 },
 
-  secRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: LINE },
+  // Compact "all good" systems grid (2 columns)
+  compactWrap: { flexDirection: "row", flexWrap: "wrap", marginTop: 1 },
+  compactItem: { width: "50%", flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingRight: 14, paddingVertical: 1.5 },
+  subLabel: { fontSize: 7, color: GREY, marginTop: 6, marginBottom: 1 },
+
+  // Detailed (flagged/noted) section blocks
+  detail: { marginTop: 6, paddingBottom: 5, borderBottomWidth: 0.5, borderBottomColor: LINE },
+  detailRow: { flexDirection: "row", alignItems: "flex-start" },
+  detailMain: { flex: 1, paddingRight: 8 },
+  detailHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  detailThumbs: { flexDirection: "row", flexWrap: "wrap", width: 200, justifyContent: "flex-end" },
+
   ratingTag: { flexDirection: "row", alignItems: "center" },
-  ratingText: { fontSize: 9, fontFamily: "Helvetica-Bold" },
-  note: { color: GREY, marginTop: 2, marginBottom: 2 },
+  ratingText: { fontSize: 8.5, fontFamily: "Helvetica-Bold" },
+  note: { color: GREY, marginTop: 2 },
 
-  photoWrap: { flexDirection: "row", flexWrap: "wrap", marginTop: 6, marginBottom: 4 },
-  photoBox: { width: 148, marginRight: 9, marginBottom: 9 },
-  photo: { width: 148, height: 108, objectFit: "cover", borderRadius: 4, borderWidth: 0.5, borderColor: LINE },
-  photoCaption: { fontSize: 7, color: GREY, marginTop: 3 },
+  thumbBox: { width: 92, marginLeft: 6, marginBottom: 4 },
+  thumb: { width: 92, height: 68, objectFit: "cover", borderRadius: 3, borderWidth: 0.5, borderColor: LINE },
+  thumbCap: { fontSize: 6, color: GREY, marginTop: 1 },
 
-  tHead: { flexDirection: "row", paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: LINE },
-  tHeadCell: { fontSize: 7.5, color: GREY, textTransform: "uppercase", letterSpacing: 0.5 },
-  tRow: { flexDirection: "row", paddingVertical: 5, borderBottomWidth: 0.5, borderBottomColor: LINE, alignItems: "center" },
+  // Chemistry table
+  tHead: { flexDirection: "row", paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: LINE },
+  tHeadCell: { fontSize: 7, color: GREY, textTransform: "uppercase", letterSpacing: 0.5 },
+  tRow: { flexDirection: "row", paddingVertical: 3.5, borderBottomWidth: 0.5, borderBottomColor: LINE, alignItems: "center" },
 
-  recBlockTitle: { fontSize: 10, fontFamily: "Helvetica-Bold", marginTop: 10, marginBottom: 5 },
-  recItem: { flexDirection: "row", marginBottom: 5 },
-  recAccent: { width: 2, borderRadius: 1, marginRight: 8 },
+  recBlockTitle: { fontSize: 9.5, fontFamily: "Helvetica-Bold", marginTop: 7, marginBottom: 3 },
+  recItem: { flexDirection: "row", marginBottom: 3 },
+  recAccent: { width: 2, borderRadius: 1, marginRight: 7 },
   recText: { flex: 1 },
-  recMeta: { fontSize: 8, color: GREY, marginTop: 1 },
+  recMeta: { fontSize: 7.5, color: GREY, marginTop: 1 },
 
-  certBox: { marginTop: 22, borderTopWidth: 1, borderTopColor: LINE, paddingTop: 10 },
+  certBox: { marginTop: 13, borderTopWidth: 1, borderTopColor: LINE, paddingTop: 8 },
 
-  footer: { position: "absolute", bottom: 26, left: 44, right: 44, fontSize: 7.5, color: GREY, textAlign: "center", borderTopWidth: 0.5, borderTopColor: LINE, paddingTop: 7 },
+  footer: { position: "absolute", bottom: 22, left: 40, right: 40, fontSize: 7, color: GREY, textAlign: "center", borderTopWidth: 0.5, borderTopColor: LINE, paddingTop: 6 },
 });
 
 function Info({ label, value }: { label: string; value?: string }) {
@@ -115,7 +135,7 @@ function Info({ label, value }: { label: string; value?: string }) {
   );
 }
 
-function RatingTag({ rating }: { rating?: AssessmentData["sections"][number]["rating"] }) {
+function RatingTag({ rating }: { rating?: Section["rating"] }) {
   const color = RATING_COLOR[rating ?? "N/A"];
   return (
     <View style={s.ratingTag}>
@@ -127,24 +147,32 @@ function RatingTag({ rating }: { rating?: AssessmentData["sections"][number]["ra
   );
 }
 
-function Photos({ photos }: { photos: { label: string; dataUrl: string }[] }) {
+function Thumbs({ photos }: { photos: Section["photos"] }) {
   if (!photos.length) return null;
   return (
-    <View style={s.photoWrap}>
+    <View style={s.detailThumbs}>
       {photos.map((p, i) => (
-        <View key={i} style={s.photoBox} wrap={false}>
+        <View key={i} style={s.thumbBox} wrap={false}>
           {/* eslint-disable-next-line jsx-a11y/alt-text */}
-          <Image src={p.dataUrl} style={s.photo} />
-          <Text style={s.photoCaption}>{p.label}</Text>
+          <Image src={p.dataUrl} style={s.thumb} />
+          <Text style={s.thumbCap}>{p.label}</Text>
         </View>
       ))}
     </View>
   );
 }
 
+/** A section is "notable" (gets an expanded block) if flagged, noted, or has a photo. */
+function isNotable(sec: Section): boolean {
+  return sec.rating === "MONITOR" || sec.rating === "ATTENTION" || !!sec.notes || sec.photos.length > 0;
+}
+
 function AssessmentReport({ data }: { data: AssessmentData }) {
   const { property, details, config, configPhotos, sections, chemistry, recommendations, overall, certification } = data;
   const order: ("GOOD" | "MONITOR" | "ATTENTION" | "N/A")[] = ["GOOD", "MONITOR", "ATTENTION", "N/A"];
+
+  const notable = sections.filter(isNotable);
+  const plain = sections.filter((sec) => !isNotable(sec));
 
   return (
     <Document title={`${SITE.shortName} Pool Assessment — ${property.customerName}`}>
@@ -158,7 +186,7 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
           <Text style={s.docTitle}>POOL CONDITION ASSESSMENT</Text>
         </View>
 
-        {/* Condition dashboard — calm */}
+        {/* Compact condition band */}
         <View style={s.dash}>
           <View>
             <Text style={s.kicker}>Overall Condition</Text>
@@ -177,41 +205,71 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
           </View>
         </View>
 
-        {/* Property */}
-        <Text style={s.sectionTitle}>Property</Text>
-        <Info label="Customer" value={property.customerName} />
-        <Info label="Service Address" value={property.serviceAddress} />
-        <Info label="City / ZIP" value={[property.city, property.zip].filter(Boolean).join(" ") || undefined} />
-        <Info label="Primary Pool Type" value={property.poolType} />
-        <Info label="Approx. Size" value={property.poolSize} />
-        <Info label="Last Water Change" value={property.lastWaterChangeUnknown ? "Unknown" : property.lastWaterChange} />
-        {property.additionalBodies.map((b, i) => (
-          <Info key={i} label={`Add'l Body #${i + 1}`} value={[b.poolType, b.size].filter(Boolean).join(" · ") || "—"} />
-        ))}
+        {/* Two-column meta: Property | Inspection + Configuration */}
+        <View style={s.metaRow}>
+          <View style={s.metaCol}>
+            <Text style={s.colTitle}>Property</Text>
+            <Info label="Customer" value={property.customerName} />
+            <Info label="Address" value={property.serviceAddress} />
+            <Info label="City / ZIP" value={[property.city, property.zip].filter(Boolean).join(" ") || undefined} />
+            <Info label="Pool Type" value={property.poolType} />
+            <Info label="Approx. Size" value={property.poolSize} />
+            <Info label="Last Change" value={property.lastWaterChangeUnknown ? "Unknown" : property.lastWaterChange} />
+            {property.additionalBodies.map((b, i) => (
+              <Info key={i} label={`Body #${i + 1}`} value={[b.poolType, b.size].filter(Boolean).join(" · ") || "—"} />
+            ))}
+          </View>
+          <View style={s.metaColGap} />
+          <View style={s.metaCol}>
+            <Text style={s.colTitle}>Inspection</Text>
+            <Info label="Session" value={details.session} />
+            <Info label="Date / Time" value={[details.date, details.time].filter(Boolean).join(" ") || undefined} />
+            <Info label="Inspector" value={details.inspectorName} />
 
-        {/* Inspection details */}
-        <Text style={s.sectionTitle}>Inspection Details</Text>
-        <Info label="Session" value={details.session} />
-        <Info label="Date / Time" value={[details.date, details.time].filter(Boolean).join(" ") || undefined} />
-        <Info label="Inspector" value={details.inspectorName} />
+            <Text style={[s.colTitle, { marginTop: 8 }]}>Configuration</Text>
+            <Info label="Surface" value={config.surfaces.join(", ") || "—"} />
+            <Info label="Sanitization" value={config.sanitization.join(", ") || "—"} />
+            <Info label="Features" value={config.features.join(", ") || "—"} />
+          </View>
+        </View>
 
-        {/* Configuration */}
-        <Text style={s.sectionTitle}>Configuration</Text>
-        <Info label="Surface" value={config.surfaces.join(", ") || "—"} />
-        <Info label="Sanitization" value={config.sanitization.join(", ") || "—"} />
-        <Info label="Features" value={config.features.join(", ") || "—"} />
-        <Photos photos={configPhotos} />
+        {configPhotos.length > 0 && (
+          <View style={{ marginTop: 6 }}>
+            <Thumbs photos={configPhotos} />
+          </View>
+        )}
 
-        {/* Inspection sections */}
+        {/* Inspection sections — single pass */}
         <Text style={s.sectionTitle}>Inspection Sections</Text>
-        {sections.map((sec) => (
-          <View key={sec.id} wrap={false}>
-            <View style={s.secRow}>
-              <Text style={{ fontFamily: "Helvetica-Bold" }}>{sec.title}</Text>
-              <RatingTag rating={sec.rating} />
+
+        {/* Plain Good/N-A systems: compact 2-column list */}
+        {plain.length > 0 && (
+          <View style={s.compactWrap}>
+            {plain.map((sec) => (
+              <View key={sec.id} style={s.compactItem}>
+                <Text>{sec.title}</Text>
+                <RatingTag rating={sec.rating} />
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Notable sections: expanded block with inline thumbnails */}
+        {notable.length > 0 && plain.length > 0 && (
+          <Text style={s.subLabel}>Items needing attention or with notes</Text>
+        )}
+        {notable.map((sec) => (
+          <View key={sec.id} style={s.detail} wrap={false}>
+            <View style={s.detailRow}>
+              <View style={s.detailMain}>
+                <View style={s.detailHead}>
+                  <Text style={{ fontFamily: "Helvetica-Bold" }}>{sec.title}</Text>
+                  <RatingTag rating={sec.rating} />
+                </View>
+                {sec.notes ? <Text style={s.note}>{sec.notes}</Text> : null}
+              </View>
+              <Thumbs photos={sec.photos} />
             </View>
-            {sec.notes ? <Text style={s.note}>{sec.notes}</Text> : null}
-            <Photos photos={sec.photos} />
           </View>
         ))}
 
@@ -273,12 +331,12 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
 
         {/* Certification */}
         <View style={s.certBox} wrap={false}>
-          <Text style={{ fontFamily: "Helvetica-Bold", marginBottom: 3 }}>Inspector Certification</Text>
+          <Text style={{ fontFamily: "Helvetica-Bold", marginBottom: 2 }}>Inspector Certification</Text>
           <Text style={{ color: GREY }}>
             I certify that this report represents my honest assessment of the pool and equipment at the time
             of inspection.
           </Text>
-          <Text style={{ marginTop: 6, fontFamily: "Helvetica-Bold" }}>
+          <Text style={{ marginTop: 5, fontFamily: "Helvetica-Bold" }}>
             {certification.inspectorName}
             {certification.date ? `   ·   ${certification.date}` : ""}
           </Text>
