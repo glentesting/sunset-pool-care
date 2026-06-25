@@ -4,6 +4,7 @@ import { SITE } from "@/content/site";
 import { useAssessment } from "./state";
 import { getActiveSteps } from "./summary";
 import { PHASES, type Phase } from "./steps";
+import DemoLoadButton from "./DemoLoadButton";
 
 /**
  * The persistent frame around every step: a quiet branded header (SPC wordmark +
@@ -91,6 +92,10 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
       <main key={idx} className="spc-step-anim flex-1 px-5 py-5">
         {children}
       </main>
+
+      {/* Floating sample-data button for mid-flow / resumed drafts (?demo=1 only).
+          Welcome has its own inline button, so skip it there. */}
+      {!isWelcome && !state.submitted && <DemoLoadButton floating />}
 
       {!state.submitted && (
         <footer className="sticky bottom-0 flex gap-3 border-t border-line bg-white/95 px-5 py-3 backdrop-blur">

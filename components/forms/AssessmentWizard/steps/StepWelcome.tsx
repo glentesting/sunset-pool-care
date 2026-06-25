@@ -2,6 +2,7 @@
 import { useAssessment } from "../state";
 import { RATING_LEGEND } from "../config";
 import { PHASES } from "../steps";
+import DemoLoadButton from "../DemoLoadButton";
 
 const LEGEND_DOT: Record<string, string> = {
   GOOD: "bg-good",
@@ -58,6 +59,9 @@ export default function StepWelcome() {
       >
         Get Started
       </button>
+
+      {/* Only renders when ?demo=1 is present */}
+      <DemoLoadButton />
     </div>
   );
 }
