@@ -33,19 +33,23 @@ import {
 import { SITE } from "@/content/site";
 import type { AssessmentData } from "@/lib/validation/assessment";
 
-// Load the SPC logo once (data URL is the most reliable src across react-pdf
-// versions / serverless). If it can't be read, the header falls back to text
-// and the watermark is skipped — the report still generates with zero deps.
-const LOGO: string | null = (() => {
+// Load a logo from public/ once as a data URL (most reliable src across
+// react-pdf versions / serverless). Returns null if unreadable so the report
+// still generates with zero deps.
+function loadLogo(filename: string): string | null {
   try {
-    const file = path.join(process.cwd(), "public", "spc-logo-navy.png");
+    const file = path.join(process.cwd(), "public", filename);
     return `data:image/png;base64,${fs.readFileSync(file).toString("base64")}`;
   } catch {
     return null;
   }
-})();
-// Navy logo is 2400×2000 (ratio 1.2) — keep width:height at 1.2 to avoid stretch.
-const LOGO_RATIO = 1.2;
+}
+// Visible header = the real current colorful badge (square, 600×600).
+const HEADER_LOGO = loadLogo("spc-logo-color.png");
+// Watermark = the simple navy line-art mark (2400×2000, ratio 1.2) — a plain
+// outline reads far cleaner as a faint background than the detailed badge.
+const WATERMARK_LOGO = loadLogo("spc-logo-navy.png");
+const WATERMARK_RATIO = 1.2;
 
 // Mirror of globals.css @theme tokens.
 const NAVY = "#0f2438";
@@ -78,14 +82,14 @@ const s = StyleSheet.create({
 
   // Header
   header: { borderBottomWidth: 1.5, borderBottomColor: TEAL, paddingBottom: 8, marginBottom: 10 },
-  logo: { height: 100, width: 100 * LOGO_RATIO, objectFit: "contain", marginBottom: 6 },
+  logo: { height: 80, width: 80, objectFit: "contain", marginBottom: 6 },
   brand: { fontSize: 18, fontFamily: "Helvetica-Bold", color: NAVY, marginBottom: 4 },
   brandSub: { fontSize: 7.5, color: GREY, lineHeight: 1.3 },
   docTitle: { fontSize: 7.5, fontFamily: "Helvetica-Bold", color: TEAL, letterSpacing: 1.5, marginTop: 6 },
 
   // Faint full-page watermark (behind all content, repeated via `fixed`)
-  watermark: { position: "absolute", top: 268, left: (595 - 360) / 2, width: 360, height: 360 / LOGO_RATIO, opacity: 0.06 },
-  watermarkImg: { width: 360, height: 360 / LOGO_RATIO, objectFit: "contain" },
+  watermark: { position: "absolute", top: 268, left: (595 - 360) / 2, width: 360, height: 360 / WATERMARK_RATIO, opacity: 0.05 },
+  watermarkImg: { width: 360, height: 360 / WATERMARK_RATIO, objectFit: "contain" },
 
   // Compact condition band
   dash: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: LINE, borderRadius: 5, paddingVertical: 7, paddingHorizontal: 11, marginBottom: 12 },
@@ -198,20 +202,20 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
   return (
     <Document title={`${SITE.shortName} Pool Assessment — ${property.customerName}`}>
       <Page size="A4" style={s.page}>
-        {/* Faint branding watermark — first child so it paints behind content,
-            `fixed` so it repeats on every page. Skipped if the logo didn't load. */}
-        {LOGO && (
+        {/* Faint branding watermark (navy line-art) — first child so it paints
+            behind content, `fixed` so it repeats on every page. */}
+        {WATERMARK_LOGO && (
           <View style={s.watermark} fixed>
             {/* eslint-disable-next-line jsx-a11y/alt-text */}
-            <Image src={LOGO} style={s.watermarkImg} />
+            <Image src={WATERMARK_LOGO} style={s.watermarkImg} />
           </View>
         )}
 
-        {/* Header — real logo (it already contains the company name) */}
+        {/* Header — real current logo (the badge already contains the name) */}
         <View style={s.header}>
-          {LOGO ? (
+          {HEADER_LOGO ? (
             /* eslint-disable-next-line jsx-a11y/alt-text */
-            <Image src={LOGO} style={s.logo} />
+            <Image src={HEADER_LOGO} style={s.logo} />
           ) : (
             <Text style={s.brand}>{SITE.name}</Text>
           )}
