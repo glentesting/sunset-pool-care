@@ -1,14 +1,17 @@
 import Hero from "@/components/sections/Hero";
 import WeeklyReport from "@/components/sections/WeeklyReport";
 import Services from "@/components/sections/Services";
-import WhySPC from "@/components/sections/WhySPC";
 import ServiceAreas from "@/components/sections/ServiceAreas";
+import Process from "@/components/sections/Process";
 import Reviews from "@/components/sections/Reviews";
 import CTABanner from "@/components/sections/CTABanner";
+import Wave from "@/components/sections/Wave";
 
 /**
- * Homepage. Sections transition on whitespace + surface color (white ↔ sand ↔
- * navy), never on borders. Navbar and Footer are mounted in the root layout.
+ * Homepage. Bright, airy, sunset-warm: light surfaces (white ↔ cream) carry the
+ * page, aqua + coral/gold do the accent work, navy appears only as the process
+ * band and footer. Sections flow on whitespace, surface color, and soft waves —
+ * never hard dividers. Navbar/Footer live in the (marketing) layout.
  */
 export default function Home() {
   return (
@@ -16,8 +19,18 @@ export default function Home() {
       <Hero />
       <WeeklyReport />
       <Services />
-      <WhySPC />
       <ServiceAreas />
+
+      {/* cream → navy curved seam into the process band */}
+      <div className="bg-sand">
+        <Wave className="text-navy" />
+      </div>
+      <Process />
+      {/* navy → white curved seam out of the process band */}
+      <div className="bg-navy">
+        <Wave className="text-white" />
+      </div>
+
       <Reviews />
       <CTABanner />
     </main>

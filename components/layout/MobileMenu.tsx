@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { SITE } from "@/content/site";
 import { buttonClasses } from "@/components/ui/Button";
 import { NAV_LINKS, telHref } from "./navLinks";
+import Logo from "./Logo";
 
 /**
  * Mobile nav: a hamburger that opens a full-screen navy overlay with the same
@@ -48,7 +48,7 @@ export default function MobileMenu({ tone }: { tone: "light" | "dark" }) {
       {open && (
         <div className="spc-step-anim fixed inset-0 z-50 flex flex-col bg-navy text-white">
           <div className="flex h-16 shrink-0 items-center justify-between px-6">
-            <Image src="/logo-white.svg" alt={SITE.name} width={132} height={110} className="h-9 w-auto" />
+            <Logo tone="white" />
             <button
               type="button"
               onClick={() => setOpen(false)}
