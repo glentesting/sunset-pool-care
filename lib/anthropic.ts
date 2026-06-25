@@ -45,6 +45,15 @@ CRITICAL RULES:
 - State the overall shape of the pool, name the main thing(s) to take care of, and give honest, reassuring context — without overselling or alarming.
 - 2 to 3 sentences total. Output only the paragraph — no labels or preamble.`;
 
+const POLISH_TEXT_SYSTEM = `You clean up a pool technician's text for the homeowner's report — fix typos and clumsy wording so it reads like a real person wrote it.
+
+${VOICE_RULES}
+
+CRITICAL RULES:
+- Only clean up the wording. Keep the EXACT meaning and roughly the same length — don't add, expand, explain, or invent anything, and don't turn a short line into a long one.
+- Never change a finding, a fix, a part, a number, a price, or a recommendation. Fix spelling (e.g. "guage" → "gauge", "stabelizer" → "stabilizer", "chagned" → "changed") and grammar only.
+- Output only the cleaned text — no labels, no quotes, no preamble.`;
+
 async function callClaude(system: string, user: string, maxTokens: number): Promise<string | null> {
   if (!API_KEY) return null;
   try {
@@ -91,6 +100,21 @@ Tech's note: "${args.rawNote}"${timeframeLine}
 Rewrite the tech's note as one clear sentence for the homeowner.`;
   const out = await callClaude(POLISH_SYSTEM, user, 160);
   // Guard against the model returning multiple sentences / stray quotes.
+  return out ? out.replace(/^["']|["']$/g, "").trim() : null;
+}
+
+/**
+ * General wording cleanup for free-form text (recommendation item text, overall
+ * notes) — fixes typos/grammar, keeps meaning + length. null → caller uses raw.
+ */
+export async function polishText(rawText: string): Promise<string | null> {
+  const t = rawText.trim();
+  if (!t) return null;
+  const out = await callClaude(
+    POLISH_TEXT_SYSTEM,
+    `Clean up this text for the homeowner's report:\n\n"${t}"`,
+    220
+  );
   return out ? out.replace(/^["']|["']$/g, "").trim() : null;
 }
 

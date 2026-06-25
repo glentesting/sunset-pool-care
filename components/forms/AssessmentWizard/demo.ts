@@ -156,6 +156,16 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
       filtration: "Filter pressure's running a little high, so it's due for a cleaning.",
       decking: "There's some minor cracking near the coping worth keeping an eye on.",
     },
+    // Polished recommendation item text, keyed by the rec's sourceKey (robust to
+    // order). Mirrors what the live polish pass would produce.
+    recBySourceKey: {
+      "section:pump": "Replace the pump motor — it's making a bearing noise (within the next month or so).",
+      "chem:free_chlorine": "Free chlorine was low at 1.5 (target 3–5 ppm) — worth getting it back up.",
+      "section:filtration": "Filter pressure's running a little high — it's due for a cleaning.",
+      "section:decking": "Minor cracking near the coping — worth keeping an eye on.",
+    },
+    overallNotes:
+      "Pool's in good shape overall — a few items flagged for service, see the recommendations below.",
   };
 
   // Land on Review & Submit (last active step).

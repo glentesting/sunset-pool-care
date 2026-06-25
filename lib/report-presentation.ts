@@ -1,34 +1,39 @@
 /**
- * Builds the customer-facing WORDING for the report (summary paragraph + one
- * polished sentence per flagged section's note). Presentation layer only — it
- * never touches the deterministic ratings / recommendations.
+ * Builds the customer-facing WORDING for the whole report. Presentation layer
+ * only — it never touches the deterministic ratings / recommendations.
+ *
+ * Polishes EVERY place a tech's raw words reach the customer:
+ *   - every section note (Good included)        → one clean sentence
+ *   - every recommendation item (P1/P2)         → typo/grammar cleanup
+ *   - the Overall Assessment Notes              → typo/grammar cleanup
+ *   - plus the structured summary paragraph
  *
  * Resolution order per field:
  *   1. Client-provided text wins (the ?demo=1 sample report ships pre-written
  *      text so the AI features are demonstrable with no API key).
  *   2. Otherwise call the Claude API.
- *   3. On any failure: polished notes fall back to the tech's RAW note; the
- *      summary is omitted. This whole function never throws — worst case it
- *      returns raw notes and no summary, so the report is never blocked.
+ *   3. On any failure: fall back to the RAW text; the summary is omitted. This
+ *      function never throws — worst case it returns raw text and no summary, so
+ *      the report is never blocked.
  */
 import "server-only";
 import type { AssessmentData } from "@/lib/validation/assessment";
-import { polishNote, summarize } from "@/lib/anthropic";
+import { polishNote, polishText, summarize } from "@/lib/anthropic";
 
 export type ReportPresentation = {
   summary?: string;
   /** sectionId -> homeowner-facing sentence (falls back to the raw note) */
   polishedNotes: Record<string, string>;
+  /** polished recommendation item text, aligned by index to recommendations.p1 / .p2 */
+  recP1: string[];
+  recP2: string[];
+  /** polished Overall Assessment Notes (falls back to raw; undefined if none) */
+  overallNotes?: string;
 };
-
-const FLAGGED = new Set(["MONITOR", "ATTENTION"]);
 
 export async function buildReportPresentation(data: AssessmentData): Promise<ReportPresentation> {
   try {
     const provided = data.presentation;
-    const flagged = data.sections.filter(
-      (s) => s.rating && FLAGGED.has(s.rating) && s.notes.trim()
-    );
 
     // Map sectionId -> its recommendation timeframe (a computed fact). The rec's
     // sourceKey ties it back to its section, e.g. "section:pump".
@@ -42,23 +47,43 @@ export async function buildReportPresentation(data: AssessmentData): Promise<Rep
       }
     }
 
-    // One polished sentence per flagged note (parallel; each independent).
-    const entries = await Promise.all(
-      flagged.map(async (s) => {
+    // Every section note that has text (Good included) → one clean sentence.
+    const withNotes = data.sections.filter((s) => s.notes.trim());
+    const noteEntries = await Promise.all(
+      withNotes.map(async (s) => {
         const pre = provided?.polishedNotes?.[s.id]?.trim();
         if (pre) return [s.id, pre] as const;
         const polished = await polishNote({
           sectionTitle: s.title,
-          rating: s.rating as string,
+          rating: s.rating ?? "",
           rawNote: s.notes.trim(),
           timeframe: timeframeBySection[s.id], // undefined → polish from note alone
         });
         return [s.id, polished ?? s.notes.trim()] as const; // fallback: raw note
       })
     );
-    const polishedNotes = Object.fromEntries(entries);
+    const polishedNotes = Object.fromEntries(noteEntries);
 
-    // Summary from structured findings only.
+    // Recommendation item text — provided (demo, by sourceKey) wins, else polish.
+    const polishRec = async (r: { item: string; sourceKey?: string }): Promise<string> => {
+      const pre = r.sourceKey ? provided?.recBySourceKey?.[r.sourceKey]?.trim() : undefined;
+      if (pre) return pre;
+      if (!r.item.trim()) return r.item;
+      return (await polishText(r.item)) ?? r.item;
+    };
+    const [recP1, recP2] = await Promise.all([
+      Promise.all(data.recommendations.p1.map(polishRec)),
+      Promise.all(data.recommendations.p2.map(polishRec)),
+    ]);
+
+    // Overall Assessment Notes.
+    let overallNotes = provided?.overallNotes?.trim() || undefined;
+    if (!overallNotes && data.recommendations.overallNotes.trim()) {
+      const raw = data.recommendations.overallNotes.trim();
+      overallNotes = (await polishText(raw)) ?? raw;
+    }
+
+    // Summary paragraph from structured findings only.
     let summary = provided?.summary?.trim() || undefined;
     if (!summary) {
       summary =
@@ -70,8 +95,8 @@ export async function buildReportPresentation(data: AssessmentData): Promise<Rep
         })) ?? undefined;
     }
 
-    return { summary, polishedNotes };
+    return { summary, polishedNotes, recP1, recP2, overallNotes };
   } catch {
-    return { polishedNotes: {} };
+    return { polishedNotes: {}, recP1: [], recP2: [] };
   }
 }
