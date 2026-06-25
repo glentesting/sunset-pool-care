@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Inter } from "next/font/google";
 import { SITE } from "@/content/site";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import "./globals.css";
 
 // SPC type pairing: Bricolage Grotesque (display) + Inter (body). Mapped to
@@ -33,11 +31,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${bricolage.variable} ${inter.variable}`}>
-        <Navbar />
-        {children}
-        <Footer />
-      </body>
+      {/* Root layout is intentionally minimal (html/body/fonts) so /assessment
+          renders standalone. Marketing nav/footer live in app/(marketing)/. */}
+      <body className={`${bricolage.variable} ${inter.variable}`}>{children}</body>
     </html>
   );
 }
