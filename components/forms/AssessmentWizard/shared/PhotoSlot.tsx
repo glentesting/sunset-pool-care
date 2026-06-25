@@ -63,16 +63,16 @@ export default function PhotoSlot({
         onChange={handleFile}
       />
       {value ? (
-        <div className="relative overflow-hidden rounded-lg border border-line">
+        <div className="relative overflow-hidden rounded-lg border border-wiz-line">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={value} alt={label} className="h-28 w-full object-cover" />
-          <span className="absolute inset-x-0 bottom-0 bg-navy/70 px-2 py-1 text-[11px] font-medium text-white">
+          <span className="absolute inset-x-0 bottom-0 bg-wiz-ink/70 px-2 py-1 text-[11px] font-medium text-white">
             {label}
           </span>
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="absolute right-1.5 top-1.5 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-medium text-navy/70 shadow-card"
+            className="absolute right-1.5 top-1.5 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-medium text-wiz-ink/70 shadow-card"
           >
             Remove
           </button>
@@ -83,7 +83,7 @@ export default function PhotoSlot({
           className={`flex h-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-center text-[13px] font-medium transition-colors ${
             missing
               ? "border-attention bg-attention/5 text-attention-dark"
-              : "border-field bg-sand/60 text-navy/70 hover:border-navy/40"
+              : "border-wiz-field bg-wiz-surface/60 text-wiz-ink/70 hover:border-wiz-ink/40"
           }`}
         >
           {busy ? (
@@ -92,7 +92,7 @@ export default function PhotoSlot({
             <>
               <CameraGlyph />
               <span className="px-2">{label}</span>
-              {required && <span className="text-[11px] text-navy/60">Required</span>}
+              {required && <span className="text-[11px] text-wiz-ink/60">Required</span>}
             </>
           )}
         </label>

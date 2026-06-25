@@ -72,19 +72,19 @@ export default function StepConfiguration() {
           value={newFeature}
           onChange={(e) => setNewFeature(e.target.value)}
           placeholder="Add additional feature…"
-          className="flex-1 rounded-lg border border-field p-3 text-base text-navy placeholder:text-navy/50 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30"
+          className="flex-1 rounded-lg border border-wiz-field p-3 text-base text-wiz-ink placeholder:text-wiz-ink/50 focus:border-wiz-accent focus:outline-none focus:ring-2 focus:ring-wiz-accent/30"
         />
         <button
           type="button"
           onClick={addFeature}
-          className="rounded-lg border border-field px-4 text-sm font-semibold text-teal-dark transition-colors hover:bg-sand"
+          className="rounded-lg border border-wiz-field px-4 text-sm font-semibold text-wiz-accent-dark transition-colors hover:bg-wiz-surface"
         >
           Add
         </button>
       </div>
 
       <div>
-        <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-navy/70">Required Photos</p>
+        <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-wiz-ink/70">Required Photos</p>
         <div className="grid grid-cols-2 gap-3">
           {photoSlots.map((slot) => (
             <PhotoSlot
@@ -104,7 +104,7 @@ export default function StepConfiguration() {
 function Group({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-navy/70">{label}</p>
+      <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-wiz-ink/70">{label}</p>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );

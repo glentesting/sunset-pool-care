@@ -75,23 +75,23 @@ export default function StepReview() {
   return (
     <div className="space-y-7">
       {/* Condition dashboard — calm, type-led */}
-      <div className="rounded-xl border border-line p-5">
-        <p className="text-[12px] font-semibold uppercase tracking-wide text-navy/70">
+      <div className="rounded-xl border border-wiz-line p-5">
+        <p className="text-[12px] font-semibold uppercase tracking-wide text-wiz-ink/70">
           Overall Condition
         </p>
         <p className={`mt-1 font-display text-[26px] font-semibold leading-tight ${OVERALL_ACCENT[overall.key]}`}>
           {overall.label}
         </p>
 
-        <div className="mt-5 grid grid-cols-4 divide-x divide-line border-t border-line pt-4">
+        <div className="mt-5 grid grid-cols-4 divide-x divide-wiz-line border-t border-wiz-line pt-4">
           {ORDER.map((r) => (
             <div key={r} className="px-1 text-center">
-              <div className="font-display text-2xl font-semibold tabular-nums text-navy">
+              <div className="font-display text-2xl font-semibold tabular-nums text-wiz-ink">
                 {overall.counts[r]}
               </div>
               <div className="mt-1 flex items-center justify-center gap-1.5">
                 <span className={`h-2 w-2 rounded-full ${RATING_DOT[r]}`} aria-hidden />
-                <span className="text-[11px] font-semibold text-navy/70">{RATING_LABEL[r]}</span>
+                <span className="text-[11px] font-semibold text-wiz-ink/70">{RATING_LABEL[r]}</span>
               </div>
             </div>
           ))}
@@ -100,20 +100,20 @@ export default function StepReview() {
 
       {/* Per-section ratings in color (quiet) */}
       <div>
-        <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-navy/70">
+        <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-wiz-ink/70">
           Section ratings
         </p>
-        <ul className="divide-y divide-line border-y border-line">
+        <ul className="divide-y divide-wiz-line border-y border-wiz-line">
           {rollup.map((s) => (
             <li key={s.id} className="flex items-center justify-between py-2.5">
-              <span className="text-sm text-navy">{s.title}</span>
+              <span className="text-sm text-wiz-ink">{s.title}</span>
               {s.rating ? (
                 <span className={`flex items-center gap-1.5 text-[13px] font-semibold ${RATING_TEXT[s.rating]}`}>
                   <span className={`h-2 w-2 rounded-full ${RATING_DOT[s.rating]}`} aria-hidden />
                   {RATING_LABEL[s.rating]}
                 </span>
               ) : (
-                <span className="text-[13px] font-medium text-navy/55">Not rated</span>
+                <span className="text-[13px] font-medium text-wiz-ink/55">Not rated</span>
               )}
             </li>
           ))}
@@ -121,24 +121,24 @@ export default function StepReview() {
       </div>
 
       {/* Certification — inspector + date captured once on Property & Inspection */}
-      <div className="space-y-3 rounded-xl border border-line p-4">
-        <h3 className="text-sm font-semibold text-navy">Inspector Certification</h3>
+      <div className="space-y-3 rounded-xl border border-wiz-line p-4">
+        <h3 className="text-sm font-semibold text-wiz-ink">Inspector Certification</h3>
         <dl className="grid grid-cols-2 gap-3">
           <div>
-            <dt className="text-[11px] font-semibold uppercase tracking-wide text-navy/60">Inspector</dt>
-            <dd className="mt-0.5 text-sm font-medium text-navy">{inspectorName || "—"}</dd>
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-wiz-ink/60">Inspector</dt>
+            <dd className="mt-0.5 text-sm font-medium text-wiz-ink">{inspectorName || "—"}</dd>
           </div>
           <div>
-            <dt className="text-[11px] font-semibold uppercase tracking-wide text-navy/60">Date</dt>
-            <dd className="mt-0.5 text-sm font-medium text-navy">{date || "—"}</dd>
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-wiz-ink/60">Date</dt>
+            <dd className="mt-0.5 text-sm font-medium text-wiz-ink">{date || "—"}</dd>
           </div>
         </dl>
-        <label className="flex items-start gap-3 text-[13px] leading-relaxed text-navy/85">
+        <label className="flex items-start gap-3 text-[13px] leading-relaxed text-wiz-ink/85">
           <input
             type="checkbox"
             checked={cert.certified}
             onChange={(e) => dispatch({ type: "setCertification", patch: { certified: e.target.checked } })}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-teal"
+            className="mt-0.5 h-4 w-4 shrink-0 accent-wiz-accent"
           />
           I certify that this report represents my honest assessment of the pool and equipment at the
           time of inspection.
@@ -163,7 +163,7 @@ export default function StepReview() {
         type="button"
         onClick={submit}
         disabled={!gate.ok || state.submitting}
-        className="w-full rounded-lg bg-orange py-3.5 text-base font-semibold text-white transition-colors hover:bg-orange-dark disabled:cursor-not-allowed disabled:opacity-40"
+        className="w-full rounded-lg bg-wiz-action py-3.5 text-base font-semibold text-white transition-colors hover:bg-wiz-action-dark disabled:cursor-not-allowed disabled:opacity-40"
       >
         {state.submitting ? "Generating…" : "Generate Customer Report"}
       </button>
@@ -184,18 +184,18 @@ function SubmittedScreen({ results }: { results: SubmitResults }) {
         ✓
       </div>
       <div>
-        <h2 className="font-display text-2xl font-semibold text-navy">Report Generated</h2>
-        <p className="mt-1 text-sm text-navy/70">Your PDF should be downloading now.</p>
+        <h2 className="font-display text-2xl font-semibold text-wiz-ink">Report Generated</h2>
+        <p className="mt-1 text-sm text-wiz-ink/70">Your PDF should be downloading now.</p>
       </div>
-      <ul className="divide-y divide-line border-y border-line text-left">
+      <ul className="divide-y divide-wiz-line border-y border-wiz-line text-left">
         {rows.map((r) => (
           <li key={r.key} className="flex items-center gap-3 py-3">
-            <span className={results[r.key] ? "text-good-dark" : "text-navy/30"}>
+            <span className={results[r.key] ? "text-good-dark" : "text-wiz-ink/30"}>
               {results[r.key] ? "✓" : "○"}
             </span>
-            <span className="flex-1 text-[13px] text-navy">{r.label}</span>
+            <span className="flex-1 text-[13px] text-wiz-ink">{r.label}</span>
             {r.stubbed && !results[r.key] && (
-              <span className="text-[11px] font-medium text-navy/60">pending setup</span>
+              <span className="text-[11px] font-medium text-wiz-ink/60">pending setup</span>
             )}
           </li>
         ))}
@@ -203,7 +203,7 @@ function SubmittedScreen({ results }: { results: SubmitResults }) {
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="w-full rounded-lg border border-field py-3 text-sm font-semibold text-navy transition-colors hover:bg-sand"
+        className="w-full rounded-lg border border-wiz-field py-3 text-sm font-semibold text-wiz-ink transition-colors hover:bg-wiz-surface"
       >
         Start New Assessment
       </button>
