@@ -69,8 +69,8 @@ export default function Services() {
           >
             <path
               d="M0 64 C100 24 180 24 280 64 S460 104 560 64 S740 24 840 64 1000 104 1000 64"
-              className="stroke-teal/40"
-              strokeWidth="3"
+              className="stroke-teal/55"
+              strokeWidth="5"
               strokeLinecap="round"
             />
           </svg>
@@ -86,13 +86,13 @@ export default function Services() {
                   <span
                     className={`inline-flex items-center justify-center rounded-full transition ${
                       n.emphasized
-                        ? "h-24 w-24 bg-teal text-white shadow-lift ring-4 ring-teal/20"
-                        : "h-20 w-20 bg-white text-teal-dark shadow-card ring-1 ring-teal/30 group-hover:ring-2 group-hover:ring-teal"
+                        ? "h-28 w-28 bg-teal text-white shadow-lift ring-4 ring-teal/25"
+                        : "h-24 w-24 bg-teal/12 text-teal-dark shadow-card ring-2 ring-teal/40 group-hover:bg-teal/20 group-hover:ring-teal"
                     }`}
                   >
                     <svg
-                      width={n.emphasized ? 38 : 32}
-                      height={n.emphasized ? 38 : 32}
+                      width={n.emphasized ? 46 : 38}
+                      height={n.emphasized ? 46 : 38}
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -104,10 +104,10 @@ export default function Services() {
                       {n.icon}
                     </svg>
                   </span>
-                  <span className="mt-4 font-display text-base font-semibold text-navy group-hover:text-teal-dark">
+                  <span className="mt-4 font-display text-lg font-semibold text-navy group-hover:text-teal-dark">
                     {n.label}
                   </span>
-                  <span className="mt-1 max-w-[12rem] text-sm leading-snug text-navy/80">
+                  <span className="mt-1.5 max-w-[12rem] text-sm font-medium leading-snug text-navy/85">
                     {n.desc}
                   </span>
                 </Link>

@@ -1,20 +1,12 @@
+import Image from "next/image";
 import { SERVICE_AREAS } from "@/content/site";
 
 /**
- * Service area — a friendly stylized aqua "map" blob with location pins, beside
- * a checklist of the five East Valley areas. Custom illustrated feel, not a
- * boxed Google Map. Static this pass; interactive hover states come later.
- *
- * Pin positions are decorative (roughly East-Valley relative), not surveyed.
+ * Service area — the real East Valley coverage map (a true service boundary,
+ * far more credible than an illustration), framed to sit in the palette:
+ * rounded to match the card radius, soft shadow, a thin aqua edge. The area
+ * checklist sits beside it. Displayed contained so the ~500px map stays crisp.
  */
-const PINS: { name: string; x: number; y: number }[] = [
-  { name: "Ahwatukee", x: 26, y: 34 },
-  { name: "Gilbert", x: 58, y: 26 },
-  { name: "Chandler", x: 44, y: 54 },
-  { name: "Queen Creek", x: 76, y: 60 },
-  { name: "San Tan Valley", x: 56, y: 80 },
-];
-
 export default function ServiceAreas() {
   return (
     <section className="bg-sand py-20 sm:py-28">
@@ -45,39 +37,16 @@ export default function ServiceAreas() {
           </ul>
         </div>
 
-        {/* Stylized map blob */}
-        <div className="relative mx-auto aspect-[4/3] w-full max-w-md">
-          <svg viewBox="0 0 400 300" className="h-full w-full" aria-hidden>
-            <path
-              d="M58 150 C36 78 120 30 206 42 C300 55 384 84 360 168 C342 236 268 280 184 268 C104 256 80 220 58 150 Z"
-              className="fill-teal/15 stroke-teal/30"
-              strokeWidth="2"
-            />
-            {/* a couple of soft water ripples */}
-            <path d="M120 120 C160 100 220 110 270 96" className="stroke-teal/25" strokeWidth="2" fill="none" strokeLinecap="round" />
-            <path d="M120 196 C170 214 240 206 296 188" className="stroke-teal/25" strokeWidth="2" fill="none" strokeLinecap="round" />
-          </svg>
-
-          {PINS.map((p) => (
-            <div
-              key={p.name}
-              className="absolute flex -translate-x-1/2 -translate-y-full flex-col items-center"
-              style={{ left: `${p.x}%`, top: `${p.y}%` }}
-            >
-              <svg width="26" height="32" viewBox="0 0 26 32" fill="none" aria-hidden>
-                <path
-                  d="M13 1C6.4 1 1 6.3 1 12.8 1 21 13 31 13 31s12-10 12-18.2C25 6.3 19.6 1 13 1z"
-                  className="fill-orange"
-                  stroke="white"
-                  strokeWidth="1.5"
-                />
-                <circle cx="13" cy="12.5" r="4" fill="white" />
-              </svg>
-              <span className="mt-1 whitespace-nowrap rounded-full bg-white/90 px-2 py-0.5 text-xs font-semibold text-navy shadow-card">
-                {p.name}
-              </span>
-            </div>
-          ))}
+        {/* Real coverage map, framed */}
+        <div className="mx-auto w-full max-w-md">
+          <Image
+            src="/photos/service-area-map.jpg"
+            alt="Map of Sunset Pool Care's East Valley service area, covering Chandler, Gilbert, Queen Creek, San Tan Valley, and Ahwatukee."
+            width={503}
+            height={429}
+            sizes="(min-width: 1024px) 28rem, 90vw"
+            className="w-full rounded-3xl shadow-lift ring-1 ring-teal/25"
+          />
         </div>
       </div>
     </section>

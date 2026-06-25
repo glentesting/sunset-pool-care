@@ -4,9 +4,12 @@ import { publicPhotoExists } from "@/lib/photo";
 
 /**
  * The signature section — the thing that actually sets SPC apart. Asymmetric:
- * copy on the left, the after-visit report on the right, the visual tilted and
- * bleeding slightly past the column for a deliberately non-boxy feel. Renders
- * the real screenshot when present; otherwise a clean styled mock of the report.
+ * copy on the left, the after-visit report card on the right, tilted and bleeding
+ * slightly past the column for a deliberately non-boxy feel.
+ *
+ * The "Today's photo" slot fills with a real pool photo when
+ * public/photos/weekly-report.jpg exists; otherwise it falls back to a styled
+ * water gradient. The rest of the report (readings, work done) is always shown.
  */
 
 const READINGS = [
@@ -30,20 +33,32 @@ const DOT: Record<"good" | "monitor", string> = {
 };
 
 function ReportMock() {
+  const hasPhoto = publicPhotoExists("photos/weekly-report.jpg");
+
   return (
     <div className="mx-auto max-w-sm rounded-3xl bg-white p-5 shadow-lift ring-1 ring-navy/5 lg:rotate-1">
-      {/* Today's pool photo */}
-      <div className="relative flex aspect-[4/3] items-end overflow-hidden rounded-2xl bg-gradient-to-br from-teal/35 via-teal/15 to-navy/25">
-        <svg
-          className="absolute inset-x-0 bottom-0 text-white/40"
-          viewBox="0 0 400 120"
-          preserveAspectRatio="none"
-          aria-hidden
-        >
-          <path d="M0 60 C60 40 120 80 200 60 S340 40 400 64 L400 120 L0 120 Z" fill="currentColor" opacity="0.5" />
-          <path d="M0 78 C70 58 130 96 210 78 S350 60 400 82 L400 120 L0 120 Z" fill="currentColor" opacity="0.7" />
-        </svg>
-        <span className="relative m-3 rounded-full bg-navy/70 px-3 py-1 text-xs font-semibold text-white">
+      {/* Today's pool photo (real photo when present, else a water gradient) */}
+      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-teal/35 via-teal/15 to-navy/25">
+        {hasPhoto ? (
+          <Image
+            src="/photos/weekly-report.jpg"
+            alt="A freshly serviced backyard pool — clear, blue, swim-ready."
+            fill
+            sizes="(min-width: 1024px) 22rem, 90vw"
+            className="object-cover"
+          />
+        ) : (
+          <svg
+            className="absolute inset-x-0 bottom-0 text-white/40"
+            viewBox="0 0 400 120"
+            preserveAspectRatio="none"
+            aria-hidden
+          >
+            <path d="M0 60 C60 40 120 80 200 60 S340 40 400 64 L400 120 L0 120 Z" fill="currentColor" opacity="0.5" />
+            <path d="M0 78 C70 58 130 96 210 78 S350 60 400 82 L400 120 L0 120 Z" fill="currentColor" opacity="0.7" />
+          </svg>
+        )}
+        <span className="absolute bottom-0 left-0 m-3 rounded-full bg-navy/70 px-3 py-1 text-xs font-semibold text-white">
           Today&apos;s photo
         </span>
       </div>
@@ -92,8 +107,6 @@ function ReportMock() {
 }
 
 export default function WeeklyReport() {
-  const hasPhoto = publicPhotoExists("photos/weekly-report.jpg");
-
   return (
     <section className="bg-sand py-20 sm:py-28">
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 lg:grid-cols-2 lg:gap-16">
@@ -129,18 +142,7 @@ export default function WeeklyReport() {
         </div>
 
         <div className="relative lg:-mr-4">
-          {hasPhoto ? (
-            <Image
-              src="/photos/weekly-report.jpg"
-              alt="The after-visit report: a photo of your pool with chemical readings and the work done."
-              width={900}
-              height={1100}
-              sizes="(min-width: 1024px) 40vw, 90vw"
-              className="mx-auto w-full max-w-sm rounded-3xl shadow-lift lg:rotate-1"
-            />
-          ) : (
-            <ReportMock />
-          )}
+          <ReportMock />
         </div>
       </div>
     </section>
