@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Inter } from "next/font/google";
 import { SITE } from "@/content/site";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import "./globals.css";
 
 // SPC type pairing: Bricolage Grotesque (display) + Inter (body). Mapped to
@@ -17,6 +19,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(`https://${SITE.domain}`),
   title: {
     default: `${SITE.name} — Pool Service in Chandler, AZ`,
     template: `%s | ${SITE.name}`,
@@ -30,7 +33,11 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${bricolage.variable} ${inter.variable}`}>{children}</body>
+      <body className={`${bricolage.variable} ${inter.variable}`}>
+        <Navbar />
+        {children}
+        <Footer />
+      </body>
     </html>
   );
 }

@@ -1,27 +1,25 @@
-import { SITE, WEEKLY_SERVICE_PRICE, SERVICE_AREAS } from "@/content/site";
+import Hero from "@/components/sections/Hero";
+import WeeklyReport from "@/components/sections/WeeklyReport";
+import Services from "@/components/sections/Services";
+import WhySPC from "@/components/sections/WhySPC";
+import ServiceAreas from "@/components/sections/ServiceAreas";
+import Reviews from "@/components/sections/Reviews";
+import CTABanner from "@/components/sections/CTABanner";
 
 /**
- * Homepage — placeholder skeleton. Real hero/sections come in the content phase.
- * This exists so the site builds and deploys clean from day one.
+ * Homepage. Sections transition on whitespace + surface color (white ↔ sand ↔
+ * navy), never on borders. Navbar and Footer are mounted in the root layout.
  */
 export default function Home() {
   return (
-    <main className="min-h-screen bg-navy text-white flex items-center justify-center px-6">
-      <div className="max-w-2xl text-center">
-        <p className="text-teal font-semibold tracking-widest uppercase text-sm">
-          {SITE.shortName} — Build in progress
-        </p>
-        <h1 className="mt-4 text-4xl sm:text-5xl font-bold">{SITE.name}</h1>
-        <p className="mt-4 text-white/70">
-          Pool service in {SERVICE_AREAS.join(", ")}.
-        </p>
-        <p className="mt-8 inline-block rounded-lg bg-orange px-5 py-3 font-semibold">
-          Weekly service ${WEEKLY_SERVICE_PRICE}/mo
-        </p>
-        <p className="mt-8 text-xs text-white/40">
-          Skeleton deploy — structure is live, content & forms next.
-        </p>
-      </div>
+    <main>
+      <Hero />
+      <WeeklyReport />
+      <Services />
+      <WhySPC />
+      <ServiceAreas />
+      <Reviews />
+      <CTABanner />
     </main>
   );
 }

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Sunset Pool Care premium simplified logo</title>
+  <desc id="desc">A restrained one-color Sunset Pool Care logo with a sun, desert mountains, pool waves, and clean stacked typography.</desc>
+  <style>
+    .c { color:#0f2438; }
+    .fill { fill: currentColor; }
+    .soft { fill: currentColor; opacity:.10; }
+    .line { fill:none; stroke:currentColor; stroke-width:26; stroke-linecap:round; stroke-linejoin:round; }
+    .thin { fill:none; stroke:currentColor; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .sunset { fill:currentColor; font-family: Montserrat, Avenir Next, Arial, sans-serif; font-weight:800; letter-spacing:16px; }
+    .poolcare { fill:currentColor; font-family: Montserrat, Avenir Next, Arial, sans-serif; font-weight:650; letter-spacing:20px; }
+  </style>
+  <g class="c">
+    <!-- minimal desert/pool mark -->
+    <path class="soft" d="M390 392a210 210 0 0 1 420 0H390z"/>
+    <path class="thin" d="M390 392a210 210 0 0 1 420 0"/>
+    <path class="line" d="M214 506 L352 392 L492 500 L604 428 L716 506 L858 374 L986 494"/>
+    <path class="line" d="M210 590 C320 538 418 638 530 590 S740 538 860 590 S1010 638 1060 594"/>
+    <path class="thin" d="M260 676 C350 640 442 710 544 676 S726 640 836 676 S982 712 1036 678" opacity=".82"/>
+
+    <!-- wordmark -->
+    <text class="sunset" x="600" y="825" font-size="128" text-anchor="middle">SUNSET</text>
+    <text class="poolcare" x="600" y="925" font-size="58" text-anchor="middle">POOL CARE</text>
+  </g>
+</svg>

@@ -18,13 +18,33 @@ export const SERVICES: Service[] = [
   {
     slug: "weekly-pool-service",
     name: "Weekly Pool Service",
-    tagline: "Crystal clear, every week, no babysitting required.",
+    tagline: "Crystal clear, every week. From $135/mo.",
     description: "TODO copy.",
   },
-  { slug: "repair", name: "Repair", tagline: "TODO", description: "TODO copy." },
-  { slug: "remodel", name: "Remodel", tagline: "TODO", description: "TODO copy." },
-  { slug: "green-pool", name: "Green Pool Recovery", tagline: "TODO", description: "TODO copy." },
-  { slug: "equipment", name: "Equipment", tagline: "TODO", description: "TODO copy." },
+  {
+    slug: "repair",
+    name: "Repair",
+    tagline: "Pumps, motors, filters, leaks — fixed right the first time.",
+    description: "TODO copy.",
+  },
+  {
+    slug: "remodel",
+    name: "Remodel",
+    tagline: "Resurfacing, salt conversion, and automation upgrades.",
+    description: "TODO copy.",
+  },
+  {
+    slug: "green-pool",
+    name: "Green Pool Recovery",
+    tagline: "From swamp to swim-ready, fast.",
+    description: "TODO copy.",
+  },
+  {
+    slug: "equipment",
+    name: "Equipment",
+    tagline: "Energy-smart variable-speed upgrades that cut your bill.",
+    description: "TODO copy.",
+  },
 ];
 
 export function getService(slug: string): Service | undefined {
