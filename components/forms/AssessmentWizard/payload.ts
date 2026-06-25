@@ -74,15 +74,17 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
     pumps: state.pumps.map((p) => p.label),
     spaType: spaPresent ? state.spaType || derivedSpaType(state) : SPA_NA,
     recommendations: {
-      p1: state.recommendations.p1.map(({ item, investment, timeframe }) => ({
+      p1: state.recommendations.p1.map(({ item, investment, timeframe, sourceKey }) => ({
         item,
         investment,
         timeframe,
+        sourceKey,
       })),
-      p2: state.recommendations.p2.map(({ item, investment, timeframe }) => ({
+      p2: state.recommendations.p2.map(({ item, investment, timeframe, sourceKey }) => ({
         item,
         investment,
         timeframe,
+        sourceKey,
       })),
       overallNotes: state.recommendations.overallNotes,
     },
