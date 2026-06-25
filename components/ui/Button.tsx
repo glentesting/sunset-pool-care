@@ -9,13 +9,15 @@ import type { ButtonHTMLAttributes } from "react";
  *   secondary → solid navy
  *   ghost     → outlined, for use on navy/dark surfaces (white hairline)
  */
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "ghost" | "white";
 type Size = "md" | "lg";
 
 const VARIANTS: Record<Variant, string> = {
   primary: "bg-orange text-white hover:bg-orange-dark",
   secondary: "bg-navy text-white hover:bg-navy-light",
   ghost: "border border-white/40 text-white hover:bg-white/10",
+  // Solid white — the action button on warm-gradient / navy bands.
+  white: "bg-white text-orange hover:bg-white/90",
 };
 
 const SIZES: Record<Size, string> = {

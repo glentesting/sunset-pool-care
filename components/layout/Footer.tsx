@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { SITE, SERVICE_AREAS } from "@/content/site";
 import { SERVICES } from "@/content/services";
 import { telHref } from "./navLinks";
+import Logo from "./Logo";
 
 /**
  * Navy footer. Sits directly under the navy CTA band — they read as one dark
@@ -32,10 +32,14 @@ export default function Footer() {
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           {/* NAP */}
           <div>
-            <Image src="/logo-white.svg" alt={SITE.name} width={150} height={125} className="h-12 w-auto" />
+            <Logo tone="white" className="h-12 w-auto" />
             <address className="mt-5 not-italic leading-relaxed">
               <a href={telHref(SITE.phone)} className="font-semibold text-white transition-colors hover:text-teal">
                 {SITE.phone}
+              </a>
+              <br />
+              <a href={`mailto:${SITE.email}`} className="transition-colors hover:text-teal">
+                {SITE.email}
               </a>
               <br />
               {street}

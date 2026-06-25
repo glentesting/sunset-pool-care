@@ -3,13 +3,20 @@
 /**
  * SPC brand tokens — single source for the design system.
  *
+ * Bright / airy / sunset-warm palette. Light surfaces carry the page; aqua and
+ * coral/gold do the accent work; navy is text + occasional accent bands + footer
+ * only — never the dominant surface.
+ *
  * Palette intent:
- *   navy   → structure, text, dark surfaces
- *   teal   → active/selected states + the progress bar (the "brand accent")
- *   orange → the PRIMARY ACTION button only (do not reuse for status/ratings)
- *   sand   → soft neutral surface
+ *   navy   → text, headings, the process band + footer (accent dark, not bg)
+ *   teal   → POOL-AQUA: the primary brand accent — links, eyebrows, active
+ *            states, the highlighted service node, the map, water bands
+ *   orange → SUNSET CORAL: primary action buttons + warm accent moments
+ *   gold   → amber partner to coral, so warm bands read as a gradient not a slab
+ *   sand   → warm cream — the dominant light surface, alternating with white
+ *   water  → soft aqua surface tint for water/map bands
  *   good / monitor / attention → semantic RATING colors (green / amber / red),
- *     kept distinct from teal & orange so status never reads as "brand" or "CTA"
+ *     kept distinct so status never reads as "brand" or "CTA". Stars use amber.
  *
  * Fonts: Bricolage Grotesque for display/headings, Inter for body. The actual
  * font files are wired via next/font in app/layout.tsx (sets --font-bricolage /
@@ -18,20 +25,28 @@
  * Never hardcode these values elsewhere — use the generated utilities
  * (bg-teal, text-attention, font-display, shadow-card, …). PDF colors live in
  * lib/pdf-generator.tsx because @react-pdf can't read CSS variables; they mirror
- * these on purpose — keep the two in sync.
+ * these on purpose — keep the two in sync (PDF still uses the older teal/orange;
+ * sync on the next assessment pass).
  */
 @theme {
   --color-navy: #0f2438;
   --color-navy-light: #1c3a57;
-  --color-teal: #2bb3a3;
-  --color-teal-dark: #1f8a7e;
-  /* Rich sunset orange — reserved for the single primary action. Not neon. */
-  --color-orange: #d9692e;
-  --color-orange-dark: #bd571f;
-  --color-sand: #f7f6f3;
-  --color-sand-dark: #eceae4;
-  /* Surface hairlines / dividers — darkened for outdoor legibility (still calm) */
-  --color-line: #d3d8de;
+  /* Pool-aqua — primary brand accent. Bright clean aqua; dark for text-links. */
+  --color-teal: #16b1c4;
+  --color-teal-dark: #0e8a9a;
+  /* Sunset coral — reserved for primary actions + warm accents. */
+  --color-orange: #ec6a45;
+  --color-orange-dark: #d4542f;
+  /* Gold/amber — coral's partner for warm sunset gradients. */
+  --color-gold: #f3a838;
+  --color-gold-dark: #d98e26;
+  /* Warm cream — the dominant light surface, alternating with white. */
+  --color-sand: #faf7f1;
+  --color-sand-dark: #f1ebe0;
+  /* Soft aqua water tint — map / water bands. */
+  --color-water: #e6f5f7;
+  /* Surface hairlines / dividers — warm, calm (used sparingly). */
+  --color-line: #e4ddce;
   /* Input/select/textarea borders — clearly visible medium border for glare */
   --color-field: #8d99a7;
 

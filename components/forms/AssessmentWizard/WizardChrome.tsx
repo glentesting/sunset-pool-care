@@ -35,10 +35,10 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
     <div className="mx-auto flex min-h-screen max-w-xl flex-col bg-white">
       <header className="sticky top-0 z-10 border-b border-line bg-white/90 px-5 pb-2.5 pt-3.5 backdrop-blur">
         <div className="flex items-center justify-between">
-          {/* Real SPC logo (SVG). The lockup is a vertical mark+wordmark, so it's
-              kept compact to fit the header height — see summary for the call. */}
+          {/* Real current SPC logo (colorful badge). Square — kept compact to
+              fit the header height cleanly. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/spc-logo-navy.svg" alt={SITE.name} className="h-10 w-auto" />
+          <img src="/spc-logo-color.png" alt={SITE.name} className="h-10 w-auto" />
           <span className="text-xs font-semibold tabular-nums text-navy/70">
             {idx + 1} / {total}
           </span>
