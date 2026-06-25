@@ -21,29 +21,6 @@ const PHASE_SHORT: Record<Phase, string> = {
   "Recommendations & Submit": "Report",
 };
 
-/**
- * Temporary SPC sun mark. Restrained — a thin navy/orange sun.
- * TODO: swap for the real Sunset Pool Care logo file when provided (drop it in
- * /public and replace this <BrandMark /> with an <Image>).
- */
-function BrandMark() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0">
-      <circle cx="12" cy="12" r="4.5" className="fill-orange" />
-      {Array.from({ length: 8 }).map((_, i) => {
-        const a = (i * Math.PI) / 4;
-        const x1 = 12 + Math.cos(a) * 7.5;
-        const y1 = 12 + Math.sin(a) * 7.5;
-        const x2 = 12 + Math.cos(a) * 10;
-        const y2 = 12 + Math.sin(a) * 10;
-        return (
-          <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} className="stroke-orange" strokeWidth="1.6" strokeLinecap="round" />
-        );
-      })}
-    </svg>
-  );
-}
-
 export default function WizardChrome({ children }: { children: ReactNode }) {
   const { state, dispatch } = useAssessment();
   const steps = getActiveSteps(state);
@@ -58,12 +35,10 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
     <div className="mx-auto flex min-h-screen max-w-xl flex-col bg-white">
       <header className="sticky top-0 z-10 border-b border-line bg-white/90 px-5 pb-2.5 pt-3.5 backdrop-blur">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BrandMark />
-            <span className="font-display text-[15px] font-semibold tracking-tight text-navy">
-              {SITE.name}
-            </span>
-          </div>
+          {/* Real SPC logo (SVG). The lockup is a vertical mark+wordmark, so it's
+              kept compact to fit the header height — see summary for the call. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/spc-logo-navy.svg" alt={SITE.name} className="h-10 w-auto" />
           <span className="text-xs font-semibold tabular-nums text-navy/70">
             {idx + 1} / {total}
           </span>
