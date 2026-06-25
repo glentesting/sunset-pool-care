@@ -102,6 +102,8 @@ export const assessmentSchema = z.object({
     .object({
       summary: z.string().optional(),
       polishedNotes: z.record(z.string(), z.string()).optional(),
+      recBySourceKey: z.record(z.string(), z.string()).optional(),
+      overallNotes: z.string().optional(),
     })
     .optional(),
 });

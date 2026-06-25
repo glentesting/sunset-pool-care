@@ -108,8 +108,11 @@ const s = StyleSheet.create({
   metaCol: { flex: 1 },
   metaColGap: { width: 18 },
 
-  // AI overview paragraph under the condition band
-  summary: { fontSize: 9.5, color: NAVY, lineHeight: 1.45, marginBottom: 12 },
+  // AI overview paragraph under the condition band — its own zone (breathing
+  // room above; the hairline rule below separates it from the meta block).
+  summary: { fontSize: 9.5, color: NAVY, lineHeight: 1.5, marginTop: 8 },
+  // Subtle hairline divider (wiz-line tone) for premium separation.
+  rule: { borderBottomWidth: 0.5, borderBottomColor: LINE, marginTop: 12, marginBottom: 12 },
 
   sectionTitle: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: GREY, textTransform: "uppercase", letterSpacing: 1, marginTop: 13, marginBottom: 4 },
   colTitle: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: GREY, textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 },
@@ -248,8 +251,14 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
           </View>
         </View>
 
-        {/* AI overview paragraph (from structured findings only); omitted on fallback */}
-        {presentation.summary ? <Text style={s.summary}>{presentation.summary}</Text> : null}
+        {/* AI overview paragraph (from structured findings only); omitted on
+            fallback. Sits in its own zone, fenced by a hairline rule. */}
+        {presentation.summary ? (
+          <>
+            <Text style={s.summary}>{presentation.summary}</Text>
+            <View style={s.rule} />
+          </>
+        ) : null}
 
         {/* Two-column meta: Property | Inspection + Configuration */}
         <View style={s.metaRow}>
@@ -285,8 +294,11 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
           </View>
         )}
 
+        {/* Separate the meta block from the inspection findings */}
+        <View style={s.rule} />
+
         {/* Inspection sections — single pass */}
-        <Text style={s.sectionTitle}>Inspection Sections</Text>
+        <Text style={[s.sectionTitle, { marginTop: 0 }]}>Inspection Sections</Text>
 
         {/* Plain Good/N-A systems: compact 2-column list */}
         {plain.length > 0 && (
@@ -352,7 +364,7 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
             <View key={i} style={s.recItem}>
               <View style={[s.recAccent, { backgroundColor: ATTENTION }]} />
               <View style={s.recText}>
-                <Text style={{ fontFamily: "Helvetica-Bold" }}>{r.item || "—"}</Text>
+                <Text style={{ fontFamily: "Helvetica-Bold" }}>{presentation.recP1[i] || r.item || "—"}</Text>
                 <Text style={s.recMeta}>{[r.investment && `Est. ${r.investment}`, r.timeframe].filter(Boolean).join("   ·   ")}</Text>
               </View>
             </View>
@@ -366,16 +378,16 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
             <View key={i} style={s.recItem}>
               <View style={[s.recAccent, { backgroundColor: MONITOR }]} />
               <View style={s.recText}>
-                <Text style={{ fontFamily: "Helvetica-Bold" }}>{r.item || "—"}</Text>
+                <Text style={{ fontFamily: "Helvetica-Bold" }}>{presentation.recP2[i] || r.item || "—"}</Text>
                 <Text style={s.recMeta}>{[r.investment && `Est. ${r.investment}`, r.timeframe].filter(Boolean).join("   ·   ")}</Text>
               </View>
             </View>
           ))
         )}
-        {recommendations.overallNotes ? (
+        {presentation.overallNotes || recommendations.overallNotes ? (
           <>
             <Text style={[s.recBlockTitle, { color: NAVY }]}>Overall Assessment Notes</Text>
-            <Text>{recommendations.overallNotes}</Text>
+            <Text>{presentation.overallNotes || recommendations.overallNotes}</Text>
           </>
         ) : null}
 
@@ -402,7 +414,7 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
 
 export async function generateAssessmentPdf(
   data: AssessmentData,
-  presentation: ReportPresentation = { polishedNotes: {} }
+  presentation: ReportPresentation = { polishedNotes: {}, recP1: [], recP2: [] }
 ): Promise<Buffer> {
   return renderToBuffer(<AssessmentReport data={data} presentation={presentation} />);
 }
