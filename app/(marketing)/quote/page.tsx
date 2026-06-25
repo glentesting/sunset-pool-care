@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function QuotePage() {
   return (
     <main className="mx-auto max-w-2xl px-6 py-20 sm:py-28">
-      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-dark">
+      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-dark">
         Get a quote
       </p>
       <h1 className="mt-4 font-display text-4xl font-semibold leading-tight text-navy sm:text-5xl">

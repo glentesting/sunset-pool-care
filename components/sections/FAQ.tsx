@@ -41,7 +41,7 @@ export default function FAQ() {
   return (
     <section className="bg-white py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-dark">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-dark">
           Good to know
         </p>
         <h2 className="mt-4 font-display text-4xl font-semibold leading-tight text-navy sm:text-5xl">
@@ -61,7 +61,7 @@ export default function FAQ() {
                     viewBox="0 0 24 24"
                     fill="none"
                     aria-hidden
-                    className="shrink-0 text-teal-dark transition-transform group-open:rotate-180"
+                    className="shrink-0 text-orange-dark transition-transform group-open:rotate-180"
                   >
                     <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>

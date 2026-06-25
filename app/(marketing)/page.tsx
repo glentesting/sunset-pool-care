@@ -23,13 +23,13 @@ export default function Home() {
       <Services />
       <ServiceAreas />
 
-      {/* aqua → dusk curved seam into the process band (matches its navy top) */}
+      {/* aqua → navy curved seam into the process band */}
       <div className="bg-sand">
         <Wave className="text-navy" />
       </div>
       <Process />
-      {/* dusk → white curved seam out (matches the band's plum bottom edge) */}
-      <div className="bg-[#73415a]">
+      {/* navy → white curved seam out of the process band */}
+      <div className="bg-navy">
         <Wave className="text-white" />
       </div>
 

@@ -51,7 +51,7 @@ export default function Services() {
   return (
     <section className="bg-white py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-dark">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-dark">
           What we do
         </p>
         <h2 className="mt-4 max-w-2xl font-display text-4xl font-semibold leading-tight text-navy sm:text-5xl">
@@ -86,7 +86,7 @@ export default function Services() {
                   <span
                     className={`inline-flex items-center justify-center rounded-full transition ${
                       n.emphasized
-                        ? "h-28 w-28 bg-gradient-to-br from-orange to-gold text-white shadow-lift ring-4 ring-orange/20"
+                        ? "h-28 w-28 bg-orange text-white shadow-lift ring-4 ring-orange/20"
                         : "h-24 w-24 bg-teal/12 text-teal-dark shadow-card ring-2 ring-teal/40 group-hover:bg-teal/20 group-hover:ring-teal"
                     }`}
                   >
@@ -104,7 +104,7 @@ export default function Services() {
                       {n.icon}
                     </svg>
                   </span>
-                  <span className="mt-4 font-display text-lg font-semibold text-navy group-hover:text-teal-dark">
+                  <span className="mt-4 font-display text-lg font-semibold text-navy group-hover:text-orange-dark">
                     {n.label}
                   </span>
                   <span className="mt-1.5 max-w-[12rem] text-sm font-medium leading-snug text-navy/85">

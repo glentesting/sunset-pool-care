@@ -28,7 +28,7 @@ export default function Hero() {
           className="object-cover object-center"
         />
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-gold via-orange to-navy" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-br from-orange via-orange-dark to-navy" aria-hidden />
       )}
 
       {/* Light-touch scrim — left-weighted, just enough for legible white copy */}
@@ -40,7 +40,7 @@ export default function Hero() {
       <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-6 py-20 lg:grid-cols-[1.12fr_0.88fr] lg:py-24">
         {/* Copy */}
         <div className="max-w-xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange">
             Chandler · Gilbert · The East Valley
           </p>
           <h1 className="mt-5 font-display text-5xl font-semibold leading-[1.04] text-white sm:text-6xl">
@@ -94,7 +94,7 @@ export default function Hero() {
 
           <p className="mt-4 text-center text-sm text-navy/70">
             or call{" "}
-            <a href={telHref(SITE.phone)} className="font-semibold text-teal-dark hover:underline">
+            <a href={telHref(SITE.phone)} className="font-semibold text-orange-dark hover:underline">
               {SITE.phone}
             </a>
           </p>

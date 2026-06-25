@@ -39,7 +39,7 @@ export default function Trust() {
         <div className="mt-12 grid gap-8 sm:grid-cols-3 sm:gap-10">
           {POINTS.map((p) => (
             <div key={p.title}>
-              <span className="block h-1 w-12 rounded-full bg-gradient-to-r from-orange to-gold" aria-hidden />
+              <span className="block h-1 w-12 rounded-full bg-orange" aria-hidden />
               <h3 className="mt-5 font-display text-xl font-semibold text-navy">{p.title}</h3>
               <p className="mt-2 leading-relaxed text-navy/80">{p.body}</p>
             </div>

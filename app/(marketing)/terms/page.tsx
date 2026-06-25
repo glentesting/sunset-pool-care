@@ -12,7 +12,7 @@ export default function TermsPage() {
       <p className="mt-6 text-navy/70">
         Our full terms of service are coming soon. In the meantime, if you have
         any questions, please call {SITE.name} at{" "}
-        <a href={telHref(SITE.phone)} className="font-semibold text-teal-dark hover:underline">
+        <a href={telHref(SITE.phone)} className="font-semibold text-orange-dark hover:underline">
           {SITE.phone}
         </a>
         .

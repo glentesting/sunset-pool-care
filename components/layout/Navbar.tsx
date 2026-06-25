@@ -24,14 +24,14 @@ export default function Navbar() {
             <Link
               key={l.href}
               href={l.href}
-              className="text-sm font-semibold text-navy transition-colors hover:text-teal-dark"
+              className="text-sm font-semibold text-navy transition-colors hover:text-orange-dark"
             >
               {l.label}
             </Link>
           ))}
           <a
             href={telHref(SITE.phone)}
-            className="text-sm font-semibold text-navy transition-colors hover:text-teal-dark"
+            className="text-sm font-semibold text-navy transition-colors hover:text-orange-dark"
           >
             {SITE.phone}
           </a>

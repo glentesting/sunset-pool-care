@@ -35,7 +35,7 @@ export default function Reviews() {
   return (
     <section id="reviews" className="scroll-mt-20 bg-white py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-dark">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-dark">
           <span className="text-gold" aria-hidden>★</span> 4.8 from 221 reviews on Google
         </p>
         <h2 className="mt-4 max-w-2xl font-display text-4xl font-semibold leading-tight text-navy sm:text-5xl">

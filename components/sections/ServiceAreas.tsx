@@ -13,7 +13,7 @@ export default function ServiceAreas() {
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 lg:grid-cols-2 lg:gap-16">
         {/* Copy + checklist */}
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-dark">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-dark">
             Service area
           </p>
           <h2 className="mt-4 font-display text-4xl font-semibold leading-tight text-navy sm:text-5xl">
@@ -27,8 +27,8 @@ export default function ServiceAreas() {
           <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3">
             {SERVICE_AREAS.map((area) => (
               <li key={area} className="flex items-center gap-2.5 font-semibold text-navy">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden className="shrink-0 text-teal-dark">
-                  <circle cx="10" cy="10" r="9" className="fill-teal/15" />
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden className="shrink-0 text-orange-dark">
+                  <circle cx="10" cy="10" r="9" className="fill-orange/15" />
                   <path d="M6 10.5l2.5 2.5L14 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 {area}
@@ -45,7 +45,7 @@ export default function ServiceAreas() {
             width={503}
             height={429}
             sizes="(min-width: 1024px) 28rem, 90vw"
-            className="w-full rounded-3xl shadow-lift ring-1 ring-teal/25"
+            className="w-full rounded-3xl shadow-lift ring-1 ring-navy/10"
           />
         </div>
       </div>

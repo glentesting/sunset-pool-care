@@ -1,11 +1,8 @@
 /**
- * Process — the page's warm anchor: a deep "dusk" gradient band (navy/indigo
- * easing into a muted plum), distinct from the brighter golden-hour CTA banner.
- * Four connected steps with a dotted connector the circular markers sit on top
- * of. Gold accents carry the sunset cue; white text stays fully legible.
- *
- * The band's bottom edge color (#73415a) is mirrored by the wave wrapper beneath
- * it in (marketing)/page.tsx — keep them in sync.
+ * Process — a clean, flat deep-navy band (calmer and more premium than a
+ * gradient). Four connected steps with a dotted connector the circular markers
+ * sit on top of. Eyebrow + numerals use the one coral accent, identical to every
+ * other section; white text stays fully legible.
  */
 const STEPS = [
   { n: "1", title: "Request a quote", desc: "Tell us about your pool — online or a 2-minute call." },
@@ -16,9 +13,9 @@ const STEPS = [
 
 export default function Process() {
   return (
-    <section className="bg-gradient-to-b from-navy via-[#2b2752] to-[#73415a] py-20 text-white sm:py-24">
+    <section className="bg-navy py-20 text-white sm:py-24">
       <div className="mx-auto max-w-6xl px-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange">
           How it works
         </p>
         <h2 className="mt-4 max-w-2xl font-display text-4xl font-semibold leading-tight text-white sm:text-5xl">
@@ -34,7 +31,7 @@ export default function Process() {
           <ol className="grid gap-10 md:grid-cols-4">
             {STEPS.map((s) => (
               <li key={s.n} className="relative flex flex-col items-center text-center">
-                <span className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-navy font-display text-xl font-semibold text-gold ring-2 ring-gold">
+                <span className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-navy font-display text-xl font-semibold text-orange ring-2 ring-orange">
                   {s.n}
                 </span>
                 <h3 className="mt-5 font-display text-lg font-semibold text-white">{s.title}</h3>

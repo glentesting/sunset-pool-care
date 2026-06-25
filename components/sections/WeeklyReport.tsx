@@ -91,7 +91,7 @@ function ReportMock() {
       <ul className="mt-4 space-y-1.5">
         {DONE.map((item) => (
           <li key={item} className="flex items-center gap-2 text-sm text-navy/80">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden className="shrink-0 text-teal-dark">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden className="shrink-0 text-orange-dark">
               <path d="M3 8.5l3 3 7-7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             {item}
@@ -111,7 +111,7 @@ export default function WeeklyReport() {
     <section className="bg-sand py-20 sm:py-28">
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 lg:grid-cols-2 lg:gap-16">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-dark">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-dark">
             The weekly report
           </p>
           <h2 className="mt-4 font-display text-4xl font-semibold leading-tight text-navy sm:text-5xl">
@@ -131,8 +131,8 @@ export default function WeeklyReport() {
               "Every task we completed that visit",
             ].map((item) => (
               <li key={item} className="flex items-center gap-3 font-medium text-navy">
-                <svg width="22" height="22" viewBox="0 0 20 20" fill="none" aria-hidden className="shrink-0 text-teal-dark">
-                  <circle cx="10" cy="10" r="9" className="fill-teal/15" />
+                <svg width="22" height="22" viewBox="0 0 20 20" fill="none" aria-hidden className="shrink-0 text-orange-dark">
+                  <circle cx="10" cy="10" r="9" className="fill-orange/15" />
                   <path d="M6 10.5l2.5 2.5L14 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 {item}

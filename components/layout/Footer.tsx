@@ -34,11 +34,11 @@ export default function Footer() {
           <div>
             <Logo tone="white" className="h-14 w-auto" />
             <address className="mt-5 not-italic leading-relaxed">
-              <a href={telHref(SITE.phone)} className="font-semibold text-white transition-colors hover:text-teal">
+              <a href={telHref(SITE.phone)} className="font-semibold text-white transition-colors hover:text-orange">
                 {SITE.phone}
               </a>
               <br />
-              <a href={`mailto:${SITE.email}`} className="transition-colors hover:text-teal">
+              <a href={`mailto:${SITE.email}`} className="transition-colors hover:text-orange">
                 {SITE.email}
               </a>
               <br />
@@ -56,7 +56,7 @@ export default function Footer() {
             <ul className="mt-4 space-y-2">
               {SERVICES.map((s) => (
                 <li key={s.slug}>
-                  <Link href={`/services/${s.slug}`} className="transition-colors hover:text-teal">
+                  <Link href={`/services/${s.slug}`} className="transition-colors hover:text-orange">
                     {s.name}
                   </Link>
                 </li>
@@ -72,7 +72,7 @@ export default function Footer() {
             <ul className="mt-4 space-y-2">
               {COMPANY_LINKS.map((l) => (
                 <li key={l.href}>
-                  <Link href={l.href} className="transition-colors hover:text-teal">
+                  <Link href={l.href} className="transition-colors hover:text-orange">
                     {l.label}
                   </Link>
                 </li>
@@ -102,7 +102,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={s.label}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-teal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                 <path d={s.path} />
@@ -115,10 +115,10 @@ export default function Footer() {
         <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 text-sm sm:flex-row sm:items-center sm:justify-between">
           <p>© {year} {SITE.name}. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link href="/privacy" className="transition-colors hover:text-teal">
+            <Link href="/privacy" className="transition-colors hover:text-orange">
               Privacy Policy
             </Link>
-            <Link href="/terms" className="transition-colors hover:text-teal">
+            <Link href="/terms" className="transition-colors hover:text-orange">
               Terms
             </Link>
           </div>

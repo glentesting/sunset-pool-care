@@ -13,7 +13,7 @@ export default function PrivacyPage() {
         Our full privacy policy is coming soon. In the meantime, if you have any
         questions about how {SITE.name} handles your information, please call us
         at{" "}
-        <a href={telHref(SITE.phone)} className="font-semibold text-teal-dark hover:underline">
+        <a href={telHref(SITE.phone)} className="font-semibold text-orange-dark hover:underline">
           {SITE.phone}
         </a>
         .

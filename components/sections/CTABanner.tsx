@@ -4,13 +4,13 @@ import { buttonClasses } from "@/components/ui/Button";
 import { telHref } from "@/components/layout/navLinks";
 
 /**
- * Closing CTA — a warm sunset gradient (coral → gold), white copy, a solid white
- * primary button and a ghost call button. The page's warm anchor before the
- * navy footer.
+ * Closing CTA — the boldest warm moment, in the one coral hue (a subtle
+ * single-hue coral gradient, no second color). White copy, a solid white primary
+ * button and a ghost call button. The page's warm anchor before the navy footer.
  */
 export default function CTABanner() {
   return (
-    <section className="bg-gradient-to-br from-orange via-orange to-gold py-20 text-white sm:py-28">
+    <section className="bg-gradient-to-br from-orange to-orange-dark py-20 text-white sm:py-28">
       <div className="mx-auto max-w-3xl px-6 text-center">
         <h2 className="font-display text-4xl font-semibold leading-tight sm:text-5xl">
           Enjoy the pool. Skip the work.
