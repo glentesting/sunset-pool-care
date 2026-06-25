@@ -19,6 +19,8 @@
  * Branding (name, NAP) is pulled from content/site.ts — never hardcoded here.
  */
 import "server-only";
+import fs from "node:fs";
+import path from "node:path";
 import {
   Document,
   Page,
@@ -30,6 +32,20 @@ import {
 } from "@react-pdf/renderer";
 import { SITE } from "@/content/site";
 import type { AssessmentData } from "@/lib/validation/assessment";
+
+// Load the SPC logo once (data URL is the most reliable src across react-pdf
+// versions / serverless). If it can't be read, the header falls back to text
+// and the watermark is skipped — the report still generates with zero deps.
+const LOGO: string | null = (() => {
+  try {
+    const file = path.join(process.cwd(), "public", "spc-logo-navy.png");
+    return `data:image/png;base64,${fs.readFileSync(file).toString("base64")}`;
+  } catch {
+    return null;
+  }
+})();
+// Navy logo is 2400×2000 (ratio 1.2) — keep width:height at 1.2 to avoid stretch.
+const LOGO_RATIO = 1.2;
 
 // Mirror of globals.css @theme tokens.
 const NAVY = "#0f2438";
@@ -61,10 +77,15 @@ const s = StyleSheet.create({
   page: { paddingTop: 34, paddingBottom: 42, paddingHorizontal: 40, fontSize: 9.5, color: NAVY, fontFamily: "Helvetica", lineHeight: 1.32 },
 
   // Header
-  header: { borderBottomWidth: 1.5, borderBottomColor: TEAL, paddingBottom: 7, marginBottom: 10 },
-  brand: { fontSize: 18, fontFamily: "Helvetica-Bold", color: NAVY },
-  brandSub: { fontSize: 7.5, color: GREY, marginTop: 2 },
-  docTitle: { fontSize: 7.5, fontFamily: "Helvetica-Bold", color: TEAL, letterSpacing: 1.5, marginTop: 5 },
+  header: { borderBottomWidth: 1.5, borderBottomColor: TEAL, paddingBottom: 8, marginBottom: 10 },
+  logo: { height: 100, width: 100 * LOGO_RATIO, objectFit: "contain", marginBottom: 6 },
+  brand: { fontSize: 18, fontFamily: "Helvetica-Bold", color: NAVY, marginBottom: 4 },
+  brandSub: { fontSize: 7.5, color: GREY, lineHeight: 1.3 },
+  docTitle: { fontSize: 7.5, fontFamily: "Helvetica-Bold", color: TEAL, letterSpacing: 1.5, marginTop: 6 },
+
+  // Faint full-page watermark (behind all content, repeated via `fixed`)
+  watermark: { position: "absolute", top: 268, left: (595 - 360) / 2, width: 360, height: 360 / LOGO_RATIO, opacity: 0.06 },
+  watermarkImg: { width: 360, height: 360 / LOGO_RATIO, objectFit: "contain" },
 
   // Compact condition band
   dash: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: LINE, borderRadius: 5, paddingVertical: 7, paddingHorizontal: 11, marginBottom: 12 },
@@ -177,9 +198,23 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
   return (
     <Document title={`${SITE.shortName} Pool Assessment — ${property.customerName}`}>
       <Page size="A4" style={s.page}>
-        {/* Header */}
+        {/* Faint branding watermark — first child so it paints behind content,
+            `fixed` so it repeats on every page. Skipped if the logo didn't load. */}
+        {LOGO && (
+          <View style={s.watermark} fixed>
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
+            <Image src={LOGO} style={s.watermarkImg} />
+          </View>
+        )}
+
+        {/* Header — real logo (it already contains the company name) */}
         <View style={s.header}>
-          <Text style={s.brand}>{SITE.name}</Text>
+          {LOGO ? (
+            /* eslint-disable-next-line jsx-a11y/alt-text */
+            <Image src={LOGO} style={s.logo} />
+          ) : (
+            <Text style={s.brand}>{SITE.name}</Text>
+          )}
           <Text style={s.brandSub}>
             {SITE.address.street}, {SITE.address.city}, {SITE.address.state} {SITE.address.zip} · {SITE.phone} · {SITE.domain}
           </Text>
