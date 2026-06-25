@@ -30,6 +30,18 @@ export async function buildReportPresentation(data: AssessmentData): Promise<Rep
       (s) => s.rating && FLAGGED.has(s.rating) && s.notes.trim()
     );
 
+    // Map sectionId -> its recommendation timeframe (a computed fact). The rec's
+    // sourceKey ties it back to its section, e.g. "section:pump".
+    const timeframeBySection: Record<string, string> = {};
+    for (const r of [...data.recommendations.p1, ...data.recommendations.p2]) {
+      const key = r.sourceKey;
+      const tf = r.timeframe?.trim();
+      if (key?.startsWith("section:") && tf) {
+        const id = key.slice("section:".length);
+        if (!timeframeBySection[id]) timeframeBySection[id] = tf;
+      }
+    }
+
     // One polished sentence per flagged note (parallel; each independent).
     const entries = await Promise.all(
       flagged.map(async (s) => {
@@ -39,6 +51,7 @@ export async function buildReportPresentation(data: AssessmentData): Promise<Rep
           sectionTitle: s.title,
           rating: s.rating as string,
           rawNote: s.notes.trim(),
+          timeframe: timeframeBySection[s.id], // undefined → polish from note alone
         });
         return [s.id, polished ?? s.notes.trim()] as const; // fallback: raw note
       })

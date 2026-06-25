@@ -30,9 +30,10 @@ const POLISH_SYSTEM = `You clean up a pool technician's raw inspection note into
 ${VOICE_RULES}
 
 CRITICAL RULES:
-- Only restate what's in the tech's note. Never add a cause, a fix, a severity, a part, or any detail the tech didn't write. Never invent anything.
+- Only restate what's in the tech's note and the facts you're given (section, rating, timeframe). Never add a cause, a fix, a severity, or a part the tech didn't write. Never invent anything.
 - Do not change the finding. The rating is fixed; you're only cleaning up the wording.
-- Keep it to ONE sentence, roughly the length of the original. Don't pad a few words into a paragraph.
+- TIMEFRAME: you may be given a "Recommended timeframe" — a computed fact, not your judgment. If one is given, you MAY work it in naturally, in plain words (e.g. "Within 30 days" → "in the next month or so"; "Immediate" → "should be handled right away"; "Within 90 days" → "in the next few months"; "Monitor" → "worth keeping an eye on"). If NO timeframe is given, do NOT mention, guess, or imply any timeframe.
+- Keep it to ONE sentence. Stay close to the original length — don't pad a few words into a paragraph.
 - Output only the sentence — no labels, no quotes, no preamble.`;
 
 const SUMMARY_SYSTEM = `You write a short overview (2-3 sentences) for the top of a pool inspection report, for the homeowner.
@@ -77,10 +78,15 @@ export async function polishNote(args: {
   sectionTitle: string;
   rating: string;
   rawNote: string;
+  /** Computed recommendation timeframe for this section, if any (a fixed fact). */
+  timeframe?: string;
 }): Promise<string | null> {
+  const timeframeLine = args.timeframe?.trim()
+    ? `\nRecommended timeframe: ${args.timeframe.trim()}`
+    : "";
   const user = `Section: ${args.sectionTitle}
 Rating: ${args.rating}
-Tech's note: "${args.rawNote}"
+Tech's note: "${args.rawNote}"${timeframeLine}
 
 Rewrite the tech's note as one clear sentence for the homeowner.`;
   const out = await callClaude(POLISH_SYSTEM, user, 160);

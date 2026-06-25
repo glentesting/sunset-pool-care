@@ -39,6 +39,9 @@ const recItemSchema = z.object({
   item: z.string(),
   investment: z.string(),
   timeframe: z.string(),
+  // ties an auto-generated rec back to its source (e.g. "section:pump") so the
+  // server can pass that section's timeframe to the note-polish step.
+  sourceKey: z.string().optional(),
 });
 
 export const assessmentSchema = z.object({
