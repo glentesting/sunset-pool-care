@@ -124,7 +124,8 @@ const POLISH_REC_SYSTEM = `You clean up a pool technician's recommendation for t
 ${VOICE_RULES}
 
 CRITICAL RULES:
-- Only clean up the wording of the recommendation. Keep the EXACT meaning and roughly the same length — don't add, expand, explain, or invent anything.
+- Use ONLY the words the tech gave you. Fix spelling and expand obvious shorthand, nothing more. Never add a synonym, an alternative descriptor, a symptom, an adjective, a cause, or any detail the tech didn't write — if they wrote "growling", the report says "growling", NOT "grinding/growling". Don't enrich, don't offer alternatives, don't formalize. This is wording cleanup, not improvement.
+- Keep the EXACT meaning and roughly the same length. Don't add, expand, explain, or invent anything.
 - Never change a finding, a fix, a part, a number, a price, or the recommendation itself.
 - DO NOT state any timeframe, timing, or urgency — no "within 30 days", "in the next month or so", "soon", "right away", "immediately", "within 90 days", "monitor", "keep an eye on", etc. The recommendation's timeframe is printed on its own line, so repeating it inside the sentence is redundant. Leave timing out entirely.
 - Output only the cleaned recommendation — no labels, no quotes, no preamble.`;
