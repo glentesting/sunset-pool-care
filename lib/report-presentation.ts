@@ -2,11 +2,16 @@
  * Builds the customer-facing WORDING for the whole report. Presentation layer
  * only — it never touches the deterministic ratings / recommendations.
  *
- * Polishes EVERY place a tech's raw words reach the customer:
- *   - every section note (Good included)        → one clean sentence
- *   - every recommendation item (P1/P2)         → typo/grammar cleanup
- *   - the Overall Assessment Notes              → typo/grammar cleanup
+ * Polishes EVERY place a tech's raw words reach the customer — one place owns it,
+ * with rules scoped per surface so the model doesn't over-help:
+ *   - every section note (Good included)        → one clean sentence (polishNote)
+ *   - every recommendation item (P1/P2)         → cleanup, no timing (polishRecItem)
+ *   - the Overall Assessment Notes              → typo/grammar cleanup (polishText)
+ *   - every photo label                         → tag-level cleanup only (polishLabel)
  *   - plus the structured summary paragraph
+ *
+ * Photo labels are mutated in place on `data` (the cleaned tag rides through to
+ * the PDF, which is unchanged) — the lightest touch of any surface.
  *
  * Resolution order per field:
  *   1. Client-provided text wins (the ?demo=1 sample report ships pre-written
@@ -18,7 +23,7 @@
  */
 import "server-only";
 import type { AssessmentData } from "@/lib/validation/assessment";
-import { polishNote, polishRecItem, polishText, summarize } from "@/lib/anthropic";
+import { polishLabel, polishNote, polishRecItem, polishText, summarize } from "@/lib/anthropic";
 
 export type ReportPresentation = {
   summary?: string;
@@ -75,6 +80,34 @@ export async function buildReportPresentation(data: AssessmentData): Promise<Rep
       Promise.all(data.recommendations.p1.map(polishRec)),
       Promise.all(data.recommendations.p2.map(polishRec)),
     ]);
+
+    // Photo labels — tightest cleanup (tags, not sentences). Resolve each distinct
+    // non-empty label (demo-provided wins, else polishLabel, else raw) and mutate
+    // the photo objects in place so the (unchanged) PDF renders the cleaned tag.
+    const rawLabels = new Set<string>();
+    const collect = (photos: { label: string }[]) => {
+      for (const p of photos) {
+        const l = p.label.trim();
+        if (l) rawLabels.add(l);
+      }
+    };
+    data.sections.forEach((s) => collect(s.photos));
+    collect(data.configPhotos);
+    const labelMap: Record<string, string> = {};
+    await Promise.all(
+      [...rawLabels].map(async (raw) => {
+        const pre = provided?.photoLabels?.[raw]?.trim();
+        labelMap[raw] = pre || (await polishLabel(raw)) || raw; // fallback: raw label
+      })
+    );
+    const applyLabels = (photos: { label: string }[]) => {
+      for (const p of photos) {
+        const l = p.label.trim();
+        if (l && labelMap[l]) p.label = labelMap[l];
+      }
+    };
+    data.sections.forEach((s) => applyLabels(s.photos));
+    applyLabels(data.configPhotos);
 
     // Overall Assessment Notes.
     let overallNotes = provided?.overallNotes?.trim() || undefined;

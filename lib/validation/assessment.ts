@@ -104,6 +104,8 @@ export const assessmentSchema = z.object({
       polishedNotes: z.record(z.string(), z.string()).optional(),
       recBySourceKey: z.record(z.string(), z.string()).optional(),
       overallNotes: z.string().optional(),
+      // raw photo label -> cleaned tag (demo passthrough so ?demo=1 previews it)
+      photoLabels: z.record(z.string(), z.string()).optional(),
     })
     .optional(),
 });

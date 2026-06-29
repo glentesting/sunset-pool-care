@@ -118,6 +118,7 @@ export type AssessmentState = {
     polishedNotes?: Record<string, string>;
     recBySourceKey?: Record<string, string>;
     overallNotes?: string;
+    photoLabels?: Record<string, string>;
   };
   submitting: boolean;
   submitted: boolean;

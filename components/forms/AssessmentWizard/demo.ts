@@ -100,9 +100,9 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
     photos: Record<string, Photo> = {}
   ): SectionState => ({ rating, notes, photos });
 
-  // A couple of Maria's photos carry tech labels (so ?demo=1 previews typed
-  // captions); the filter shot is left unlabeled — a slotted photo, so it
-  // previews the slot-name caption fallback ("Filter").
+  // A couple of Maria's photos carry slightly-misspelled raw tech labels (so
+  // ?demo=1 previews the label cleanup); the filter shot is left unlabeled — a
+  // slotted photo, so it previews the slot-name caption fallback ("Filter").
   s.sections = {
     surface: sec("GOOD"),
     chemistry: sec("GOOD"),
@@ -110,14 +110,14 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
       [`filters:${filterId}:Filter`]: { dataUrl: makePhoto("Filter"), label: "" },
     }),
     pump: sec("ATTENTION", "Motor bearing noise, recommend replacement", {
-      [`pumps:${pumpId}:Pump`]: { dataUrl: makePhoto("Pump"), label: "Pump motor & serial plate" },
+      [`pumps:${pumpId}:Pump`]: { dataUrl: makePhoto("Pump"), label: "pump mtr & serial plate" },
     }),
     plumbing: sec("GOOD"),
     automation: sec("GOOD"),
     cleaning: sec("GOOD"),
     safety: sec("GOOD"),
     decking: sec("MONITOR", "Minor cracking near coping", {
-      [`extra:${uid()}`]: { dataUrl: makePhoto("Decking"), label: "Cracking near north coping" },
+      [`extra:${uid()}`]: { dataUrl: makePhoto("Decking"), label: "crackng nr coping" },
     }),
     spa: sec("GOOD"),
   };
@@ -172,6 +172,12 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
     },
     overallNotes:
       "Pool's in good shape overall — a few items flagged for service, see the recommendations below.",
+    // Raw misspelled photo labels → cleaned tags (so ?demo=1 shows the label
+    // rule working without a key). Tag cleanup only — not reworded to sentences.
+    photoLabels: {
+      "pump mtr & serial plate": "pump motor & serial plate",
+      "crackng nr coping": "cracking near coping",
+    },
   };
 
   // Land on Review & Submit (last active step).
