@@ -118,6 +118,32 @@ export async function polishText(rawText: string): Promise<string | null> {
   return out ? out.replace(/^["']|["']$/g, "").trim() : null;
 }
 
+const POLISH_REC_SYSTEM = `You clean up a pool technician's recommendation for the homeowner's report — fix typos and clumsy wording so it reads like a real person wrote it.
+
+${VOICE_RULES}
+
+CRITICAL RULES:
+- Only clean up the wording of the recommendation. Keep the EXACT meaning and roughly the same length — don't add, expand, explain, or invent anything.
+- Never change a finding, a fix, a part, a number, a price, or the recommendation itself.
+- DO NOT state any timeframe, timing, or urgency — no "within 30 days", "in the next month or so", "soon", "right away", "immediately", "within 90 days", "monitor", "keep an eye on", etc. The recommendation's timeframe is printed on its own line, so repeating it inside the sentence is redundant. Leave timing out entirely.
+- Output only the cleaned recommendation — no labels, no quotes, no preamble.`;
+
+/**
+ * Polish a recommendation item — same cleanup as polishText, but the timeframe
+ * is printed on its own line, so the model must NOT restate any timing inside
+ * the sentence. null → caller uses the raw item text.
+ */
+export async function polishRecItem(rawText: string): Promise<string | null> {
+  const t = rawText.trim();
+  if (!t) return null;
+  const out = await callClaude(
+    POLISH_REC_SYSTEM,
+    `Clean up this recommendation for the homeowner's report:\n\n"${t}"`,
+    200
+  );
+  return out ? out.replace(/^["']|["']$/g, "").trim() : null;
+}
+
 /** 2-3 sentence overview from structured findings. null → caller omits the summary. */
 export async function summarize(args: {
   overall: string;

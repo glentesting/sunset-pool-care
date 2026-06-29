@@ -18,7 +18,7 @@
  */
 import "server-only";
 import type { AssessmentData } from "@/lib/validation/assessment";
-import { polishNote, polishText, summarize } from "@/lib/anthropic";
+import { polishNote, polishRecItem, polishText, summarize } from "@/lib/anthropic";
 
 export type ReportPresentation = {
   summary?: string;
@@ -69,7 +69,7 @@ export async function buildReportPresentation(data: AssessmentData): Promise<Rep
       const pre = r.sourceKey ? provided?.recBySourceKey?.[r.sourceKey]?.trim() : undefined;
       if (pre) return pre;
       if (!r.item.trim()) return r.item;
-      return (await polishText(r.item)) ?? r.item;
+      return (await polishRecItem(r.item)) ?? r.item;
     };
     const [recP1, recP2] = await Promise.all([
       Promise.all(data.recommendations.p1.map(polishRec)),
