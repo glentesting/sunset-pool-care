@@ -115,7 +115,7 @@ export function outstandingPhotoIssues(state: AssessmentState): string[] {
   for (const s of SECTIONS) {
     const rating = ratingFor(state, s.id);
     if (!rating || !FLAGGED_RATINGS.includes(rating)) continue;
-    const hasPhoto = Object.values(state.sections[s.id]?.photos ?? {}).some(Boolean);
+    const hasPhoto = Object.values(state.sections[s.id]?.photos ?? {}).some((p) => p?.dataUrl);
     if (!hasPhoto) issues.push(s.title);
   }
   return issues;

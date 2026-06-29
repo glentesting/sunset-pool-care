@@ -91,8 +91,9 @@ export default function StepConfiguration() {
               key={slot}
               label={slot}
               required
-              value={cfg.photos[slot]}
+              photo={cfg.photos[slot]}
               onChange={(dataUrl) => dispatch({ type: "setConfigPhoto", slot, dataUrl })}
+              onLabelChange={(label) => dispatch({ type: "setConfigPhotoLabel", slot, label })}
             />
           ))}
         </div>

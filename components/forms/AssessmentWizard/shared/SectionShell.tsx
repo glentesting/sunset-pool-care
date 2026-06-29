@@ -32,7 +32,7 @@ export default function SectionShell({
   if (!cfg) return null;
 
   const flagged = sec.rating ? FLAGGED_RATINGS.includes(sec.rating) : false;
-  const photoCount = Object.values(sec.photos).filter(Boolean).length;
+  const photoCount = Object.values(sec.photos).filter((p) => p?.dataUrl).length;
   const needsPhoto = flagged && photoCount === 0;
 
   return (
@@ -58,9 +58,12 @@ export default function SectionShell({
                 key={slot}
                 label={slot}
                 required={flagged}
-                value={sec.photos[slot]}
+                photo={sec.photos[slot]}
                 onChange={(dataUrl) =>
                   dispatch({ type: "setSectionPhoto", id: sectionId, slot, dataUrl })
+                }
+                onLabelChange={(label) =>
+                  dispatch({ type: "setSectionPhotoLabel", id: sectionId, slot, label })
                 }
               />
             ))}

@@ -72,9 +72,12 @@ export default function UnitList({
                 <PhotoSlot
                   key={key}
                   label={slot}
-                  value={sec.photos[key]}
+                  photo={sec.photos[key]}
                   onChange={(dataUrl) =>
                     dispatch({ type: "setSectionPhoto", id: sectionId, slot: key, dataUrl })
+                  }
+                  onLabelChange={(label) =>
+                    dispatch({ type: "setSectionPhotoLabel", id: sectionId, slot: key, label })
                   }
                 />
               );
