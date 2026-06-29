@@ -31,6 +31,7 @@ ${VOICE_RULES}
 
 CRITICAL RULES:
 - Only restate what's in the tech's note and the facts you're given (section, rating, timeframe). Never add a cause, a fix, a severity, or a part the tech didn't write. Never invent anything.
+- Preserve the detail and the tech's plain, vivid words — if they wrote "growling", keep "growling"; don't formalize it into "operating abnormally". Fix spelling and make it readable, nothing more.
 - Do not change the finding. The rating is fixed; you're only cleaning up the wording.
 - TIMEFRAME: you may be given a "Recommended timeframe" — a computed fact, not your judgment. If one is given, you MAY work it in naturally, in plain words (e.g. "Within 30 days" → "in the next month or so"; "Immediate" → "should be handled right away"; "Within 90 days" → "in the next few months"; "Monitor" → "worth keeping an eye on"). If NO timeframe is given, do NOT mention, guess, or imply any timeframe.
 - Keep it to ONE sentence. Stay close to the original length — don't pad a few words into a paragraph.
@@ -141,6 +142,29 @@ export async function polishRecItem(rawText: string): Promise<string | null> {
     `Clean up this recommendation for the homeowner's report:\n\n"${t}"`,
     200
   );
+  return out ? out.replace(/^["']|["']$/g, "").trim() : null;
+}
+
+// ── PHOTO LABELS — the lightest touch of any surface. Fenced off on purpose:
+// labels are TAGS, not sentences. The failure mode to guard against is the model
+// treating a label like a note and expanding it into prose. ──────────────────
+const POLISH_LABEL_SYSTEM = `You clean up a SHORT PHOTO LABEL (a tag, not a sentence) for a pool inspection report. This is the lightest touch of any text on the report — do almost nothing.
+
+THE ONLY JOB:
+- Fix spelling and expand obvious shorthand. Examples: "pump mtr rust" → "pump motor rust"; "guage" → "gauge" (but "gauge" stays "gauge"); "crackng nr coping" → "cracking near coping".
+
+HARD LIMITS — a label is a TAG, never a sentence:
+- NEVER reword a label into a sentence. "pump motor rust" must NOT become "The pump motor is showing signs of rust." No added words, no verbs, no framing, no extra punctuation.
+- NEVER change what the label refers to. Don't infer, don't elaborate, don't add a part name that isn't there.
+- Keep the length: a 3-word label leaves as 3 words, just spelled right.
+- If you can't fix a spelling issue without rewriting, leave the label EXACTLY as-is.
+- Output only the cleaned label — no quotes, no preamble, nothing else.`;
+
+/** Tag-level cleanup for a photo label (spelling/shorthand only). null → caller uses raw. */
+export async function polishLabel(rawLabel: string): Promise<string | null> {
+  const t = rawLabel.trim();
+  if (!t) return null;
+  const out = await callClaude(POLISH_LABEL_SYSTEM, `Clean up this photo label:\n\n"${t}"`, 40);
   return out ? out.replace(/^["']|["']$/g, "").trim() : null;
 }
 
