@@ -11,11 +11,27 @@ import { CHEMISTRY_PARAMS, SALT_SANITIZER, SECTIONS, SPA_NA } from "./config";
 import { derivedSpaType, isSpaPresent, overallCondition } from "./summary";
 import type { AssessmentState, Photo } from "./state";
 
-/** Photo label sent to the PDF is the tech's own (optional) label — empty if none. */
+/**
+ * Slot-name caption floor for a photo key. Slotted photos (fixed / per-unit)
+ * fall back to their slot name; ad-hoc photos ("extra:…") have no floor.
+ */
+function slotName(key: string): string {
+  if (key.startsWith("extra:")) return ""; // ad-hoc → no floor caption
+  const parts = key.split(":");
+  // per-unit keys look like `filters:<id>:Serial number`
+  return parts.length >= 3 ? parts[parts.length - 1] : key;
+}
+
+/**
+ * Caption sent to the PDF, three-way:
+ *   tech's typed label  → the label
+ *   none, but slotted   → the slot name (Filter / Test Strip / Serial …)
+ *   none, ad-hoc        → empty (PDF renders no caption)
+ */
 function photosOf(map: Record<string, Photo>): { label: string; dataUrl: string }[] {
   return Object.entries(map)
     .filter(([, p]) => Boolean(p?.dataUrl))
-    .map(([, p]) => ({ label: (p.label ?? "").trim(), dataUrl: p.dataUrl }));
+    .map(([key, p]) => ({ label: (p.label ?? "").trim() || slotName(key), dataUrl: p.dataUrl }));
 }
 
 export function buildSubmitPayload(state: AssessmentState): AssessmentData {
