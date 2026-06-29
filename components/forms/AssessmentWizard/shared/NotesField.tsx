@@ -13,13 +13,14 @@ type SpeechRecognitionEventLike = {
   resultIndex: number;
   results: ArrayLike<SpeechRecognitionResultLike>;
 };
+type SpeechRecognitionErrorLike = { error?: string };
 type RecognitionLike = {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
   onresult: ((e: SpeechRecognitionEventLike) => void) | null;
   onend: (() => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((e: SpeechRecognitionErrorLike) => void) | null;
   start: () => void;
   stop: () => void;
 };
@@ -47,42 +48,89 @@ export default function NotesField({
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
   const recRef = useRef<RecognitionLike | null>(null);
-  const baseRef = useRef("");
+  const baseRef = useRef(""); // field text before this dictation session
+  const finalRef = useRef(""); // finalized dictation text — persists across auto-restarts
+  const activeRef = useRef(false); // tech is actively dictating (drives the auto-restart)
 
   useEffect(() => {
     // Client-only feature detection: window/SpeechRecognition aren't available
     // during SSR, so this has to run post-mount (not in a lazy initializer).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSupported(getRecognitionCtor() !== null);
-    return () => recRef.current?.stop();
+    // On unmount, make sure the auto-restart can't fire after we're gone.
+    return () => {
+      activeRef.current = false;
+      recRef.current?.stop();
+    };
   }, []);
 
   function toggle() {
     if (listening) {
+      activeRef.current = false; // tech tapped off — don't auto-restart
       recRef.current?.stop();
+      setListening(false);
       return;
     }
     const Ctor = getRecognitionCtor();
     if (!Ctor) return;
     const rec = new Ctor();
     rec.lang = "en-US";
-    rec.continuous = true;
-    rec.interimResults = true;
+    rec.continuous = true; // keep capturing across pauses
+    rec.interimResults = true; // still show text as they talk
     baseRef.current = value ? value.trimEnd() + " " : "";
+    finalRef.current = "";
+    activeRef.current = true;
+
     rec.onresult = (e) => {
-      let transcript = "";
+      // Accumulate finalized chunks into finalRef (persists across restarts and
+      // across the session's growing results); show base + final + live interim.
+      let interim = "";
+      let finalAddition = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        transcript += e.results[i][0].transcript;
+        const res = e.results[i];
+        if (res.isFinal) finalAddition += res[0].transcript;
+        else interim += res[0].transcript;
       }
-      onChange(baseRef.current + transcript);
+      if (finalAddition) finalRef.current += finalAddition;
+      onChange(baseRef.current + finalRef.current + interim);
     };
-    rec.onend = () => setListening(false);
-    rec.onerror = () => setListening(false);
+
+    // The browser still ends the session on a silence gap even with
+    // continuous=true (especially on mobile). While the tech is still dictating,
+    // restart to bridge the pause — finalRef carries the captured text over, so
+    // nothing is lost. Stops cleanly once they tap off (activeRef = false).
+    rec.onend = () => {
+      if (activeRef.current) {
+        try {
+          rec.start();
+          return;
+        } catch {
+          /* couldn't restart — fall through and stop cleanly */
+        }
+      }
+      activeRef.current = false;
+      setListening(false);
+    };
+
+    rec.onerror = (ev) => {
+      // Permission / mic errors are fatal — stop for good (no restart). Transient
+      // ones (no-speech during a pause, aborted, network) just end the session,
+      // and onend restarts to keep listening.
+      if (
+        ev?.error === "not-allowed" ||
+        ev?.error === "service-not-allowed" ||
+        ev?.error === "audio-capture"
+      ) {
+        activeRef.current = false;
+      }
+    };
+
     recRef.current = rec;
     try {
       rec.start();
       setListening(true);
     } catch {
+      activeRef.current = false;
       setListening(false);
     }
   }
