@@ -100,8 +100,9 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
     photos: Record<string, Photo> = {}
   ): SectionState => ({ rating, notes, photos });
 
-  // A couple of Maria's photos carry tech labels (so ?demo=1 previews the
-  // caption); the filter shot is left unlabeled (previews the empty-caption case).
+  // A couple of Maria's photos carry tech labels (so ?demo=1 previews typed
+  // captions); the filter shot is left unlabeled — a slotted photo, so it
+  // previews the slot-name caption fallback ("Filter").
   s.sections = {
     surface: sec("GOOD"),
     chemistry: sec("GOOD"),
