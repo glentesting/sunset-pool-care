@@ -1,6 +1,9 @@
 "use client";
 import { useId, useRef, useState } from "react";
 import { compressImage } from "@/lib/image-compress";
+import type { Photo } from "../state";
+
+const MAX_LABEL = 60;
 
 /**
  * A single photo slot: opens the phone camera (capture attribute), compresses
@@ -22,13 +25,16 @@ function CameraGlyph() {
 
 export default function PhotoSlot({
   label,
-  value,
+  photo,
   onChange,
+  onLabelChange,
   required = false,
 }: {
   label: string;
-  value?: string;
+  photo?: Photo;
   onChange: (dataUrl: string | null) => void;
+  /** when provided, a single-line label input renders under the thumbnail */
+  onLabelChange?: (label: string) => void;
   required?: boolean;
 }) {
   const inputId = useId();
@@ -49,6 +55,7 @@ export default function PhotoSlot({
     }
   }
 
+  const value = photo?.dataUrl;
   const missing = required && !value;
 
   return (
@@ -63,20 +70,33 @@ export default function PhotoSlot({
         onChange={handleFile}
       />
       {value ? (
-        <div className="relative overflow-hidden rounded-lg border border-wiz-line">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt={label} className="h-28 w-full object-cover" />
-          <span className="absolute inset-x-0 bottom-0 bg-wiz-ink/70 px-2 py-1 text-[11px] font-medium text-white">
-            {label}
-          </span>
-          <button
-            type="button"
-            onClick={() => onChange(null)}
-            className="absolute right-1.5 top-1.5 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-medium text-wiz-ink/70 shadow-card"
-          >
-            Remove
-          </button>
-        </div>
+        <>
+          <div className="relative overflow-hidden rounded-lg border border-wiz-line">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={value} alt={label} className="h-28 w-full object-cover" />
+            <span className="absolute inset-x-0 bottom-0 bg-wiz-ink/70 px-2 py-1 text-[11px] font-medium text-white">
+              {label}
+            </span>
+            <button
+              type="button"
+              onClick={() => onChange(null)}
+              className="absolute right-1.5 top-1.5 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-medium text-wiz-ink/70 shadow-card"
+            >
+              Remove
+            </button>
+          </div>
+          {onLabelChange && (
+            <input
+              type="text"
+              value={photo?.label ?? ""}
+              maxLength={MAX_LABEL}
+              onChange={(e) => onLabelChange(e.target.value.slice(0, MAX_LABEL))}
+              placeholder="Label this photo (optional)"
+              aria-label={`Label for ${label} photo`}
+              className="mt-1.5 w-full rounded-md border border-wiz-field bg-white px-2 py-1.5 text-[13px] text-wiz-ink placeholder:text-wiz-ink/55 focus:border-wiz-accent focus:outline-none focus:ring-1 focus:ring-wiz-accent/30"
+            />
+          )}
+        </>
       ) : (
         <label
           htmlFor={inputId}

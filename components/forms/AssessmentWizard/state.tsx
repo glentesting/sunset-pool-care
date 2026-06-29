@@ -50,11 +50,18 @@ export type ChemistryEntry = { reading: string; rating?: Rating; auto?: boolean 
 
 export type Unit = { id: string; label: string };
 
+/**
+ * A captured photo. The optional homeowner-facing `label` rides on the object
+ * itself (not a parallel array), so it travels with the photo through draft
+ * persistence and any future storage move for free.
+ */
+export type Photo = { dataUrl: string; label?: string };
+
 export type SectionState = {
   rating?: Rating;
   notes: string;
-  /** slot key -> compressed data URL */
-  photos: Record<string, string>;
+  /** slot key -> photo */
+  photos: Record<string, Photo>;
 };
 
 export type SubmitResults = {
@@ -83,7 +90,7 @@ export type AssessmentState = {
     surfaces: string[];
     sanitization: string[];
     features: string[];
-    photos: Record<string, string>;
+    photos: Record<string, Photo>;
   };
   /** keyed by SECTIONS config id */
   sections: Record<string, SectionState>;
@@ -134,9 +141,11 @@ type Action =
   | { type: "setDetails"; patch: Partial<AssessmentState["details"]> }
   | { type: "setConfigList"; field: "surfaces" | "sanitization" | "features"; value: string }
   | { type: "setConfigPhoto"; slot: string; dataUrl: string | null }
+  | { type: "setConfigPhotoLabel"; slot: string; label: string }
   | { type: "rateSection"; id: string; rating: Rating }
   | { type: "setSectionNotes"; id: string; notes: string }
   | { type: "setSectionPhoto"; id: string; slot: string; dataUrl: string | null }
+  | { type: "setSectionPhotoLabel"; id: string; slot: string; label: string }
   | { type: "setChemistry"; key: string; patch: Partial<ChemistryEntry> }
   | { type: "addUnit"; list: ListKey; label: string }
   | { type: "updateUnit"; list: ListKey; id: string; label: string }
@@ -196,18 +205,42 @@ export function initialState(): AssessmentState {
 }
 
 function withPhoto(
-  photos: Record<string, string>,
+  photos: Record<string, Photo>,
   slot: string,
   dataUrl: string | null
-): Record<string, string> {
+): Record<string, Photo> {
   const next = { ...photos };
-  if (dataUrl) next[slot] = dataUrl;
-  else delete next[slot];
+  if (dataUrl) next[slot] = { dataUrl, label: photos[slot]?.label ?? "" };
+  else delete next[slot]; // removing the photo removes its label with it
   return next;
+}
+
+function withPhotoLabel(
+  photos: Record<string, Photo>,
+  slot: string,
+  label: string
+): Record<string, Photo> {
+  const cur = photos[slot];
+  if (!cur) return photos; // no photo in this slot — nothing to label
+  return { ...photos, [slot]: { ...cur, label } };
 }
 
 function section(s: AssessmentState, id: string): SectionState {
   return s.sections[id] ?? emptySection();
+}
+
+/** Coerce a persisted photo map (older drafts stored bare strings) to objects. */
+function normalizePhotos(photos: unknown): Record<string, Photo> {
+  const out: Record<string, Photo> = {};
+  if (photos && typeof photos === "object") {
+    for (const [k, v] of Object.entries(photos as Record<string, unknown>)) {
+      if (typeof v === "string") out[k] = { dataUrl: v, label: "" };
+      else if (v && typeof v === "object" && typeof (v as Photo).dataUrl === "string") {
+        out[k] = v as Photo;
+      }
+    }
+  }
+  return out;
 }
 
 // --- Reducer ----------------------------------------------------------------
@@ -278,6 +311,11 @@ function reducer(s: AssessmentState, a: Action): AssessmentState {
         ...s,
         config: { ...s.config, photos: withPhoto(s.config.photos, a.slot, a.dataUrl) },
       };
+    case "setConfigPhotoLabel":
+      return {
+        ...s,
+        config: { ...s.config, photos: withPhotoLabel(s.config.photos, a.slot, a.label) },
+      };
 
     case "rateSection":
       return {
@@ -296,6 +334,16 @@ function reducer(s: AssessmentState, a: Action): AssessmentState {
         sections: {
           ...s.sections,
           [a.id]: { ...cur, photos: withPhoto(cur.photos, a.slot, a.dataUrl) },
+        },
+      };
+    }
+    case "setSectionPhotoLabel": {
+      const cur = section(s, a.id);
+      return {
+        ...s,
+        sections: {
+          ...s.sections,
+          [a.id]: { ...cur, photos: withPhotoLabel(cur.photos, a.slot, a.label) },
         },
       };
     }
@@ -428,6 +476,14 @@ function loadDraft(): AssessmentState | null {
     // certification slimmed to { certified } in v3 — keep only that from older
     // drafts (which also carried inspectorName/date, now sourced from details).
     draft.certification = { certified: Boolean(parsed.certification?.certified) };
+    // Photos became { dataUrl, label } objects — migrate older drafts that stored
+    // them as bare data-URL strings so labels can ride along.
+    draft.config = { ...draft.config, photos: normalizePhotos(draft.config?.photos) };
+    const migratedSections: Record<string, SectionState> = {};
+    for (const [id, sec] of Object.entries(draft.sections ?? {})) {
+      migratedSections[id] = { ...sec, photos: normalizePhotos(sec.photos) };
+    }
+    draft.sections = migratedSections;
     // A finished submission is not a resumable draft.
     if (draft.submitted) return null;
     return draft;

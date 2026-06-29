@@ -13,6 +13,7 @@ import { CHEMISTRY_PARAMS, suggestRating } from "./config";
 import {
   initialState,
   type AssessmentState,
+  type Photo,
   type RecItem,
   type SectionState,
 } from "./state";
@@ -96,24 +97,26 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
   const sec = (
     rating: SectionState["rating"],
     notes = "",
-    photos: Record<string, string> = {}
+    photos: Record<string, Photo> = {}
   ): SectionState => ({ rating, notes, photos });
 
+  // A couple of Maria's photos carry tech labels (so ?demo=1 previews the
+  // caption); the filter shot is left unlabeled (previews the empty-caption case).
   s.sections = {
     surface: sec("GOOD"),
     chemistry: sec("GOOD"),
     filtration: sec("MONITOR", "Pressure slightly high, due for a clean", {
-      [`filters:${filterId}:Filter`]: makePhoto("Filter"),
+      [`filters:${filterId}:Filter`]: { dataUrl: makePhoto("Filter"), label: "" },
     }),
     pump: sec("ATTENTION", "Motor bearing noise, recommend replacement", {
-      [`pumps:${pumpId}:Pump`]: makePhoto("Pump"),
+      [`pumps:${pumpId}:Pump`]: { dataUrl: makePhoto("Pump"), label: "Pump motor & serial plate" },
     }),
     plumbing: sec("GOOD"),
     automation: sec("GOOD"),
     cleaning: sec("GOOD"),
     safety: sec("GOOD"),
     decking: sec("MONITOR", "Minor cracking near coping", {
-      [`extra:${uid()}`]: makePhoto("Decking"),
+      [`extra:${uid()}`]: { dataUrl: makePhoto("Decking"), label: "Cracking near north coping" },
     }),
     spa: sec("GOOD"),
   };

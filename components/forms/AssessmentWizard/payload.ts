@@ -9,20 +9,13 @@
 import type { AssessmentData } from "@/lib/validation/assessment";
 import { CHEMISTRY_PARAMS, SALT_SANITIZER, SECTIONS, SPA_NA } from "./config";
 import { derivedSpaType, isSpaPresent, overallCondition } from "./summary";
-import type { AssessmentState } from "./state";
+import type { AssessmentState, Photo } from "./state";
 
-/** Human label for a stored photo slot key (handles fixed / per-unit / ad-hoc). */
-function photoLabel(key: string): string {
-  if (key.startsWith("extra:")) return "Photo";
-  const parts = key.split(":");
-  // per-unit keys look like `filters:<id>:Serial number`
-  return parts.length >= 3 ? parts[parts.length - 1] : key;
-}
-
-function photosOf(map: Record<string, string>): { label: string; dataUrl: string }[] {
+/** Photo label sent to the PDF is the tech's own (optional) label — empty if none. */
+function photosOf(map: Record<string, Photo>): { label: string; dataUrl: string }[] {
   return Object.entries(map)
-    .filter(([, dataUrl]) => Boolean(dataUrl))
-    .map(([key, dataUrl]) => ({ label: photoLabel(key), dataUrl }));
+    .filter(([, p]) => Boolean(p?.dataUrl))
+    .map(([, p]) => ({ label: (p.label ?? "").trim(), dataUrl: p.dataUrl }));
 }
 
 export function buildSubmitPayload(state: AssessmentState): AssessmentData {

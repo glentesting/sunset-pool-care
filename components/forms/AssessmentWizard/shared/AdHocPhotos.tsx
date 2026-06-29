@@ -35,9 +35,12 @@ export default function AdHocPhotos({
         <PhotoSlot
           key={key}
           label={`Photo ${i + 1}`}
-          value={sec.photos[key]}
+          photo={sec.photos[key]}
           onChange={(dataUrl) =>
             dispatch({ type: "setSectionPhoto", id: sectionId, slot: key, dataUrl })
+          }
+          onLabelChange={(label) =>
+            dispatch({ type: "setSectionPhotoLabel", id: sectionId, slot: key, label })
           }
         />
       ))}
@@ -45,7 +48,7 @@ export default function AdHocPhotos({
         key={pending}
         label="Add photo"
         required={required && empty}
-        value={undefined}
+        photo={undefined}
         onChange={(dataUrl) => {
           if (!dataUrl) return;
           dispatch({ type: "setSectionPhoto", id: sectionId, slot: pending, dataUrl });

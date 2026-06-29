@@ -139,7 +139,9 @@ const s = StyleSheet.create({
 
   thumbBox: { width: 92, marginLeft: 6, marginBottom: 4 },
   thumb: { width: 92, height: 68, objectFit: "cover", borderRadius: 3, borderWidth: 0.5, borderColor: LINE },
-  thumbCap: { fontSize: 6, color: GREY, marginTop: 1 },
+  // Optional caption = the tech's photo label. One line, ellipsized; omitted
+  // entirely when empty so it never adds a blank line or shifts spacing.
+  thumbCap: { fontSize: 6, color: GREY, marginTop: 2, width: 92, maxLines: 1, textOverflow: "ellipsis" },
 
   // Chemistry table
   tHead: { flexDirection: "row", paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: LINE },
@@ -187,7 +189,7 @@ function Thumbs({ photos }: { photos: Section["photos"] }) {
         <View key={i} style={s.thumbBox} wrap={false}>
           {/* eslint-disable-next-line jsx-a11y/alt-text */}
           <Image src={p.dataUrl} style={s.thumb} />
-          <Text style={s.thumbCap}>{p.label}</Text>
+          {p.label?.trim() ? <Text style={s.thumbCap}>{p.label.trim()}</Text> : null}
         </View>
       ))}
     </View>
