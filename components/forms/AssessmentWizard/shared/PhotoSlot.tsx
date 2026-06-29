@@ -91,7 +91,7 @@ export default function PhotoSlot({
               value={photo?.label ?? ""}
               maxLength={MAX_LABEL}
               onChange={(e) => onLabelChange(e.target.value.slice(0, MAX_LABEL))}
-              placeholder="Label this photo (optional)"
+              placeholder="Label (optional)"
               aria-label={`Label for ${label} photo`}
               className="mt-1.5 w-full rounded-md border border-wiz-field bg-white px-2 py-1.5 text-[13px] text-wiz-ink placeholder:text-wiz-ink/55 focus:border-wiz-accent focus:outline-none focus:ring-1 focus:ring-wiz-accent/30"
             />
