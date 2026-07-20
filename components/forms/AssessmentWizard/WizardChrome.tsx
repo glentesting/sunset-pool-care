@@ -18,7 +18,7 @@ const PHASE_SHORT: Record<Phase, string> = {
   "Property & Inspection": "Property",
   Configuration: "Config",
   "Inspection Sections": "Sections",
-  "Recommendations & Submit": "Report",
+  "Review & Submit": "Report",
 };
 
 export default function WizardChrome({ children }: { children: ReactNode }) {

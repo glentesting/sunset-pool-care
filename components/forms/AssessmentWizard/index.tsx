@@ -6,7 +6,6 @@ import WizardChrome from "./WizardChrome";
 import StepWelcome from "./steps/StepWelcome";
 import StepProperty from "./steps/StepProperty";
 import StepConfiguration from "./steps/StepConfiguration";
-import StepRecommendations from "./steps/StepRecommendations";
 import StepReview from "./steps/StepReview";
 
 import SectionPoolSurface from "./steps/sections/SectionPoolSurface";
@@ -16,7 +15,7 @@ import SectionPump from "./steps/sections/SectionPump";
 import SectionPlumbing from "./steps/sections/SectionPlumbing";
 import SectionAutomation from "./steps/sections/SectionAutomation";
 import SectionCleaning from "./steps/sections/SectionCleaning";
-import SectionSafety from "./steps/sections/SectionSafety";
+import SectionSecondary from "./steps/sections/SectionSecondary";
 import SectionDecking from "./steps/sections/SectionDecking";
 import SectionSpa from "./steps/sections/SectionSpa";
 
@@ -29,7 +28,7 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   plumbing: SectionPlumbing,
   automation: SectionAutomation,
   cleaning: SectionCleaning,
-  safety: SectionSafety,
+  secondary: SectionSecondary,
   decking: SectionDecking,
   spa: SectionSpa,
 };
@@ -39,7 +38,6 @@ const STEP_COMPONENTS: Record<string, React.ComponentType> = {
   welcome: StepWelcome,
   property: StepProperty,
   config: StepConfiguration,
-  recommendations: StepRecommendations,
   review: StepReview,
 };
 

@@ -202,7 +202,7 @@ function isNotable(sec: Section): boolean {
 }
 
 function AssessmentReport({ data, presentation }: { data: AssessmentData; presentation: ReportPresentation }) {
-  const { property, details, config, configPhotos, sections, chemistry, recommendations, overall, certification } = data;
+  const { property, details, config, configPhotos, sections, chemistry, overallNotes, overall, certification } = data;
   const order: ("GOOD" | "MONITOR" | "ATTENTION" | "N/A")[] = ["GOOD", "MONITOR", "ATTENTION", "N/A"];
 
   const notable = sections.filter(isNotable);
@@ -356,40 +356,12 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
           </View>
         ))}
 
-        {/* Recommendations */}
-        <Text style={s.sectionTitle}>Recommendations</Text>
-        <Text style={[s.recBlockTitle, { color: ATTENTION, marginTop: 2 }]}>Priority 1 — Recommend Promptly</Text>
-        {recommendations.p1.length === 0 ? (
-          <Text style={s.note}>None.</Text>
-        ) : (
-          recommendations.p1.map((r, i) => (
-            <View key={i} style={s.recItem}>
-              <View style={[s.recAccent, { backgroundColor: ATTENTION }]} />
-              <View style={s.recText}>
-                <Text style={{ fontFamily: "Helvetica-Bold" }}>{presentation.recP1[i] || r.item || "—"}</Text>
-                <Text style={s.recMeta}>{[r.investment && `Est. ${r.investment}`, r.timeframe].filter(Boolean).join("   ·   ")}</Text>
-              </View>
-            </View>
-          ))
-        )}
-        <Text style={[s.recBlockTitle, { color: MONITOR }]}>Priority 2 — Monitor / Within 90 Days</Text>
-        {recommendations.p2.length === 0 ? (
-          <Text style={s.note}>None.</Text>
-        ) : (
-          recommendations.p2.map((r, i) => (
-            <View key={i} style={s.recItem}>
-              <View style={[s.recAccent, { backgroundColor: MONITOR }]} />
-              <View style={s.recText}>
-                <Text style={{ fontFamily: "Helvetica-Bold" }}>{presentation.recP2[i] || r.item || "—"}</Text>
-                <Text style={s.recMeta}>{[r.investment && `Est. ${r.investment}`, r.timeframe].filter(Boolean).join("   ·   ")}</Text>
-              </View>
-            </View>
-          ))
-        )}
-        {presentation.overallNotes || recommendations.overallNotes ? (
+        {/* The Recommendations block is gone (spec 1.6) — pricing lives in the
+            client's Skimmer quote, not the report. */}
+        {presentation.overallNotes || overallNotes ? (
           <>
-            <Text style={[s.recBlockTitle, { color: NAVY }]}>Overall Assessment Notes</Text>
-            <Text>{presentation.overallNotes || recommendations.overallNotes}</Text>
+            <Text style={s.sectionTitle}>Overall Assessment Notes</Text>
+            <Text>{presentation.overallNotes || overallNotes}</Text>
           </>
         ) : null}
 
@@ -416,7 +388,7 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
 
 export async function generateAssessmentPdf(
   data: AssessmentData,
-  presentation: ReportPresentation = { polishedNotes: {}, recP1: [], recP2: [] }
+  presentation: ReportPresentation = { polishedNotes: {} }
 ): Promise<Buffer> {
   return renderToBuffer(<AssessmentReport data={data} presentation={presentation} />);
 }

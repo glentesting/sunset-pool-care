@@ -19,7 +19,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import type { Rating } from "./config";
+import type { BinaryAnswer, Rating } from "./config";
 
 // --- Shape ------------------------------------------------------------------
 
@@ -31,24 +31,32 @@ export type BodyOfWater = {
   lastWaterChangeUnknown: boolean;
 };
 
-export type RecItem = {
-  id: string;
-  item: string;
-  investment: string;
-  timeframe: string;
-  /** true while this item is auto-generated from a flagged rating (un-edited). */
-  auto?: boolean;
-  /** links an auto item back to its source, e.g. "section:pump" / "chem:ph". */
-  sourceKey?: string;
-};
-
-/** A flagged source that should seed a recommendation. */
-export type DesiredAutoRec = { sourceKey: string; text: string };
-
 /** Chemistry reading + rating; `auto` marks the rating as an un-overridden suggestion. */
 export type ChemistryEntry = { reading: string; rating?: Rating; auto?: boolean };
 
-export type Unit = { id: string; label: string };
+/**
+ * A repeatable equipment unit (filter / pump / interior light). The header
+ * carries make/model, type and manufacture date, e.g.
+ * "Filter 1 — Hayward 4030 · Cartridge · 2026-01".
+ */
+export type Unit = {
+  id: string;
+  makeModel: string;
+  unitType: string;
+  mfrDate: string;
+  /** Filters only — "Last Full Clean / Replacement" + its unknown-date dialog. */
+  lastClean?: string;
+  lastCleanUnknown?: boolean;
+  /** Editable recommendation captured when the date is marked Unknown. */
+  lastCleanNote?: string;
+};
+
+/** Per-item state. Condition items use `rating`; binary items use `answer`. */
+export type ItemState = {
+  rating?: Rating;
+  answer?: BinaryAnswer;
+  note: string;
+};
 
 /**
  * A captured photo. The optional homeowner-facing `label` rides on the object
@@ -58,10 +66,13 @@ export type Unit = { id: string; label: string };
 export type Photo = { dataUrl: string; label?: string };
 
 export type SectionState = {
-  rating?: Rating;
+  /** section-level note, separate from item notes */
   notes: string;
   /** slot key -> photo */
   photos: Record<string, Photo>;
+  /** itemId -> per-item rating/answer/note. The section rating is DERIVED from
+   *  these (worst wins) — sections no longer carry a manual rating. */
+  items: Record<string, ItemState>;
 };
 
 export type SubmitResults = {
@@ -83,6 +94,8 @@ export type AssessmentState = {
     poolSize: string;
     lastWaterChange: string;
     lastWaterChangeUnknown: boolean;
+    /** Editable recommendation captured when the date is marked Unknown. */
+    lastWaterChangeNote: string;
     additionalBodies: BodyOfWater[];
   };
   details: { session: string; date: string; time: string; inspectorName: string };
@@ -100,13 +113,8 @@ export type AssessmentState = {
   filters: Unit[];
   pumps: Unit[];
   spaType: string;
-  recommendations: {
-    p1: RecItem[];
-    p2: RecItem[];
-    overallNotes: string;
-    /** sourceKeys the tech removed — never auto-regenerate these. */
-    dismissed: string[];
-  };
+  /** Overall assessment notes — now lives on the final step (recs engine removed). */
+  overallNotes: string;
   // Inspector name + date are captured once on Property & Inspection (in
   // `details`) and reused on the certification — only the checkbox lives here.
   certification: { certified: boolean };
@@ -127,7 +135,6 @@ export type AssessmentState = {
 };
 
 type ListKey = "lights" | "filters" | "pumps";
-type RecTier = "p1" | "p2";
 
 type Action =
   | { type: "goto"; step: number }
@@ -143,19 +150,17 @@ type Action =
   | { type: "setConfigList"; field: "surfaces" | "sanitization" | "features"; value: string }
   | { type: "setConfigPhoto"; slot: string; dataUrl: string | null }
   | { type: "setConfigPhotoLabel"; slot: string; label: string }
-  | { type: "rateSection"; id: string; rating: Rating }
+  | { type: "setItemRating"; sectionId: string; itemId: string; rating: Rating }
+  | { type: "setItemAnswer"; sectionId: string; itemId: string; answer: BinaryAnswer }
+  | { type: "setItemNote"; sectionId: string; itemId: string; note: string }
   | { type: "setSectionNotes"; id: string; notes: string }
   | { type: "setSectionPhoto"; id: string; slot: string; dataUrl: string | null }
   | { type: "setSectionPhotoLabel"; id: string; slot: string; label: string }
   | { type: "setChemistry"; key: string; patch: Partial<ChemistryEntry> }
-  | { type: "addUnit"; list: ListKey; label: string }
-  | { type: "updateUnit"; list: ListKey; id: string; label: string }
+  | { type: "addUnit"; list: ListKey }
+  | { type: "updateUnit"; list: ListKey; id: string; patch: Partial<Omit<Unit, "id">> }
   | { type: "removeUnit"; list: ListKey; id: string }
   | { type: "setSpaType"; value: string }
-  | { type: "addRec"; tier: RecTier }
-  | { type: "updateRec"; tier: RecTier; id: string; patch: Partial<RecItem> }
-  | { type: "removeRec"; tier: RecTier; id: string }
-  | { type: "syncAutoRecs"; p1: DesiredAutoRec[]; p2: DesiredAutoRec[] }
   | { type: "setOverallNotes"; notes: string }
   | { type: "setCertification"; patch: Partial<AssessmentState["certification"]> }
   | { type: "submitStart" }
@@ -170,7 +175,11 @@ const uid = () =>
     : `id-${Math.random().toString(36).slice(2)}`;
 
 function emptySection(): SectionState {
-  return { notes: "", photos: {} };
+  return { notes: "", photos: {}, items: {} };
+}
+
+function emptyItem(): ItemState {
+  return { note: "" };
 }
 
 export function initialState(): AssessmentState {
@@ -186,6 +195,7 @@ export function initialState(): AssessmentState {
       poolSize: "",
       lastWaterChange: "",
       lastWaterChangeUnknown: false,
+      lastWaterChangeNote: "",
       additionalBodies: [],
     },
     details: { session: "", date: "", time: "", inspectorName: "" },
@@ -196,7 +206,7 @@ export function initialState(): AssessmentState {
     filters: [],
     pumps: [],
     spaType: "",
-    recommendations: { p1: [], p2: [], overallNotes: "", dismissed: [] },
+    overallNotes: "",
     certification: { certified: false },
     submitting: false,
     submitted: false,
@@ -318,11 +328,43 @@ function reducer(s: AssessmentState, a: Action): AssessmentState {
         config: { ...s.config, photos: withPhotoLabel(s.config.photos, a.slot, a.label) },
       };
 
-    case "rateSection":
+    // Items: tapping the selected state again clears it back to blank (spec 1.2 —
+    // no default, unselected renders nothing on the report).
+    case "setItemRating": {
+      const cur = section(s, a.sectionId);
+      const item = cur.items[a.itemId] ?? emptyItem();
+      const rating = item.rating === a.rating ? undefined : a.rating;
       return {
         ...s,
-        sections: { ...s.sections, [a.id]: { ...section(s, a.id), rating: a.rating } },
+        sections: {
+          ...s.sections,
+          [a.sectionId]: { ...cur, items: { ...cur.items, [a.itemId]: { ...item, rating } } },
+        },
       };
+    }
+    case "setItemAnswer": {
+      const cur = section(s, a.sectionId);
+      const item = cur.items[a.itemId] ?? emptyItem();
+      const answer = item.answer === a.answer ? undefined : a.answer;
+      return {
+        ...s,
+        sections: {
+          ...s.sections,
+          [a.sectionId]: { ...cur, items: { ...cur.items, [a.itemId]: { ...item, answer } } },
+        },
+      };
+    }
+    case "setItemNote": {
+      const cur = section(s, a.sectionId);
+      const item = cur.items[a.itemId] ?? emptyItem();
+      return {
+        ...s,
+        sections: {
+          ...s.sections,
+          [a.sectionId]: { ...cur, items: { ...cur.items, [a.itemId]: { ...item, note: a.note } } },
+        },
+      };
+    }
     case "setSectionNotes":
       return {
         ...s,
@@ -358,11 +400,14 @@ function reducer(s: AssessmentState, a: Action): AssessmentState {
     }
 
     case "addUnit":
-      return { ...s, [a.list]: [...s[a.list], { id: uid(), label: a.label }] };
+      return {
+        ...s,
+        [a.list]: [...s[a.list], { id: uid(), makeModel: "", unitType: "", mfrDate: "" }],
+      };
     case "updateUnit":
       return {
         ...s,
-        [a.list]: s[a.list].map((u) => (u.id === a.id ? { ...u, label: a.label } : u)),
+        [a.list]: s[a.list].map((u) => (u.id === a.id ? { ...u, ...a.patch } : u)),
       };
     case "removeUnit":
       return { ...s, [a.list]: s[a.list].filter((u) => u.id !== a.id) };
@@ -370,81 +415,8 @@ function reducer(s: AssessmentState, a: Action): AssessmentState {
     case "setSpaType":
       return { ...s, spaType: a.value };
 
-    case "addRec":
-      return {
-        ...s,
-        recommendations: {
-          ...s.recommendations,
-          [a.tier]: [
-            ...s.recommendations[a.tier],
-            { id: uid(), item: "", investment: "", timeframe: "" },
-          ],
-        },
-      };
-    case "updateRec":
-      return {
-        ...s,
-        recommendations: {
-          ...s.recommendations,
-          [a.tier]: s.recommendations[a.tier].map((r) =>
-            // Editing an auto item promotes it to manual so it sticks and won't
-            // be regenerated or wiped on the next sync.
-            r.id === a.id ? { ...r, ...a.patch, auto: false } : r
-          ),
-        },
-      };
-    case "removeRec": {
-      const removed = s.recommendations[a.tier].find((r) => r.id === a.id);
-      const dismissed =
-        removed?.auto && removed.sourceKey
-          ? [...s.recommendations.dismissed, removed.sourceKey]
-          : s.recommendations.dismissed;
-      return {
-        ...s,
-        recommendations: {
-          ...s.recommendations,
-          dismissed,
-          [a.tier]: s.recommendations[a.tier].filter((r) => r.id !== a.id),
-        },
-      };
-    }
-    case "syncAutoRecs": {
-      const norm = (t: string) => t.trim().toLowerCase();
-      const mergeTier = (tier: RecTier, desired: DesiredAutoRec[]): RecItem[] => {
-        const current = s.recommendations[tier];
-        // Keep everything the tech owns; rebuild auto items from current ratings.
-        const manual = current.filter((r) => !r.auto);
-        const manualKeys = new Set(manual.map((r) => r.sourceKey).filter(Boolean));
-        const manualTexts = new Set(manual.map((r) => norm(r.item)));
-        const defaultTimeframe = tier === "p1" ? "Within 30 days" : "Monitor";
-        const fresh = desired
-          .filter(
-            (d) =>
-              !s.recommendations.dismissed.includes(d.sourceKey) &&
-              !manualKeys.has(d.sourceKey) &&
-              !manualTexts.has(norm(d.text))
-          )
-          .map((d) => ({
-            id: uid(),
-            item: d.text,
-            investment: "",
-            timeframe: defaultTimeframe,
-            auto: true,
-            sourceKey: d.sourceKey,
-          }));
-        return [...manual, ...fresh];
-      };
-      return {
-        ...s,
-        recommendations: {
-          ...s.recommendations,
-          p1: mergeTier("p1", a.p1),
-          p2: mergeTier("p2", a.p2),
-        },
-      };
-    }
     case "setOverallNotes":
-      return { ...s, recommendations: { ...s.recommendations, overallNotes: a.notes } };
+      return { ...s, overallNotes: a.notes };
 
     case "setCertification":
       return { ...s, certification: { ...s.certification, ...a.patch } };
@@ -460,7 +432,11 @@ function reducer(s: AssessmentState, a: Action): AssessmentState {
 
 // --- Persistence + prefill --------------------------------------------------
 
-const STORAGE_KEY = "spc-assessment-draft-v1";
+// Bumped for the checklist rebuild. The old shape (one manual rating + one note
+// per section) has no meaningful mapping onto ~90 independently-rated items, so
+// pre-rebuild drafts are DISCARDED rather than migrated — the key bump does that
+// cleanly and can't crash the load. (Spec 1.1 allows a one-way drop; flagged.)
+const STORAGE_KEY = "spc-assessment-draft-v2-items";
 
 function loadDraft(): AssessmentState | null {
   if (typeof window === "undefined") return null;
@@ -468,23 +444,21 @@ function loadDraft(): AssessmentState | null {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<AssessmentState>;
-    // Merge over a fresh base so older drafts missing new keys don't crash.
+    // Merge over a fresh base so drafts missing newer keys don't crash.
     const base = initialState();
     const draft = { ...base, ...parsed };
-    // recommendations is nested — make sure newer keys (dismissed) survive a
-    // resume of a pre-v2 draft.
-    draft.recommendations = { ...base.recommendations, ...parsed.recommendations };
-    // certification slimmed to { certified } in v3 — keep only that from older
-    // drafts (which also carried inspectorName/date, now sourced from details).
     draft.certification = { certified: Boolean(parsed.certification?.certified) };
-    // Photos became { dataUrl, label } objects — migrate older drafts that stored
-    // them as bare data-URL strings so labels can ride along.
+    // Photos are { dataUrl, label } objects; be defensive about older/partial shapes.
     draft.config = { ...draft.config, photos: normalizePhotos(draft.config?.photos) };
-    const migratedSections: Record<string, SectionState> = {};
+    const safeSections: Record<string, SectionState> = {};
     for (const [id, sec] of Object.entries(draft.sections ?? {})) {
-      migratedSections[id] = { ...sec, photos: normalizePhotos(sec.photos) };
+      safeSections[id] = {
+        notes: sec?.notes ?? "",
+        photos: normalizePhotos(sec?.photos),
+        items: sec?.items ?? {},
+      };
     }
-    draft.sections = migratedSections;
+    draft.sections = safeSections;
     // A finished submission is not a resumable draft.
     if (draft.submitted) return null;
     return draft;

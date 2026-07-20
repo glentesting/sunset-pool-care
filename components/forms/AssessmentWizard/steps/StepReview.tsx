@@ -2,6 +2,7 @@
 import { useAssessment, clearDraft, type SubmitResults } from "../state";
 import { canSubmit, overallCondition, sectionRollup, type OverallKey } from "../summary";
 import { buildSubmitPayload } from "../payload";
+import NotesField from "../shared/NotesField";
 import type { Rating } from "../config";
 
 const RATING_DOT: Record<Rating, string> = {
@@ -118,6 +119,17 @@ export default function StepReview() {
             </li>
           ))}
         </ul>
+      </div>
+
+      {/* Overall assessment notes — moved here when the Recommendations step was
+          removed (spec 1.6). Final step is now: notes → certification → submit. */}
+      <div className="rounded-xl border border-wiz-line p-4">
+        <NotesField
+          label="Overall Assessment Notes"
+          value={state.overallNotes}
+          onChange={(notes) => dispatch({ type: "setOverallNotes", notes })}
+          placeholder="Anything the homeowner should know overall…"
+        />
       </div>
 
       {/* Certification — inspector + date captured once on Property & Inspection */}

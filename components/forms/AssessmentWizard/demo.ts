@@ -2,9 +2,14 @@
  * Demo / sample-data loader — a QA + demo convenience, GATED behind ?demo=1.
  *
  * buildDemoState() returns a complete, valid, mixed-condition assessment using
- * the REAL smart functions (suggestRating for chemistry, buildDesiredAutoRecs
- * for recommendations) so the demo exercises the actual logic rather than
- * faking it. It lands the wizard on Review & Submit, ready to generate a PDF.
+ * the REAL smart functions (suggestRating for chemistry, the derived section
+ * rating) so the demo exercises the actual logic rather than faking it. It lands
+ * the wizard on Review & Submit, ready to generate a PDF.
+ *
+ * NOTE (rebuild Pass 1): section ratings are DERIVED from line items now, and
+ * the item lists are empty until Pass 2 authors them — so only Water Chemistry
+ * (which derives from its readings) carries a rating here. Section notes and
+ * photos still exercise the polish + caption paths. Pass 2 restores the mix.
  *
  * This file injects sample state only — it changes nothing in the normal tech
  * flow. The gate (isDemoMode) and the button live behind ?demo=1.
@@ -14,10 +19,9 @@ import {
   initialState,
   type AssessmentState,
   type Photo,
-  type RecItem,
   type SectionState,
 } from "./state";
-import { buildDesiredAutoRecs, derivedSpaType, getActiveSteps } from "./summary";
+import { derivedSpaType, getActiveSteps } from "./summary";
 
 const uid = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
@@ -54,6 +58,7 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
     poolSize: "18,000 gal",
     lastWaterChange: "Spring 2025",
     lastWaterChangeUnknown: false,
+    lastWaterChangeNote: "",
     additionalBodies: [],
   };
 
@@ -67,15 +72,19 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
   s.config = {
     surfaces: ["Pebble"],
     sanitization: ["Salt System"],
-    features: ["Attached Spa", "Deck Jets"],
+    features: ["Deck Jets"],
     photos: {},
   };
 
   // One filter + one pump so their labeled photo slots exist.
   const filterId = uid();
   const pumpId = uid();
-  s.filters = [{ id: filterId, label: "Cartridge Filter" }];
-  s.pumps = [{ id: pumpId, label: "Variable-Speed Pump" }];
+  s.filters = [
+    { id: filterId, makeModel: "Hayward 4030", unitType: "Cartridge", mfrDate: "2021-04" },
+  ];
+  s.pumps = [
+    { id: pumpId, makeModel: "Pentair IntelliFlo", unitType: "Variable Speed", mfrDate: "2019-08" },
+  ];
 
   // Chemistry readings → let the real auto-rating decide each rating.
   // (FC 1.5 lands ATTENTION vs the 3–5 band; the rest land GOOD.)
@@ -92,60 +101,40 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
     s.chemistry[p.key] = { reading, rating: suggestRating(p, reading), auto: true };
   }
 
-  // Section ratings — a realistic mix. Flagged sections carry a photo so the
-  // photo-enforcement gate passes and the PDF shows a shot next to the rating.
-  const sec = (
-    rating: SectionState["rating"],
-    notes = "",
-    photos: Record<string, Photo> = {}
-  ): SectionState => ({ rating, notes, photos });
+  // Section notes + photos. Ratings are derived (see the note at the top), so
+  // there's nothing to set by hand here.
+  const sec = (notes = "", photos: Record<string, Photo> = {}): SectionState => ({
+    notes,
+    photos,
+    items: {},
+  });
 
   // A couple of Maria's photos carry slightly-misspelled raw tech labels (so
   // ?demo=1 previews the label cleanup); the filter shot is left unlabeled — a
   // slotted photo, so it previews the slot-name caption fallback ("Filter").
   s.sections = {
-    surface: sec("GOOD"),
-    chemistry: sec("GOOD"),
-    filtration: sec("MONITOR", "Pressure slightly high, due for a clean", {
+    surface: sec(),
+    chemistry: sec(),
+    filtration: sec("Pressure slightly high, due for a clean", {
       [`filters:${filterId}:Filter`]: { dataUrl: makePhoto("Filter"), label: "" },
     }),
-    pump: sec("ATTENTION", "Motor bearing noise, recommend replacement", {
+    pump: sec("Motor bearing noise, recommend replacement", {
       [`pumps:${pumpId}:Pump`]: { dataUrl: makePhoto("Pump"), label: "pump mtr & serial plate" },
     }),
-    plumbing: sec("GOOD"),
-    automation: sec("GOOD"),
-    cleaning: sec("GOOD"),
-    safety: sec("GOOD"),
-    decking: sec("MONITOR", "Minor cracking near coping", {
+    plumbing: sec(),
+    automation: sec(),
+    cleaning: sec(),
+    secondary: sec(),
+    decking: sec("Minor cracking near coping", {
       [`extra:${uid()}`]: { dataUrl: makePhoto("Decking"), label: "crackng nr coping" },
     }),
-    spa: sec("GOOD"),
+    spa: sec(),
   };
 
   s.spaType = derivedSpaType(s); // "Attached (shared water)" for Pool/Spa
 
-  // Recommendations — populate from the flagged items exactly as syncAutoRecs
-  // would on entering the step (ATTENTION → P1, MONITOR → P2).
-  const desired = buildDesiredAutoRecs(s);
-  const toItems = (
-    arr: { sourceKey: string; text: string }[],
-    timeframe: string
-  ): RecItem[] =>
-    arr.map((d) => ({
-      id: uid(),
-      item: d.text,
-      investment: "",
-      timeframe,
-      auto: true,
-      sourceKey: d.sourceKey,
-    }));
-  s.recommendations = {
-    p1: toItems(desired.p1, "Within 30 days"),
-    p2: toItems(desired.p2, "Monitor"),
-    overallNotes:
-      "Pool is in generally good shape; a few items flagged for service — see recommendations.",
-    dismissed: [],
-  };
+  s.overallNotes =
+    "Pool is in generally good shape; a few items flagged for service — see the notes above.";
 
   s.certification = { certified: true };
 

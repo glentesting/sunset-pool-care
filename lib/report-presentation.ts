@@ -5,7 +5,6 @@
  * Polishes EVERY place a tech's raw words reach the customer — one place owns it,
  * with rules scoped per surface so the model doesn't over-help:
  *   - every section note (Good included)        → one clean sentence (polishNote)
- *   - every recommendation item (P1/P2)         → cleanup, no timing (polishRecItem)
  *   - the Overall Assessment Notes              → typo/grammar cleanup (polishText)
  *   - every photo label                         → tag-level cleanup only (polishLabel)
  *   - plus the structured summary paragraph
@@ -23,34 +22,28 @@
  */
 import "server-only";
 import type { AssessmentData } from "@/lib/validation/assessment";
-import { polishLabel, polishNote, polishRecItem, polishText, summarize } from "@/lib/anthropic";
+// polishRecItem stays in lib/anthropic.ts but is UNUSED — the recommendations
+// engine was removed (spec 1.6) and the prompt is deliberately kept on the shelf.
+import { polishLabel, polishNote, polishText, summarize } from "@/lib/anthropic";
 
 export type ReportPresentation = {
   summary?: string;
   /** sectionId -> homeowner-facing sentence (falls back to the raw note) */
   polishedNotes: Record<string, string>;
-  /** polished recommendation item text, aligned by index to recommendations.p1 / .p2 */
-  recP1: string[];
-  recP2: string[];
   /** polished Overall Assessment Notes (falls back to raw; undefined if none) */
   overallNotes?: string;
 };
 
+/** Section titles (with their note, if any) at a given rating — summary facts. */
+function flaggedTitles(data: AssessmentData, rating: "ATTENTION" | "MONITOR"): string[] {
+  return data.sections
+    .filter((s) => s.rating === rating)
+    .map((s) => (s.notes.trim() ? `${s.title} — ${s.notes.trim()}` : s.title));
+}
+
 export async function buildReportPresentation(data: AssessmentData): Promise<ReportPresentation> {
   try {
     const provided = data.presentation;
-
-    // Map sectionId -> its recommendation timeframe (a computed fact). The rec's
-    // sourceKey ties it back to its section, e.g. "section:pump".
-    const timeframeBySection: Record<string, string> = {};
-    for (const r of [...data.recommendations.p1, ...data.recommendations.p2]) {
-      const key = r.sourceKey;
-      const tf = r.timeframe?.trim();
-      if (key?.startsWith("section:") && tf) {
-        const id = key.slice("section:".length);
-        if (!timeframeBySection[id]) timeframeBySection[id] = tf;
-      }
-    }
 
     // Every section note that has text (Good included) → one clean sentence.
     const withNotes = data.sections.filter((s) => s.notes.trim());
@@ -62,24 +55,11 @@ export async function buildReportPresentation(data: AssessmentData): Promise<Rep
           sectionTitle: s.title,
           rating: s.rating ?? "",
           rawNote: s.notes.trim(),
-          timeframe: timeframeBySection[s.id], // undefined → polish from note alone
         });
         return [s.id, polished ?? s.notes.trim()] as const; // fallback: raw note
       })
     );
     const polishedNotes = Object.fromEntries(noteEntries);
-
-    // Recommendation item text — provided (demo, by sourceKey) wins, else polish.
-    const polishRec = async (r: { item: string; sourceKey?: string }): Promise<string> => {
-      const pre = r.sourceKey ? provided?.recBySourceKey?.[r.sourceKey]?.trim() : undefined;
-      if (pre) return pre;
-      if (!r.item.trim()) return r.item;
-      return (await polishRecItem(r.item)) ?? r.item;
-    };
-    const [recP1, recP2] = await Promise.all([
-      Promise.all(data.recommendations.p1.map(polishRec)),
-      Promise.all(data.recommendations.p2.map(polishRec)),
-    ]);
 
     // Photo labels — tightest cleanup (tags, not sentences). Resolve each distinct
     // non-empty label (demo-provided wins, else polishLabel, else raw) and mutate
@@ -111,8 +91,8 @@ export async function buildReportPresentation(data: AssessmentData): Promise<Rep
 
     // Overall Assessment Notes.
     let overallNotes = provided?.overallNotes?.trim() || undefined;
-    if (!overallNotes && data.recommendations.overallNotes.trim()) {
-      const raw = data.recommendations.overallNotes.trim();
+    if (!overallNotes && data.overallNotes.trim()) {
+      const raw = data.overallNotes.trim();
       overallNotes = (await polishText(raw)) ?? raw;
     }
 
@@ -123,13 +103,15 @@ export async function buildReportPresentation(data: AssessmentData): Promise<Rep
         (await summarize({
           overall: data.overall.label,
           goodCount: data.overall.counts.GOOD,
-          priority1: data.recommendations.p1.map((r) => r.item).filter(Boolean),
-          priority2: data.recommendations.p2.map((r) => r.item).filter(Boolean),
+          // Facts for the summary now come straight from the sections — the
+          // recommendations engine that used to supply them is gone.
+          priority1: flaggedTitles(data, "ATTENTION"),
+          priority2: flaggedTitles(data, "MONITOR"),
         })) ?? undefined;
     }
 
-    return { summary, polishedNotes, recP1, recP2, overallNotes };
+    return { summary, polishedNotes, overallNotes };
   } catch {
-    return { polishedNotes: {}, recP1: [], recP2: [] };
+    return { polishedNotes: {} };
   }
 }
