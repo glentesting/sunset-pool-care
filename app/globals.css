@@ -9,10 +9,12 @@
  *
  * Palette intent:
  *   navy   → text, headings, the process band + footer (accent dark, not bg)
- *   teal   → POOL-AQUA: the primary brand accent — links, eyebrows, active
- *            states, the highlighted service node, the map, water bands
- *   orange → SUNSET CORAL: primary action buttons + warm accent moments
- *   gold   → amber partner to coral, so warm bands read as a gradient not a slab
+ *   teal   → POOL-AQUA: a SURFACE tint only (soft background bands, map/water) —
+ *            not an accent, eyebrow, or highlight color
+ *   orange → SUNSET ORANGE (#F97316): THE one accent — every eyebrow, link,
+ *            highlight, the featured node, CTAs. Matches the logo + Brian's guides.
+ *   gold   → rare supporting warm note (review stars + the CTA gradient's lighter
+ *            end) — do not scatter
  *   sand   → soft aqua water-tint — the recurring ALTERNATE surface (white is
  *            primary). Reads like clean water; the warmth stays in the accents.
  *   water  → slightly deeper aqua for map/blob fills
@@ -35,12 +37,15 @@
   /* Pool-aqua — primary brand accent. Bright clean aqua; dark for text-links. */
   --color-teal: #16b1c4;
   --color-teal-dark: #0e8a9a;
-  /* Sunset coral — reserved for primary actions + warm accents. */
-  --color-orange: #ec6a45;
-  --color-orange-dark: #d4542f;
-  /* Gold/amber — coral's partner for warm sunset gradients. */
-  --color-gold: #f3a838;
-  --color-gold-dark: #d98e26;
+  /* Sunset orange — THE one accent (matches the brand/logo + Brian's guides).
+     #F97316 for fills and text on dark; #EA580C (same hue, darker) for accent
+     text on light surfaces so small eyebrows/links clear contrast. */
+  --color-orange: #F97316;
+  --color-orange-dark: #EA580C;
+  /* Gold — rare, supporting warm note only (review stars + the CTA gradient's
+     lighter end). Not a general accent; do not scatter. */
+  --color-gold: #FACC15;
+  --color-gold-dark: #EAB308;
   /* Soft aqua water-tint — the recurring ALTERNATE surface (white stays
      primary). Swapped from warm cream so the page reads like clean water with
      sunset-warm accents. One-token revert: restore #faf7f1 / #f1ebe0. */

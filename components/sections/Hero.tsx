@@ -10,7 +10,7 @@ const TRUST = ["Licensed & Insured", "15+ Years", "Weekly Photo Reports"];
 /**
  * Hero — a warm golden-hour pool photo with a light-touch legibility gradient
  * (not a heavy dark slab). Copy on the left, a bright white quote-capture card
- * on the right: a zip field + coral button that routes into /quote, plus a call
+ * on the right: a zip field + orange button that routes into /quote, plus a call
  * line. Trust pills + the Google rating sit beneath the copy.
  */
 export default function Hero() {

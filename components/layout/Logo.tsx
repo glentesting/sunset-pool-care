@@ -1,6 +1,6 @@
 /**
  * SPC sunset wordmark — a lightweight inline SVG mark used in page chrome
- * (navbar + footer). A bold gradient half-sun (coral → gold) over two aqua water
+ * (navbar + footer). A bold gradient half-sun (orange → gold) over two aqua water
  * lines, beside the "SUNSET POOL CARE" wordmark. Scales crisply at any size.
  *
  * `tone="navy"` → dark wordmark for light surfaces (navbar).
@@ -25,11 +25,11 @@ export default function Logo({
       role="img"
       aria-label="Sunset Pool Care"
     >
-      {/* coral → gold half-sun gradient (hex mirrors --color-orange / --color-gold) */}
+      {/* orange → gold half-sun gradient (hex mirrors --color-orange / --color-gold) */}
       <defs>
         <linearGradient id="spcSun" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ec6a45" />
-          <stop offset="1" stopColor="#f3a838" />
+          <stop offset="0" stopColor="#F97316" />
+          <stop offset="1" stopColor="#FACC15" />
         </linearGradient>
       </defs>
 

@@ -1,7 +1,7 @@
 /**
  * Process — a clean, flat deep-navy band (calmer and more premium than a
  * gradient). Four connected steps with a dotted connector the circular markers
- * sit on top of. Eyebrow + numerals use the one coral accent, identical to every
+ * sit on top of. Eyebrow + numerals use the one orange accent, identical to every
  * other section; white text stays fully legible.
  */
 const STEPS = [

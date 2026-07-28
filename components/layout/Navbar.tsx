@@ -9,7 +9,7 @@ import MobileMenu from "./MobileMenu";
  * Sticky top nav, pinned flush to the very top. Solid white with a real shadow
  * so it reads as a layer floating ABOVE the page (content scrolls under it),
  * never merging into the hero or cards behind it. Navy sunset wordmark, aqua
- * link hovers, one coral CTA.
+ * link hovers, one orange CTA.
  */
 export default function Navbar() {
   return (
