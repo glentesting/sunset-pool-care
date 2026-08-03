@@ -134,15 +134,21 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
   // ?demo=1 previews the label cleanup); the filter shot is left unlabeled — a
   // slotted photo, so it previews the slot-name caption fallback ("Filter").
   s.sections = {
-    surface: sec({
-      cond: cond("GOOD"),
-      stain: bin("no"),
-      algae: bin("no"),
-      tile: cond("MONITOR", "Some calcium buildup along the waterline"),
-      coping: cond("GOOD"),
-      steps: cond("GOOD"),
+    surface: sec(
+      {
+        cond: cond("GOOD"),
+        stain: bin("no"),
+        algae: bin("no"),
+        tile: cond("MONITOR", "Some calcium buildup along the waterline"),
+        coping: cond("GOOD"),
+        steps: cond("GOOD"),
+      },
+      "",
+      { "Pool (overall)": { dataUrl: makePhoto("Pool"), label: "" } }
+    ),
+    chemistry: sec({}, "", {
+      "Test Strip": { dataUrl: makePhoto("Test Strip"), label: "" },
     }),
-    chemistry: sec({}),
     filtration: sec(
       {
         [`${filterId}:tank`]: cond("GOOD"),
@@ -172,26 +178,34 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
       autofill: cond("GOOD"),
       level: cond("GOOD"),
     }),
-    automation: sec({
-      timer: cond("GOOD"),
-      panel: cond("GOOD"),
-      saltcell: cond("MONITOR", "Output a little low, cell may be near end of life"),
-      gfci: bin("yes"),
-      rem: cond("GOOD"),
-      [`${lightId}:cond`]: cond("GOOD"),
-    }),
+    automation: sec(
+      {
+        timer: cond("GOOD"),
+        panel: cond("GOOD"),
+        saltcell: cond("MONITOR", "Output a little low, cell may be near end of life"),
+        gfci: bin("yes"),
+        rem: cond("GOOD"),
+        [`${lightId}:cond`]: cond("GOOD"),
+      },
+      "",
+      { [`extra:${uid()}`]: { dataUrl: makePhoto("Salt Cell"), label: "salt cell" } }
+    ),
     cleaning: sec({
       move: cond("GOOD"),
       cond: cond("GOOD"),
       hose: cond("GOOD"),
       booster: cond("GOOD"),
     }),
-    secondary: sec({
-      heater: cond("GOOD"),
-      heatpump: cond("GOOD"),
-      pads: cond("GOOD"),
-      [`${extraId}:cond`]: cond("MONITOR", "Runs but cycles often"),
-    }),
+    secondary: sec(
+      {
+        heater: cond("GOOD"),
+        heatpump: cond("GOOD"),
+        pads: cond("GOOD"),
+        [`${extraId}:cond`]: cond("MONITOR", "Runs but cycles often"),
+      },
+      "",
+      { [`extra:${uid()}`]: { dataUrl: makePhoto("Equipment"), label: "" } }
+    ),
     decking: sec(
       {
         surf: cond("GOOD"),
@@ -240,7 +254,7 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
       "section:decking": "There's some minor cracking near the coping.",
     },
     overallNotes:
-      "Pool's in good shape overall — a few items flagged for service, see the recommendations below.",
+      "Pool's in good shape overall — a few items are flagged for service in the sections above.",
     // Raw misspelled photo labels → cleaned tags (so ?demo=1 shows the label
     // rule working without a key). Tag cleanup only — not reworded to sentences.
     photoLabels: {

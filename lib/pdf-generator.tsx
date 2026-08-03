@@ -159,6 +159,117 @@ const s = StyleSheet.create({
   footer: { position: "absolute", bottom: 22, left: 40, right: 40, fontSize: 7, color: GREY, textAlign: "center", borderTopWidth: 0.5, borderTopColor: LINE, paddingTop: 6 },
 });
 
+// Per-item report styles (Pass 3).
+const r = StyleSheet.create({
+  secBlock: { marginBottom: 7 },
+  secHead: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: LINE,
+    paddingBottom: 2,
+    marginTop: 11,
+    marginBottom: 3,
+  },
+  secTitle: { fontSize: 10, fontFamily: "Helvetica-Bold", color: NAVY },
+  itemRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingVertical: 1.6,
+    borderBottomWidth: 0.25,
+    borderBottomColor: LINE,
+  },
+  itemMain: { flex: 1, paddingRight: 10 },
+  itemLabel: { fontSize: 9 },
+  itemNote: { fontSize: 8, color: GREY, marginTop: 0.5 },
+  unitHead: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: TEAL, marginTop: 5, marginBottom: 1 },
+  unitNote: { fontSize: 8, color: GREY, marginBottom: 1 },
+  secNote: { fontSize: 8.5, color: GREY, marginTop: 3, lineHeight: 1.4 },
+  badge: { fontSize: 8.5, fontFamily: "Helvetica-Bold", minWidth: 34, textAlign: "right" },
+  photoStrip: { flexDirection: "row", flexWrap: "wrap", marginTop: 4 },
+  bandCaption: { fontSize: 6, color: GREY, textAlign: "center", marginTop: 1 },
+});
+
+/** Item badge: binary items show YES/NO; condition items show the rating word. */
+function ItemBadge({ status, answer }: { status?: string; answer?: "yes" | "no" }) {
+  const color = status ? RATING_COLOR[status] : STONE;
+  const text = answer ? answer.toUpperCase() : status ? RATING_LABEL[status] : "—";
+  return <Text style={[r.badge, { color }]}>{text}</Text>;
+}
+
+type Item = Section["items"][number];
+
+function ItemRows({ items }: { items: Item[] }) {
+  return (
+    <>
+      {items.map((it, i) => {
+        const label = it.reading
+          ? `${it.label} — ${it.reading}${it.readingUnit ? ` ${it.readingUnit}` : ""}`
+          : it.label;
+        return (
+          <View key={i} style={r.itemRow} wrap={false}>
+            <View style={r.itemMain}>
+              <Text style={r.itemLabel}>{label}</Text>
+              {it.note?.trim() ? <Text style={r.itemNote}>{it.note.trim()}</Text> : null}
+            </View>
+            <ItemBadge status={it.status} answer={it.answer} />
+          </View>
+        );
+      })}
+    </>
+  );
+}
+
+function PhotoStrip({ photos }: { photos: Section["photos"] }) {
+  if (!photos.length) return null;
+  return (
+    <View style={r.photoStrip}>
+      {photos.map((p, i) => (
+        <View key={i} style={s.thumbBox} wrap={false}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
+          <Image src={p.dataUrl} style={s.thumb} />
+          {p.label?.trim() ? <Text style={s.thumbCap}>{p.label.trim()}</Text> : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** One inspection section as per-item rows (Pass 3). Renders nothing when the
+ *  section has no rated items, units, note or photos. */
+function SectionBlock({ sec, note }: { sec: Section; note: string }) {
+  const hasContent =
+    sec.items.length > 0 ||
+    sec.units.some((u) => u.items.length > 0 || u.note?.trim()) ||
+    note.trim() ||
+    sec.photos.length > 0;
+  if (!hasContent) return null;
+
+  return (
+    <View style={r.secBlock}>
+      <View style={r.secHead} wrap={false}>
+        <Text style={r.secTitle}>{sec.title}</Text>
+        <RatingTag rating={sec.rating} />
+      </View>
+
+      {sec.items.length > 0 && <ItemRows items={sec.items} />}
+
+      {sec.units.map((u, i) => (
+        <View key={i}>
+          <Text style={r.unitHead}>{u.heading}</Text>
+          {u.note?.trim() ? <Text style={r.unitNote}>{u.note.trim()}</Text> : null}
+          <ItemRows items={u.items} />
+        </View>
+      ))}
+
+      {note.trim() ? <Text style={r.secNote}>{note.trim()}</Text> : null}
+      <PhotoStrip photos={sec.photos} />
+    </View>
+  );
+}
+
 function Info({ label, value }: { label: string; value?: string }) {
   if (!value) return null;
   return (
@@ -196,17 +307,8 @@ function Thumbs({ photos }: { photos: Section["photos"] }) {
   );
 }
 
-/** A section is "notable" (gets an expanded block) if flagged, noted, or has a photo. */
-function isNotable(sec: Section): boolean {
-  return sec.rating === "MONITOR" || sec.rating === "ATTENTION" || !!sec.notes || sec.photos.length > 0;
-}
-
 function AssessmentReport({ data, presentation }: { data: AssessmentData; presentation: ReportPresentation }) {
-  const { property, details, config, configPhotos, sections, chemistry, overallNotes, overall, certification } = data;
-  const order: ("GOOD" | "MONITOR" | "ATTENTION" | "N/A")[] = ["GOOD", "MONITOR", "ATTENTION", "N/A"];
-
-  const notable = sections.filter(isNotable);
-  const plain = sections.filter((sec) => !isNotable(sec));
+  const { property, details, config, configPhotos, configOptions, sections, chemistry, itemCounts, overallNotes, overall, certification } = data;
 
   return (
     <Document title={`${SITE.shortName} Pool Assessment — ${property.customerName}`}>
@@ -241,12 +343,18 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
             <Text style={[s.overallLabel, { color: OVERALL_COLOR[overall.key] }]}>{overall.label}</Text>
           </View>
           <View style={s.counts}>
-            {order.map((r) => (
-              <View key={r} style={s.countCell}>
-                <Text style={s.countNum}>{overall.counts[r]}</Text>
+            {(
+              [
+                ["Need Attn", itemCounts.attention, ATTENTION],
+                ["Monitor", itemCounts.monitor, MONITOR],
+                ["Good", itemCounts.good, GOOD],
+              ] as const
+            ).map(([label, n, color]) => (
+              <View key={label} style={s.countCell}>
+                <Text style={s.countNum}>{n}</Text>
                 <View style={s.countRow}>
-                  <View style={[s.dot, { backgroundColor: RATING_COLOR[r] }]} />
-                  <Text style={s.countLabel}>{RATING_LABEL[r]}</Text>
+                  <View style={[s.dot, { backgroundColor: color }]} />
+                  <Text style={s.countLabel}>{label}</Text>
                 </View>
               </View>
             ))}
@@ -299,43 +407,25 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
         {/* Separate the meta block from the inspection findings */}
         <View style={s.rule} />
 
-        {/* Inspection sections — single pass */}
-        <Text style={[s.sectionTitle, { marginTop: 0 }]}>Inspection Sections</Text>
-
-        {/* Plain Good/N-A systems: compact 2-column list */}
-        {plain.length > 0 && (
-          <View style={s.compactWrap}>
-            {plain.map((sec) => (
-              <View key={sec.id} style={s.compactItem}>
-                <Text>{sec.title}</Text>
-                <RatingTag rating={sec.rating} />
-              </View>
-            ))}
+        {/* Configuration ratings — selected sanitation / feature options the tech
+            rated (spec Pass 2). Small block; only shown when present. */}
+        {configOptions.length > 0 && (
+          <View style={r.secBlock}>
+            <View style={r.secHead} wrap={false}>
+              <Text style={r.secTitle}>Sanitation &amp; Features</Text>
+            </View>
+            <ItemRows items={configOptions.map((o) => ({ label: o.label, status: o.status, note: o.note }))} />
           </View>
         )}
 
-        {/* Notable sections: expanded block with inline thumbnails */}
-        {notable.length > 0 && plain.length > 0 && (
-          <Text style={s.subLabel}>Items needing attention or with notes</Text>
-        )}
-        {notable.map((sec) => {
-          // Polished (homeowner-facing) note when available, else the raw note.
-          const note = presentation.polishedNotes[sec.id] || sec.notes;
-          return (
-            <View key={sec.id} style={s.detail} wrap={false}>
-              <View style={s.detailRow}>
-                <View style={s.detailMain}>
-                  <View style={s.detailHead}>
-                    <Text style={{ fontFamily: "Helvetica-Bold" }}>{sec.title}</Text>
-                    <RatingTag rating={sec.rating} />
-                  </View>
-                  {note ? <Text style={s.note}>{note}</Text> : null}
-                </View>
-                <Thumbs photos={sec.photos} />
-              </View>
-            </View>
-          );
-        })}
+        {/* Inspection sections — per-item rows (unrated items render nothing). */}
+        {sections.map((sec) => (
+          <SectionBlock
+            key={sec.id}
+            sec={sec}
+            note={presentation.polishedNotes[sec.id] || sec.notes}
+          />
+        ))}
 
         {/* Chemistry table */}
         <Text style={s.sectionTitle}>Water Chemistry</Text>

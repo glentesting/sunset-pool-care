@@ -45,6 +45,27 @@ export async function buildReportPresentation(data: AssessmentData): Promise<Rep
   try {
     const provided = data.presentation;
 
+    // ITEM notes — Pass 3 spreads notes across many short per-item lines. Polish
+    // them all CONCURRENTLY (one awaited batch, not one-at-a-time), mutating the
+    // data in place so the PDF renders the cleaned text. Demo (no key) and any
+    // failure fall back to the raw note. Provided demo text isn't keyed per item,
+    // so item notes stay raw in demo — they're already short and clean.
+    const itemNoteJobs: Promise<void>[] = [];
+    const polishInto = (holder: { note?: string }, sectionTitle: string, status?: string) => {
+      const raw = (holder.note ?? "").trim();
+      if (!raw) return;
+      itemNoteJobs.push(
+        polishNote({ sectionTitle, rating: status ?? "", rawNote: raw }).then((out) => {
+          holder.note = out ?? raw; // fallback: raw
+        })
+      );
+    };
+    for (const sec of data.sections) {
+      for (const it of sec.items) polishInto(it, sec.title, it.status);
+      for (const u of sec.units) for (const it of u.items) polishInto(it, sec.title, it.status);
+    }
+    await Promise.all(itemNoteJobs);
+
     // Every section note that has text (Good included) → one clean sentence.
     const withNotes = data.sections.filter((s) => s.notes.trim());
     const noteEntries = await Promise.all(

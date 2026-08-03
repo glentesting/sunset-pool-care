@@ -1,16 +1,44 @@
 /**
  * Build the API request body (AssessmentData) from wizard state.
  *
- * v2: section photos ARE included now (compressed JPEG data URLs already in the
- * draft) so the PDF can embed them. This makes the POST body large — bounded by
- * the per-image compression in lib/image-compress.ts. Flagged as a size/serverless
- * watch-item in the summary; if it ever bites, add a cap here (and log drops).
+ * Pass 3: the report is PER-ITEM. Each section emits its rated checklist rows
+ * (plus per-unit rows for filters/pumps/lights/extras), unrated items are
+ * dropped ("blank renders nothing"), and a report-wide item count band is
+ * computed. Section photos (compressed JPEG data URLs) are embedded so the PDF
+ * can render them.
  */
-import type { AssessmentData } from "@/lib/validation/assessment";
-import { CHEMISTRY_PARAMS, SALT_SANITIZER, SECTIONS, SPA_NA } from "./config";
-import { derivedSpaType, isSpaPresent, overallCondition, sectionRating } from "./summary";
+import type {
+  AssessmentData,
+  ReportItem,
+  ReportUnit,
+} from "@/lib/validation/assessment";
+import {
+  CHEMISTRY_PARAMS,
+  SALT_SANITIZER,
+  SECTIONS,
+  SPA_NA,
+  UNIT_SECTIONS,
+  getSection,
+  type ItemDef,
+  type Rating,
+} from "./config";
+import {
+  derivedSpaType,
+  isSpaPresent,
+  itemRating,
+  overallCondition,
+  sectionRating,
+} from "./summary";
 import { unitHeading } from "./shared/UnitList";
-import type { AssessmentState, Photo } from "./state";
+import type { AssessmentState, ItemState, Photo } from "./state";
+
+/** Singular unit noun per section (for unit headings on the report). */
+const UNIT_SINGULAR: Record<string, string> = {
+  filtration: "Filter",
+  pump: "Pump",
+  automation: "Light",
+  secondary: "Equipment",
+};
 
 /**
  * Slot-name caption floor for a photo key. Slotted photos (fixed / per-unit)
@@ -19,32 +47,105 @@ import type { AssessmentState, Photo } from "./state";
 function slotName(key: string): string {
   if (key.startsWith("extra:")) return ""; // ad-hoc → no floor caption
   const parts = key.split(":");
-  // per-unit keys look like `filters:<id>:Serial number`
   return parts.length >= 3 ? parts[parts.length - 1] : key;
 }
 
-/**
- * Caption sent to the PDF, three-way:
- *   tech's typed label  → the label
- *   none, but slotted   → the slot name (Filter / Test Strip / Serial …)
- *   none, ad-hoc        → empty (PDF renders no caption)
- */
 function photosOf(map: Record<string, Photo>): { label: string; dataUrl: string }[] {
   return Object.entries(map)
     .filter(([, p]) => Boolean(p?.dataUrl))
     .map(([key, p]) => ({ label: (p.label ?? "").trim() || slotName(key), dataUrl: p.dataUrl }));
 }
 
+/** One rated/annotated item → a report row. Unrated + empty items return null. */
+function reportItem(def: ItemDef, st: ItemState | undefined): ReportItem | null {
+  const status = itemRating(def, st);
+  const note = (st?.note ?? "").trim();
+  const reading = (st?.reading ?? "").trim();
+  // "Unrated items render nothing" — but keep a bare note/reading if the tech
+  // bothered to write one.
+  if (!status && !note && !reading) return null;
+  return {
+    label: def.label,
+    status,
+    answer: st?.answer,
+    reading: reading || undefined,
+    readingUnit: def.readingUnit,
+    note,
+  };
+}
+
+function tally(counts: { attention: number; monitor: number; good: number }, r?: Rating) {
+  if (r === "ATTENTION") counts.attention += 1;
+  else if (r === "MONITOR") counts.monitor += 1;
+  else if (r === "GOOD") counts.good += 1;
+}
+
 export function buildSubmitPayload(state: AssessmentState): AssessmentData {
   const usesSalt = state.config.sanitization.includes(SALT_SANITIZER);
   const spaPresent = isSpaPresent(state);
+  const counts = { attention: 0, monitor: 0, good: 0 };
 
   const sections = SECTIONS.map((s) => {
     // Auto-skipped spa is reported as N/A with nothing attached.
     if (s.id === "spa" && !spaPresent) {
-      return { id: s.id, title: s.title, rating: "N/A" as const, notes: "", photoCount: 0, photos: [] };
+      return {
+        id: s.id,
+        title: s.title,
+        rating: "N/A" as const,
+        notes: "",
+        photoCount: 0,
+        photos: [],
+        items: [],
+        units: [],
+      };
     }
+
+    const cfg = getSection(s.id);
     const sec = state.sections[s.id];
+    const stateItems = sec?.items ?? {};
+
+    // Section-level checklist rows.
+    const items: ReportItem[] = (cfg?.items ?? [])
+      .filter((d) => !d.conditional || d.conditional(state))
+      .map((d) => reportItem(d, stateItems[d.id]))
+      .filter((r): r is ReportItem => r !== null);
+    for (const r of items) tally(counts, r.status);
+
+    // Spa's own Last Water Change rides as a row on the spa section.
+    if (s.id === "spa") {
+      const note = state.spaLastWaterChangeUnknown
+        ? state.spaLastWaterChangeNote
+        : state.spaLastWaterChange
+          ? `Last changed: ${state.spaLastWaterChange}`
+          : "";
+      if (note.trim()) items.push({ label: "Last Water Change (Spa)", note: note.trim() });
+    }
+
+    // Repeatable-unit rows (each unit its own checklist).
+    const unitCfg = UNIT_SECTIONS[s.id];
+    const units: ReportUnit[] = [];
+    if (unitCfg) {
+      const singular = UNIT_SINGULAR[s.id] ?? "Unit";
+      state[unitCfg.list].forEach((u, i) => {
+        const uItems = unitCfg.defs
+          .map((d) => reportItem(d, stateItems[`${u.id}:${d.id}`]))
+          .filter((r): r is ReportItem => r !== null);
+        for (const r of uItems) tally(counts, r.status);
+
+        let heading = unitHeading(singular, i, u);
+        if (u.location?.trim()) heading += ` · ${u.location.trim()}`;
+
+        // Filter's Last Full Clean / Replacement.
+        let note = "";
+        if (u.lastCleanUnknown) note = (u.lastCleanNote ?? "").trim();
+        else if (u.lastClean?.trim()) note = `Last full clean: ${u.lastClean.trim()}`;
+
+        if (uItems.length || u.makeModel.trim() || note) {
+          units.push({ heading, note, items: uItems });
+        }
+      });
+    }
+
     const photos = sec ? photosOf(sec.photos) : [];
     return {
       id: s.id,
@@ -53,11 +154,14 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
       notes: sec?.notes ?? "",
       photoCount: photos.length,
       photos,
+      items,
+      units,
     };
   });
 
   const chemistry = CHEMISTRY_PARAMS.filter((p) => !p.saltOnly || usesSalt).map((p) => {
     const row = state.chemistry[p.key];
+    tally(counts, row?.rating);
     return {
       key: p.key,
       label: p.label,
@@ -66,6 +170,19 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
       ideal: p.ideal,
     };
   });
+
+  // Selected sanitation / feature options with a rating or note (spec Pass 2).
+  const configOptions: { label: string; status?: Rating; note: string }[] = [];
+  const pushOption = (prefix: string, opt: string) => {
+    const o = state.config.optionRatings[`${prefix}:${opt}`];
+    if (!o) return;
+    const note = (o.note ?? "").trim();
+    if (!o.rating && !note) return;
+    tally(counts, o.rating);
+    configOptions.push({ label: opt, status: o.rating, note });
+  };
+  state.config.sanitization.forEach((o) => pushOption("sanitation", o));
+  state.config.features.filter((o) => o !== "None").forEach((o) => pushOption("feature", o));
 
   return {
     jobId: state.jobId || undefined,
@@ -77,10 +194,10 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
       features: state.config.features,
     },
     configPhotos: photosOf(state.config.photos),
+    configOptions,
     sections,
     chemistry,
-    // Units now carry make/model, type and manufacture date — the report shows
-    // the same heading the tech sees in the wizard.
+    itemCounts: counts,
     lights: state.lights.map((u, i) => unitHeading("Light", i, u)),
     filters: state.filters.map((u, i) => unitHeading("Filter", i, u)),
     pumps: state.pumps.map((u, i) => unitHeading("Pump", i, u)),
