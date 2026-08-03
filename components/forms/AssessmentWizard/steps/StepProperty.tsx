@@ -24,6 +24,14 @@ export default function StepProperty() {
         onChange={(v) => dispatch({ type: "setProperty", patch: { customerEmail: v } })}
       />
       <TextField
+        label="Customer Phone"
+        value={p.customerPhone}
+        type="tel"
+        inputMode="tel"
+        placeholder="(480) 555-0123"
+        onChange={(v) => dispatch({ type: "setProperty", patch: { customerPhone: v } })}
+      />
+      <TextField
         label="Service Address"
         value={p.serviceAddress}
         onChange={(v) => dispatch({ type: "setProperty", patch: { serviceAddress: v } })}

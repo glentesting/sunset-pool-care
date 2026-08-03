@@ -96,6 +96,7 @@ export type AssessmentState = {
   property: {
     customerName: string;
     customerEmail: string;
+    customerPhone: string;
     serviceAddress: string;
     city: string;
     zip: string;
@@ -214,6 +215,7 @@ export function initialState(): AssessmentState {
     property: {
       customerName: "",
       customerEmail: "",
+      customerPhone: "",
       serviceAddress: "",
       city: "",
       zip: "",

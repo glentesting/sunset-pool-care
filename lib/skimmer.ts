@@ -62,6 +62,7 @@ export function buildTicketBody(
   const addr = [p.serviceAddress, cityZip].filter(Boolean).join(", ");
   if (addr) out.push(addr);
   if (p.customerEmail?.trim()) out.push(p.customerEmail.trim());
+  if (p.customerPhone?.trim()) out.push(p.customerPhone.trim());
   out.push("");
 
   // Overall condition + item counts.
@@ -70,7 +71,8 @@ export function buildTicketBody(
   out.push(`${c.attention} need attention · ${c.monitor} to monitor · ${c.good} good`);
   out.push("");
 
-  // Flagged items (ATTENTION / MONITOR) across section items AND unit items.
+  // Flagged items (ATTENTION / MONITOR) across section items, unit items, and
+  // config-option (sanitation / feature) ratings.
   const flagged: string[] = [];
   for (const s of data.sections) {
     for (const it of s.items) {
@@ -80,6 +82,12 @@ export function buildTicketBody(
       for (const it of u.items) {
         if (it.status && FLAGGED.has(it.status)) flagged.push(formatFlagged(s.title, u.heading, it));
       }
+    }
+  }
+  for (const o of data.configOptions) {
+    if (o.status && FLAGGED.has(o.status)) {
+      const note = o.note?.trim() ? ` — ${o.note.trim()}` : "";
+      flagged.push(`Configuration — ${o.label}: ${o.status}${note}`);
     }
   }
   out.push("FLAGGED ITEMS");

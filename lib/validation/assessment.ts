@@ -68,6 +68,7 @@ export const assessmentSchema = z.object({
     // Optional to submit (a tech may not have it) but always present. HubSpot
     // match key + how the office reaches the customer.
     customerEmail: z.string().default(""),
+    customerPhone: z.string().default(""),
     serviceAddress: z.string(),
     city: z.string(),
     zip: z.string(),
