@@ -64,3 +64,92 @@ export async function uploadPdfToSupabase(pdf: Buffer, path: string): Promise<st
   // signedURL is a path like "/object/sign/<bucket>/<file>?token=..." — make absolute.
   return `${base}/storage/v1${signedURL}`;
 }
+
+export type SupabaseHealth = {
+  ok: boolean;
+  configured: boolean;
+  bucket: string;
+  /** Each round-trip step against the real bucket. */
+  steps: { upload: boolean; sign: boolean; fetch: boolean; cleanup: boolean };
+  /** Sample signed URL with the token redacted (proves the sign path works). */
+  signedUrlSample?: string;
+  error?: string;
+};
+
+/**
+ * Smoke-test the Supabase storage path WITHOUT running a full assessment:
+ * upload a tiny throwaway object to the bucket, sign it, fetch it back, then
+ * delete it. Never touches real assessment data. Returns which steps passed and
+ * a sanitized error on failure (never echoes the service key).
+ */
+export async function checkSupabaseStorage(): Promise<SupabaseHealth> {
+  const bucket = ASSESSMENT_PDF_BUCKET;
+  const steps = { upload: false, sign: false, fetch: false, cleanup: false };
+
+  if (!SUPABASE_URL || !SERVICE_KEY) {
+    return {
+      ok: false,
+      configured: false,
+      bucket,
+      steps,
+      error: "SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set",
+    };
+  }
+
+  const base = SUPABASE_URL.replace(/\/+$/, "");
+  const path = `_healthcheck/check-${Date.now()}.txt`;
+  const objectPath = `${bucket}/${path.split("/").map(encodeURIComponent).join("/")}`;
+  const auth = { Authorization: `Bearer ${SERVICE_KEY}` };
+
+  try {
+    const up = await fetch(`${base}/storage/v1/object/${objectPath}`, {
+      method: "POST",
+      headers: { ...auth, "Content-Type": "text/plain", "x-upsert": "true" },
+      body: "spc-healthcheck",
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!up.ok) {
+      return { ok: false, configured: true, bucket, steps, error: `upload ${up.status}: ${await up.text().catch(() => "")}` };
+    }
+    steps.upload = true;
+
+    const sign = await fetch(`${base}/storage/v1/object/sign/${objectPath}`, {
+      method: "POST",
+      headers: { ...auth, "Content-Type": "application/json" },
+      body: JSON.stringify({ expiresIn: 60 }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!sign.ok) {
+      return { ok: false, configured: true, bucket, steps, error: `sign ${sign.status}: ${await sign.text().catch(() => "")}` };
+    }
+    const { signedURL } = (await sign.json()) as { signedURL: string };
+    const fullUrl = `${base}/storage/v1${signedURL}`;
+    steps.sign = true;
+
+    const got = await fetch(fullUrl, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    steps.fetch = got.ok;
+
+    const del = await fetch(`${base}/storage/v1/object/${objectPath}`, {
+      method: "DELETE",
+      headers: auth,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    steps.cleanup = del.ok;
+
+    return {
+      ok: steps.upload && steps.sign && steps.fetch && steps.cleanup,
+      configured: true,
+      bucket,
+      steps,
+      signedUrlSample: fullUrl.replace(/token=[^&]+/, "token=<redacted>"),
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      configured: true,
+      bucket,
+      steps,
+      error: e instanceof Error ? e.message : String(e),
+    };
+  }
+}

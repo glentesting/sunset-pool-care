@@ -14,7 +14,7 @@ import { logAssessmentToSkimmer } from "@/lib/skimmer";
  *   3. HubSpot contact + tasks   ← STUBBED (throws, caught)
  *   4. Upload PDF to Supabase    ← WIRED; skips cleanly if not configured → pdf_url
  *   5. Make webhook              ← WIRED; posts assessment (photo base64 stripped)
- *                                  + pdf_url. Skips cleanly if the URL isn't set.
+ *                                  + pdf_url + ticket_body. Skips if URL unset.
  *
  * Each output is wrapped independently — a failure in one never kills the
  * others, and crucially never blocks the PDF. We report exactly what landed in
@@ -41,8 +41,13 @@ export async function POST(req: NextRequest) {
   //    is presentation-only and never throws — on any failure it returns raw
   //    notes and no summary, so the report is never blocked.
   let pdf: Buffer | null = null;
+  // Polished overall-assessment note (for the Make ticket_body). buildReport-
+  // Presentation also mutates the per-item notes on `data` in place, so the
+  // ticket_body picks up the same polished item text the PDF shows.
+  let polishedOverall = data.overallNotes;
   try {
     const presentation = await buildReportPresentation(data);
+    polishedOverall = presentation.overallNotes || data.overallNotes;
     pdf = await generateAssessmentPdf(data, presentation);
     results.pdf = true;
   } catch (e) {
@@ -95,7 +100,7 @@ export async function POST(req: NextRequest) {
   //    creates the HubSpot ticket, logs Skimmer, etc. Skips cleanly when the URL
   //    isn't set. Own try/catch so a webhook failure never blocks the PDF.
   try {
-    results.skimmer = await logAssessmentToSkimmer(data, pdfUrl);
+    results.skimmer = await logAssessmentToSkimmer(data, pdfUrl, polishedOverall);
   } catch (e) {
     console.error("Make webhook step failed:", e);
   }
