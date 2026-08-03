@@ -44,6 +44,8 @@ export type Unit = {
   makeModel: string;
   unitType: string;
   mfrDate: string;
+  /** Interior lights only — Brian's tool captures the light's Location. */
+  location?: string;
   /** Filters only — "Last Full Clean / Replacement" + its unknown-date dialog. */
   lastClean?: string;
   lastCleanUnknown?: boolean;
@@ -51,10 +53,15 @@ export type Unit = {
   lastCleanNote?: string;
 };
 
-/** Per-item state. Condition items use `rating`; binary items use `answer`. */
+/**
+ * Per-item state. Condition items use `rating`; binary items use `answer`.
+ * `reading` is an optional captured value (e.g. Filter Pressure in PSI) for
+ * items whose def carries a `readingUnit`.
+ */
 export type ItemState = {
   rating?: Rating;
   answer?: BinaryAnswer;
+  reading?: string;
   note: string;
 };
 
@@ -104,6 +111,9 @@ export type AssessmentState = {
     sanitization: string[];
     features: string[];
     photos: Record<string, Photo>;
+    /** Per selected sanitation/feature option: a rating + note (spec Pass 2).
+     *  Keyed `sanitation:<opt>` / `feature:<opt>`. */
+    optionRatings: Record<string, { rating?: Rating; note?: string }>;
   };
   /** keyed by SECTIONS config id */
   sections: Record<string, SectionState>;
@@ -112,7 +122,13 @@ export type AssessmentState = {
   lights: Unit[];
   filters: Unit[];
   pumps: Unit[];
+  /** Secondary "additional equipment" — repeatable free-text units (spec 1.6/Pass 2). */
+  extras: Unit[];
   spaType: string;
+  /** Spa's own last water change (stand-alone spas are on a separate schedule). */
+  spaLastWaterChange: string;
+  spaLastWaterChangeUnknown: boolean;
+  spaLastWaterChangeNote: string;
   /** Overall assessment notes — now lives on the final step (recs engine removed). */
   overallNotes: string;
   // Inspector name + date are captured once on Property & Inspection (in
@@ -134,7 +150,7 @@ export type AssessmentState = {
   error: string | null;
 };
 
-type ListKey = "lights" | "filters" | "pumps";
+export type ListKey = "lights" | "filters" | "pumps" | "extras";
 
 type Action =
   | { type: "goto"; step: number }
@@ -150,9 +166,12 @@ type Action =
   | { type: "setConfigList"; field: "surfaces" | "sanitization" | "features"; value: string }
   | { type: "setConfigPhoto"; slot: string; dataUrl: string | null }
   | { type: "setConfigPhotoLabel"; slot: string; label: string }
+  | { type: "setConfigOptionRating"; key: string; rating: Rating }
+  | { type: "setConfigOptionNote"; key: string; note: string }
   | { type: "setItemRating"; sectionId: string; itemId: string; rating: Rating }
   | { type: "setItemAnswer"; sectionId: string; itemId: string; answer: BinaryAnswer }
   | { type: "setItemNote"; sectionId: string; itemId: string; note: string }
+  | { type: "setItemReading"; sectionId: string; itemId: string; reading: string }
   | { type: "setSectionNotes"; id: string; notes: string }
   | { type: "setSectionPhoto"; id: string; slot: string; dataUrl: string | null }
   | { type: "setSectionPhotoLabel"; id: string; slot: string; label: string }
@@ -161,6 +180,10 @@ type Action =
   | { type: "updateUnit"; list: ListKey; id: string; patch: Partial<Omit<Unit, "id">> }
   | { type: "removeUnit"; list: ListKey; id: string }
   | { type: "setSpaType"; value: string }
+  | {
+      type: "setSpaWaterChange";
+      patch: { date?: string; unknown?: boolean; note?: string };
+    }
   | { type: "setOverallNotes"; notes: string }
   | { type: "setCertification"; patch: Partial<AssessmentState["certification"]> }
   | { type: "submitStart" }
@@ -199,13 +222,17 @@ export function initialState(): AssessmentState {
       additionalBodies: [],
     },
     details: { session: "", date: "", time: "", inspectorName: "" },
-    config: { surfaces: [], sanitization: [], features: [], photos: {} },
+    config: { surfaces: [], sanitization: [], features: [], photos: {}, optionRatings: {} },
     sections: {},
     chemistry: {},
     lights: [],
     filters: [],
     pumps: [],
+    extras: [],
     spaType: "",
+    spaLastWaterChange: "",
+    spaLastWaterChangeUnknown: false,
+    spaLastWaterChangeNote: "",
     overallNotes: "",
     certification: { certified: false },
     submitting: false,
@@ -327,6 +354,28 @@ function reducer(s: AssessmentState, a: Action): AssessmentState {
         ...s,
         config: { ...s.config, photos: withPhotoLabel(s.config.photos, a.slot, a.label) },
       };
+    case "setConfigOptionRating": {
+      const cur = s.config.optionRatings[a.key] ?? {};
+      // Tap the selected rating again to clear it (same deselect rule as items).
+      const rating = cur.rating === a.rating ? undefined : a.rating;
+      return {
+        ...s,
+        config: {
+          ...s.config,
+          optionRatings: { ...s.config.optionRatings, [a.key]: { ...cur, rating } },
+        },
+      };
+    }
+    case "setConfigOptionNote": {
+      const cur = s.config.optionRatings[a.key] ?? {};
+      return {
+        ...s,
+        config: {
+          ...s.config,
+          optionRatings: { ...s.config.optionRatings, [a.key]: { ...cur, note: a.note } },
+        },
+      };
+    }
 
     // Items: tapping the selected state again clears it back to blank (spec 1.2 —
     // no default, unselected renders nothing on the report).
@@ -362,6 +411,17 @@ function reducer(s: AssessmentState, a: Action): AssessmentState {
         sections: {
           ...s.sections,
           [a.sectionId]: { ...cur, items: { ...cur.items, [a.itemId]: { ...item, note: a.note } } },
+        },
+      };
+    }
+    case "setItemReading": {
+      const cur = section(s, a.sectionId);
+      const item = cur.items[a.itemId] ?? emptyItem();
+      return {
+        ...s,
+        sections: {
+          ...s.sections,
+          [a.sectionId]: { ...cur, items: { ...cur.items, [a.itemId]: { ...item, reading: a.reading } } },
         },
       };
     }
@@ -414,6 +474,13 @@ function reducer(s: AssessmentState, a: Action): AssessmentState {
 
     case "setSpaType":
       return { ...s, spaType: a.value };
+    case "setSpaWaterChange":
+      return {
+        ...s,
+        ...(a.patch.date !== undefined && { spaLastWaterChange: a.patch.date }),
+        ...(a.patch.unknown !== undefined && { spaLastWaterChangeUnknown: a.patch.unknown }),
+        ...(a.patch.note !== undefined && { spaLastWaterChangeNote: a.patch.note }),
+      };
 
     case "setOverallNotes":
       return { ...s, overallNotes: a.notes };
@@ -449,7 +516,12 @@ function loadDraft(): AssessmentState | null {
     const draft = { ...base, ...parsed };
     draft.certification = { certified: Boolean(parsed.certification?.certified) };
     // Photos are { dataUrl, label } objects; be defensive about older/partial shapes.
-    draft.config = { ...draft.config, photos: normalizePhotos(draft.config?.photos) };
+    draft.config = {
+      ...base.config,
+      ...draft.config,
+      photos: normalizePhotos(draft.config?.photos),
+      optionRatings: draft.config?.optionRatings ?? {},
+    };
     const safeSections: Record<string, SectionState> = {};
     for (const [id, sec] of Object.entries(draft.sections ?? {})) {
       safeSections[id] = {

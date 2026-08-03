@@ -1,8 +1,10 @@
 "use client";
 import { useEffect } from "react";
 import SectionShell from "../../shared/SectionShell";
+import UnknownDateField from "../../shared/UnknownDateField";
 import { useAssessment } from "../../state";
 import { derivedSpaType } from "../../summary";
+import { UNKNOWN_DATE_RECOMMENDATION } from "../../config";
 
 /**
  * Spa / Hot Tub. Spa presence + type are derived once from pool type +
@@ -28,7 +30,16 @@ export default function SectionSpa() {
         Spa type: <span className="font-semibold text-wiz-ink">{spaType || "—"}</span>
         <span className="text-wiz-ink/60"> · from setup</span>
       </p>
-      <SectionShell sectionId="spa" />
+      <SectionShell sectionId="spa">
+        <UnknownDateField
+          label="Last Water Change (Spa)"
+          date={state.spaLastWaterChange}
+          unknown={state.spaLastWaterChangeUnknown}
+          note={state.spaLastWaterChangeNote}
+          recommendation={UNKNOWN_DATE_RECOMMENDATION.waterChange}
+          onChange={(patch) => dispatch({ type: "setSpaWaterChange", patch })}
+        />
+      </SectionShell>
     </div>
   );
 }
