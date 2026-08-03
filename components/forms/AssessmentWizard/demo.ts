@@ -52,6 +52,7 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
 
   s.property = {
     customerName: "Maria Hernandez",
+    customerEmail: "maria.hernandez@example.com",
     serviceAddress: "1840 E Ranch Rd",
     city: "Gilbert",
     zip: "85296",

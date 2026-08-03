@@ -94,6 +94,7 @@ export type AssessmentState = {
   jobId: string;
   property: {
     customerName: string;
+    customerEmail: string;
     serviceAddress: string;
     city: string;
     zip: string;
@@ -211,6 +212,7 @@ export function initialState(): AssessmentState {
     jobId: "",
     property: {
       customerName: "",
+      customerEmail: "",
       serviceAddress: "",
       city: "",
       zip: "",
@@ -515,6 +517,9 @@ function loadDraft(): AssessmentState | null {
     const base = initialState();
     const draft = { ...base, ...parsed };
     draft.certification = { certified: Boolean(parsed.certification?.certified) };
+    // Merge property over the base so a draft saved before a new field (e.g.
+    // customerEmail) still loads with that key present.
+    draft.property = { ...base.property, ...parsed.property };
     // Photos are { dataUrl, label } objects; be defensive about older/partial shapes.
     draft.config = {
       ...base.config,

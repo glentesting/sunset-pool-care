@@ -8,10 +8,10 @@ import { logAssessmentToSkimmer } from "@/lib/skimmer";
 
 /**
  * Assessment Wizard submit. FOUR outputs are orchestrated from this ONE route:
- *   1. Generate PDF              ← WIRED in v1 (returned to the tech as download)
+ *   1. Generate PDF              ← WIRED (returned to the tech as download)
  *   2. Upload PDF to Drive       ← STUBBED (throws, caught)
  *   3. HubSpot contact + tasks   ← STUBBED (throws, caught)
- *   4. Make webhook -> Skimmer   ← STUBBED (throws, caught)
+ *   4. Make webhook (full body)  ← WIRED; skips cleanly if the URL isn't set
  *
  * Each output is wrapped independently — a failure in one never kills the
  * others, and crucially never blocks the PDF. We report exactly what landed in
@@ -71,16 +71,13 @@ export async function POST(req: NextRequest) {
     console.error("HubSpot step failed (stubbed):", e);
   }
 
-  // 4. Skimmer via Make webhook — STUB (throws, caught).
+  // 4. Make webhook — POST the FULL assessment (Make creates the HubSpot ticket,
+  //    logs Skimmer, etc.). Skips cleanly when the webhook URL isn't configured.
+  //    Own try/catch so a webhook failure never blocks the PDF.
   try {
-    await logAssessmentToSkimmer({
-      jobId: data.jobId,
-      contactEmail: "",
-      summary: `${data.overall.label} — ${data.property.customerName}`,
-    });
-    results.skimmer = true;
+    results.skimmer = await logAssessmentToSkimmer(data);
   } catch (e) {
-    console.error("Skimmer step failed (stubbed):", e);
+    console.error("Make webhook step failed:", e);
   }
 
   const allOk = Object.values(results).every(Boolean);

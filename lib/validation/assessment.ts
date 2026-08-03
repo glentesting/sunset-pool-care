@@ -65,6 +65,9 @@ export const assessmentSchema = z.object({
   jobId: z.string().optional(),
   property: z.object({
     customerName: z.string().min(1, "Customer name is required"),
+    // Optional to submit (a tech may not have it) but always present. HubSpot
+    // match key + how the office reaches the customer.
+    customerEmail: z.string().default(""),
     serviceAddress: z.string(),
     city: z.string(),
     zip: z.string(),
