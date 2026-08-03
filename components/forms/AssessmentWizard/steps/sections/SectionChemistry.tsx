@@ -3,7 +3,13 @@ import SectionShell from "../../shared/SectionShell";
 import RatingButtons from "../../shared/RatingButtons";
 import InfoDot from "../../shared/InfoDot";
 import { useAssessment } from "../../state";
-import { CHEMISTRY_PARAMS, SALT_SANITIZER, suggestRating } from "../../config";
+import UnknownDateField from "../../shared/UnknownDateField";
+import {
+  CHEMISTRY_PARAMS,
+  SALT_SANITIZER,
+  UNKNOWN_DATE_RECOMMENDATION,
+  suggestRating,
+} from "../../config";
 
 /**
  * Water Chemistry & Balance — bespoke: a reading + rating per parameter with the
@@ -11,6 +17,9 @@ import { CHEMISTRY_PARAMS, SALT_SANITIZER, suggestRating } from "../../config";
  * parameter's tunable bands (config.ts); the suggestion pre-selects but the tech
  * can override with one tap (which locks it as manual). Salt row only appears
  * when a salt system was selected in Pool Configuration.
+ *
+ * Last Water Change lives here too (moved from Property Information, spec 1.5)
+ * with its unknown-date dialog.
  */
 export default function SectionChemistry() {
   const { state, dispatch } = useAssessment();
@@ -73,6 +82,24 @@ export default function SectionChemistry() {
           );
         })}
       </div>
+
+      <UnknownDateField
+        label="Last Water Change"
+        date={state.property.lastWaterChange}
+        unknown={state.property.lastWaterChangeUnknown}
+        note={state.property.lastWaterChangeNote}
+        recommendation={UNKNOWN_DATE_RECOMMENDATION.waterChange}
+        onChange={(patch) =>
+          dispatch({
+            type: "setProperty",
+            patch: {
+              ...(patch.date !== undefined && { lastWaterChange: patch.date }),
+              ...(patch.unknown !== undefined && { lastWaterChangeUnknown: patch.unknown }),
+              ...(patch.note !== undefined && { lastWaterChangeNote: patch.note }),
+            },
+          })
+        }
+      />
     </SectionShell>
   );
 }

@@ -9,6 +9,8 @@
  * place. Site-wide constants (price, NAP, service areas) do NOT belong here —
  * those stay in content/site.ts.
  */
+// type-only (erased at runtime) — no import cycle with state.tsx
+import type { AssessmentState } from "./state";
 
 export const RATINGS = ["GOOD", "MONITOR", "ATTENTION", "N/A"] as const;
 export type Rating = (typeof RATINGS)[number];
@@ -124,6 +126,14 @@ export function suggestRating(param: ChemistryParam, reading: string): Rating | 
   return "ATTENTION";
 }
 
+// --- Unknown-date dialog (spec 1.3) -----------------------------------------
+// Exact copy. Pre-filled into an EDITABLE dialog when a date is marked Unknown.
+
+export const UNKNOWN_DATE_RECOMMENDATION = {
+  waterChange: "We always recommend a water change if the last date is unknown.",
+  filterClean: "We always recommend a filter clean if the last date is unknown.",
+} as const;
+
 // --- Spa section (section 10) -----------------------------------------------
 
 export const SPA_TYPES = [
@@ -159,28 +169,60 @@ export const P2_TIMEFRAMES = ["Within 90 days", "Monitor"] as const;
 // per-unit photos (filters, pumps) or per-light photos generate extra slots
 // inside their own component — those aren't listed here.
 
+// --- Checklist item model ---------------------------------------------------
+//
+// Every section is a CHECKLIST: each specific line item is visible and rated on
+// its own, so nothing gets skipped by accident. Item DEFINITIONS live here (data,
+// not hand-built components); per-item state (rating / answer / note) lives in
+// state.tsx keyed by item id.
+//
+// NOTE on rating values: items reuse the existing `Rating` union
+// ("GOOD" | "MONITOR" | "ATTENTION" | "N/A") rather than introducing a second
+// lowercase casing ('attn' / 'na'). Same four states, one casing across
+// chemistry, the derived section rating, and the report.
+
+export type ItemKind = "condition" | "binary";
+export type BinaryAnswer = "yes" | "no";
+
+export type ItemDef = {
+  id: string;
+  label: string;
+  kind: ItemKind;
+  /** binary only — the answer that is NOT a problem (drives green vs red) */
+  goodAnswer?: BinaryAnswer;
+  /** optional gate — the item only renders when this returns true */
+  conditional?: (state: AssessmentState) => boolean;
+};
+
 export type SectionConfig = {
   id: string;
   title: string;
+  /** Checklist line items. Authored as data — Pass 2 fills these in. */
+  items: ItemDef[];
   /** Fixed required photo slot labels (used as slot keys too). */
   photos: string[];
-  /** Label for the notes textarea. */
+  /** Label for the section-level notes textarea (separate from item notes). */
   notesLabel: string;
   /** Short helper line under the title. */
   hint?: string;
 };
 
+// Final section order (spec 1.7). Property Information and Pool Configuration are
+// steps 1–2; these ten are steps 3–12. Safety Equipment is gone (Barrier moved to
+// Decking, GFCI to Automation) and Secondary Equipment takes its slot.
+// `items` are intentionally empty here — Pass 2 authors the ~90 line items.
 export const SECTIONS: SectionConfig[] = [
   {
     id: "surface",
     title: "Pool Surface & Interior Finish",
+    items: [],
     photos: ["Pool (overall)"],
-    notesLabel: "Notes",
-    hint: "Rate the interior finish and log each light.",
+    notesLabel: "Section Notes",
   },
   {
     id: "chemistry",
     title: "Water Chemistry & Balance",
+    items: [],
     photos: ["Test Strip"],
     notesLabel: "Treatment Notes",
     hint: "Enter each reading and rate it against the ideal range.",
@@ -188,53 +230,62 @@ export const SECTIONS: SectionConfig[] = [
   {
     id: "filtration",
     title: "Filtration System",
+    items: [],
     photos: [],
-    notesLabel: "Notes",
-    hint: "Add each filter — capture filter, serial, and pressure gauge.",
+    notesLabel: "Section Notes",
+    hint: "Add each filter — record make/model, type and manufacture date.",
   },
   {
     id: "pump",
     title: "Pump & Motor",
+    items: [],
     photos: [],
-    notesLabel: "Notes",
-    hint: "Add each pump — capture pump, serial, and display.",
+    notesLabel: "Section Notes",
+    hint: "Add each pump — record make/model, type and manufacture date.",
   },
   {
     id: "plumbing",
     title: "Plumbing, Valves & Seals",
+    items: [],
     photos: ["Vacuum Breaker", "Autofill"],
-    notesLabel: "Notes",
+    notesLabel: "Section Notes",
   },
   {
     id: "automation",
-    title: "Automation & Controls",
+    title: "Automation, Controls & Electrical",
+    items: [],
     photos: [],
-    notesLabel: "Notes",
+    notesLabel: "Section Notes",
+    hint: "Includes interior lights and GFCI outlets.",
   },
   {
     id: "cleaning",
     title: "Cleaning Equipment & Vacuum",
-    photos: [],
-    notesLabel: "Notes",
+    items: [],
+    photos: ["Cleaning Head"],
+    notesLabel: "Section Notes",
   },
   {
-    id: "safety",
-    title: "Safety Equipment",
+    id: "secondary",
+    title: "Secondary Equipment",
+    items: [],
     photos: [],
-    notesLabel: "Notes",
+    notesLabel: "Section Notes",
+    hint: "Heater, heat pump, equipment pads and anything else on site.",
   },
   {
     id: "decking",
     title: "Decking, Coping & Surroundings",
+    items: [],
     photos: [],
-    notesLabel: "Notes",
+    notesLabel: "Section Notes",
   },
   {
     id: "spa",
     title: "Spa / Hot Tub",
+    items: [],
     photos: ["Spa", "Test Strip"],
-    notesLabel: "Notes",
-    hint: "If there's no spa, mark the type N/A to skip the rest.",
+    notesLabel: "Section Notes",
   },
 ];
 

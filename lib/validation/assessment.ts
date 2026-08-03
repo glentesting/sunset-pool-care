@@ -35,15 +35,6 @@ const chemistryRowSchema = z.object({
   ideal: z.string(),
 });
 
-const recItemSchema = z.object({
-  item: z.string(),
-  investment: z.string(),
-  timeframe: z.string(),
-  // ties an auto-generated rec back to its source (e.g. "section:pump") so the
-  // server can pass that section's timeframe to the note-polish step.
-  sourceKey: z.string().optional(),
-});
-
 export const assessmentSchema = z.object({
   jobId: z.string().optional(),
   property: z.object({
@@ -55,6 +46,8 @@ export const assessmentSchema = z.object({
     poolSize: z.string(),
     lastWaterChange: z.string(),
     lastWaterChangeUnknown: z.boolean(),
+    // Editable recommendation captured when the date is marked Unknown.
+    lastWaterChangeNote: z.string().default(""),
     additionalBodies: z.array(bodyOfWaterSchema),
   }),
   details: z.object({
@@ -75,11 +68,9 @@ export const assessmentSchema = z.object({
   filters: z.array(z.string()),
   pumps: z.array(z.string()),
   spaType: z.string(),
-  recommendations: z.object({
-    p1: z.array(recItemSchema),
-    p2: z.array(recItemSchema),
-    overallNotes: z.string(),
-  }),
+  // The recommendations/pricing engine is gone (spec 1.6) — pricing lives in the
+  // client's Skimmer quote. The final step is overall notes -> certification.
+  overallNotes: z.string().default(""),
   overall: z.object({
     key: z.enum(["not-rated", "good", "monitor", "attention"]),
     label: z.string(),

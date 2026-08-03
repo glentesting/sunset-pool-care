@@ -47,25 +47,7 @@ export default function StepProperty() {
         onChange={(v) => dispatch({ type: "setProperty", patch: { poolSize: v } })}
       />
 
-      <div>
-        <TextField
-          label="Last Water Change — Primary Pool"
-          value={p.lastWaterChange}
-          placeholder="e.g. Spring 2024"
-          onChange={(v) => dispatch({ type: "setProperty", patch: { lastWaterChange: v } })}
-        />
-        <label className="mt-2 flex items-center gap-2 text-[13px] text-wiz-ink/80">
-          <input
-            type="checkbox"
-            checked={p.lastWaterChangeUnknown}
-            onChange={(e) =>
-              dispatch({ type: "setProperty", patch: { lastWaterChangeUnknown: e.target.checked } })
-            }
-            className="h-4 w-4 accent-wiz-accent"
-          />
-          Unknown
-        </label>
-      </div>
+      {/* Last Water Change moved to Water Chemistry & Balance (spec 1.5). */}
 
       {p.additionalBodies.map((b, i) => (
         <AdditionalBody key={b.id} body={b} index={i} />

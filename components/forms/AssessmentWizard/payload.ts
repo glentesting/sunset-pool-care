@@ -8,7 +8,8 @@
  */
 import type { AssessmentData } from "@/lib/validation/assessment";
 import { CHEMISTRY_PARAMS, SALT_SANITIZER, SECTIONS, SPA_NA } from "./config";
-import { derivedSpaType, isSpaPresent, overallCondition } from "./summary";
+import { derivedSpaType, isSpaPresent, overallCondition, sectionRating } from "./summary";
+import { unitHeading } from "./shared/UnitList";
 import type { AssessmentState, Photo } from "./state";
 
 /**
@@ -48,7 +49,7 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
     return {
       id: s.id,
       title: s.title,
-      rating: sec?.rating,
+      rating: sectionRating(state, s.id),
       notes: sec?.notes ?? "",
       photoCount: photos.length,
       photos,
@@ -78,25 +79,13 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
     configPhotos: photosOf(state.config.photos),
     sections,
     chemistry,
-    lights: state.lights.map((l) => l.label),
-    filters: state.filters.map((f) => f.label),
-    pumps: state.pumps.map((p) => p.label),
+    // Units now carry make/model, type and manufacture date — the report shows
+    // the same heading the tech sees in the wizard.
+    lights: state.lights.map((u, i) => unitHeading("Light", i, u)),
+    filters: state.filters.map((u, i) => unitHeading("Filter", i, u)),
+    pumps: state.pumps.map((u, i) => unitHeading("Pump", i, u)),
     spaType: spaPresent ? state.spaType || derivedSpaType(state) : SPA_NA,
-    recommendations: {
-      p1: state.recommendations.p1.map(({ item, investment, timeframe, sourceKey }) => ({
-        item,
-        investment,
-        timeframe,
-        sourceKey,
-      })),
-      p2: state.recommendations.p2.map(({ item, investment, timeframe, sourceKey }) => ({
-        item,
-        investment,
-        timeframe,
-        sourceKey,
-      })),
-      overallNotes: state.recommendations.overallNotes,
-    },
+    overallNotes: state.overallNotes,
     overall: overallCondition(state),
     certification: {
       inspectorName: state.details.inspectorName,
