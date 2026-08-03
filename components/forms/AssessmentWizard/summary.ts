@@ -13,6 +13,7 @@ import {
   SPA_TYPE_ATTACHED,
   SPA_TYPE_STANDALONE,
   STANDALONE_HOT_TUB,
+  UNIT_SECTIONS,
   getSection,
   type ItemDef,
   type Rating,
@@ -91,6 +92,17 @@ export function sectionRating(state: AssessmentState, sectionId: string): Rating
     for (const p of CHEMISTRY_PARAMS) {
       if (p.saltOnly && !usesSalt) continue;
       ratings.push(state.chemistry[p.key]?.rating);
+    }
+  }
+
+  // Repeatable-unit sections (filters / pumps / lights / extras): each unit is
+  // rated against its own per-unit checklist, keyed `${unitId}:${def.id}`.
+  const unit = UNIT_SECTIONS[sectionId];
+  if (unit) {
+    for (const u of state[unit.list]) {
+      for (const def of unit.defs) {
+        ratings.push(itemRating(def, items[`${u.id}:${def.id}`]));
+      }
     }
   }
 

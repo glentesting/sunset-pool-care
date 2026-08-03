@@ -1,10 +1,13 @@
 "use client";
 import SectionShell from "../../shared/SectionShell";
 import UnitList from "../../shared/UnitList";
+import UnitItemList from "../../shared/UnitItemList";
+import { PUMP_ITEMS, PUMP_TYPES } from "../../config";
 
-const PUMP_TYPES = ["Single Speed", "Two Speed", "Variable Speed", "Other"] as const;
-
-/** Pump & Motor — one or more pumps, each with pump/serial/display photos. */
+/**
+ * Pump & Motor — one or more pumps, each with its type, make/model and
+ * manufacture date, its own full checklist (PUMP_ITEMS), and photos.
+ */
 export default function SectionPump() {
   return (
     <SectionShell sectionId="pump">
@@ -16,7 +19,9 @@ export default function SectionPump() {
         photoSlots={["Pump", "Serial", "Display"]}
         typeOptions={PUMP_TYPES}
         ensureOne
-      />
+      >
+        {(u) => <UnitItemList sectionId="pump" unitId={u.id} defs={PUMP_ITEMS} />}
+      </UnitList>
     </SectionShell>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, type ReactNode } from "react";
-import { useAssessment, type Unit } from "../state";
+import { useAssessment, type ListKey, type Unit } from "../state";
 import PhotoSlot from "./PhotoSlot";
 
 /**
@@ -28,16 +28,29 @@ export default function UnitList({
   addLabel,
   photoSlots,
   typeOptions,
+  locationOptions,
+  makeModelLabel = "Make / Model",
+  makeModelPlaceholder = "e.g. Hayward 4030",
+  showType = true,
+  showMfrDate = true,
   ensureOne = false,
   children,
 }: {
-  list: "lights" | "filters" | "pumps";
+  list: ListKey;
   sectionId: string;
   singular: string;
   addLabel: string;
   photoSlots: string[];
   /** Dropdown choices for this unit's Type; free text when omitted. */
   typeOptions?: readonly string[];
+  /** When set, a Location dropdown is shown (interior lights). */
+  locationOptions?: readonly string[];
+  /** Relabel the make/model field (e.g. "Equipment Name" for extras). */
+  makeModelLabel?: string;
+  makeModelPlaceholder?: string;
+  /** Hide the Type / Manufacture Date fields (free-text extras). */
+  showType?: boolean;
+  showMfrDate?: boolean;
   /** Start with one unit so its labeled photo slots are visible without a tap. */
   ensureOne?: boolean;
   /** Per-unit content (item list, unknown-date field) rendered under the header. */
@@ -76,46 +89,66 @@ export default function UnitList({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Labeled label="Make / Model">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Labeled label={makeModelLabel}>
               <input
                 value={u.makeModel}
-                placeholder="e.g. Hayward 4030"
+                placeholder={makeModelPlaceholder}
                 onChange={(e) => patch(u.id, { makeModel: e.target.value })}
                 className={INPUT}
               />
             </Labeled>
-            <Labeled label="Type">
-              {typeOptions ? (
+            {showType && (
+              <Labeled label="Type">
+                {typeOptions ? (
+                  <select
+                    value={u.unitType}
+                    onChange={(e) => patch(u.id, { unitType: e.target.value })}
+                    className={INPUT}
+                  >
+                    <option value="">Select…</option>
+                    {typeOptions.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    value={u.unitType}
+                    placeholder="Type"
+                    onChange={(e) => patch(u.id, { unitType: e.target.value })}
+                    className={INPUT}
+                  />
+                )}
+              </Labeled>
+            )}
+            {locationOptions && (
+              <Labeled label="Location">
                 <select
-                  value={u.unitType}
-                  onChange={(e) => patch(u.id, { unitType: e.target.value })}
+                  value={u.location ?? ""}
+                  onChange={(e) => patch(u.id, { location: e.target.value })}
                   className={INPUT}
                 >
                   <option value="">Select…</option>
-                  {typeOptions.map((t) => (
+                  {locationOptions.map((t) => (
                     <option key={t} value={t}>
                       {t}
                     </option>
                   ))}
                 </select>
-              ) : (
+              </Labeled>
+            )}
+            {showMfrDate && (
+              <Labeled label="Manufacture Date">
                 <input
-                  value={u.unitType}
-                  placeholder="Type"
-                  onChange={(e) => patch(u.id, { unitType: e.target.value })}
+                  type="month"
+                  value={u.mfrDate}
+                  onChange={(e) => patch(u.id, { mfrDate: e.target.value })}
                   className={INPUT}
                 />
-              )}
-            </Labeled>
-            <Labeled label="Manufacture Date">
-              <input
-                type="month"
-                value={u.mfrDate}
-                onChange={(e) => patch(u.id, { mfrDate: e.target.value })}
-                className={INPUT}
-              />
-            </Labeled>
+              </Labeled>
+            )}
           </div>
 
           {children?.(u, i)}

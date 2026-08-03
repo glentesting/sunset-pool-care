@@ -1,14 +1,15 @@
 "use client";
 import SectionShell from "../../shared/SectionShell";
 import UnitList from "../../shared/UnitList";
+import UnitItemList from "../../shared/UnitItemList";
+import { LIGHT_ITEMS, LIGHT_LOCATIONS, LIGHT_TYPES } from "../../config";
 
 /**
- * Automation, Controls & Electrical — checklist plus INTERIOR LIGHTS, which
- * moved here from Pool Surface & Interior Finish (spec 1.5). GFCI Outlets &
- * Switch Covers also lands here as a line item (Pass 2).
+ * Automation, Controls & Electrical — the section checklist (timer, panel,
+ * salt cell, GFCI, etc.) plus INTERIOR LIGHTS, which moved here from Pool
+ * Surface & Interior Finish (spec 1.5). Each light carries Type and Location
+ * (Brian's tool) and its own condition rating.
  */
-const LIGHT_TYPES = ["LED", "Incandescent", "Fiber Optic", "Other"] as const;
-
 export default function SectionAutomation() {
   return (
     <SectionShell sectionId="automation">
@@ -23,7 +24,12 @@ export default function SectionAutomation() {
           addLabel="+ Add Another Light"
           photoSlots={["Light"]}
           typeOptions={LIGHT_TYPES}
-        />
+          locationOptions={LIGHT_LOCATIONS}
+          makeModelLabel="Make / Model"
+          makeModelPlaceholder="e.g. Pentair IntelliBrite"
+        >
+          {(u) => <UnitItemList sectionId="automation" unitId={u.id} defs={LIGHT_ITEMS} />}
+        </UnitList>
       </div>
     </SectionShell>
   );

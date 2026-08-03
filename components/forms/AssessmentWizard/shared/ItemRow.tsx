@@ -35,39 +35,68 @@ const RATING_FILL: Record<Rating, string> = {
 export default function ItemRow({
   sectionId,
   item,
+  itemKey,
 }: {
   sectionId: string;
   item: ItemDef;
+  /** State key override for per-unit items (e.g. `${unitId}:${item.id}`). */
+  itemKey?: string;
 }) {
   const { state, dispatch } = useAssessment();
-  const st: ItemState = state.sections[sectionId]?.items?.[item.id] ?? { note: "" };
+  const key = itemKey ?? item.id;
+  const st: ItemState = state.sections[sectionId]?.items?.[key] ?? { note: "" };
 
   return (
     <div className="border-b border-wiz-line py-3 last:border-b-0">
-      <p className="mb-2 text-[13px] font-medium text-wiz-ink">{item.label}</p>
+      <p className="text-[13px] font-medium text-wiz-ink">{item.label}</p>
+      {item.desc && <p className="mb-2 mt-0.5 text-[12px] leading-snug text-wiz-ink/60">{item.desc}</p>}
+      {!item.desc && <div className="mb-2" />}
+
+      {item.readingUnit && (
+        <div className="mb-2 flex items-center gap-2">
+          <input
+            type="text"
+            inputMode="decimal"
+            value={st.reading ?? ""}
+            onChange={(e) =>
+              dispatch({ type: "setItemReading", sectionId, itemId: key, reading: e.target.value })
+            }
+            placeholder="0"
+            aria-label={`${item.label} reading`}
+            className="w-24 rounded-md border border-wiz-field bg-white px-2 py-1.5 text-center text-[15px] font-semibold text-wiz-ink focus:border-wiz-accent focus:outline-none focus:ring-1 focus:ring-wiz-accent/30"
+          />
+          <span className="text-[13px] font-medium text-wiz-ink/60">{item.readingUnit}</span>
+        </div>
+      )}
 
       {item.kind === "binary" ? (
         <BinaryControl
           value={st.answer}
           goodAnswer={item.goodAnswer ?? "yes"}
           onPick={(answer) =>
-            dispatch({ type: "setItemAnswer", sectionId, itemId: item.id, answer })
+            dispatch({ type: "setItemAnswer", sectionId, itemId: key, answer })
           }
         />
       ) : (
         <ConditionControl
           value={st.rating}
           onPick={(rating) =>
-            dispatch({ type: "setItemRating", sectionId, itemId: item.id, rating })
+            dispatch({ type: "setItemRating", sectionId, itemId: key, rating })
           }
         />
+      )}
+
+      {item.staticNote && (
+        <p className="mt-2 rounded-md border-l-[3px] border-monitor-dark bg-monitor/10 px-2.5 py-1.5 text-[12px] leading-snug text-wiz-ink/80">
+          {item.staticNote}
+        </p>
       )}
 
       <input
         type="text"
         value={st.note}
         onChange={(e) =>
-          dispatch({ type: "setItemNote", sectionId, itemId: item.id, note: e.target.value })
+          dispatch({ type: "setItemNote", sectionId, itemId: key, note: e.target.value })
         }
         placeholder="Note (optional)"
         aria-label={`Note for ${item.label}`}
