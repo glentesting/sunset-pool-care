@@ -18,6 +18,24 @@ const bodyOfWaterSchema = z.object({
   lastWaterChangeUnknown: z.boolean(),
 });
 
+// A single rated/annotated checklist row on the report (Pass 3).
+const reportItemSchema = z.object({
+  label: z.string(),
+  /** effective rating for the badge (binary items resolve to GOOD / ATTENTION) */
+  status: ratingSchema.optional(),
+  answer: z.enum(["yes", "no"]).optional(),
+  reading: z.string().optional(),
+  readingUnit: z.string().optional(),
+  note: z.string().default(""),
+});
+
+// A repeatable unit (filter / pump / light / extra) with its own rated rows.
+const reportUnitSchema = z.object({
+  heading: z.string(),
+  note: z.string().default(""),
+  items: z.array(reportItemSchema).default([]),
+});
+
 const sectionSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -25,6 +43,14 @@ const sectionSchema = z.object({
   notes: z.string(),
   photoCount: z.number().int().nonnegative(),
   photos: z.array(photoSchema).default([]),
+  items: z.array(reportItemSchema).default([]),
+  units: z.array(reportUnitSchema).default([]),
+});
+
+const configOptionSchema = z.object({
+  label: z.string(),
+  status: ratingSchema.optional(),
+  note: z.string().default(""),
 });
 
 const chemistryRowSchema = z.object({
@@ -62,8 +88,15 @@ export const assessmentSchema = z.object({
     features: z.array(z.string()),
   }),
   configPhotos: z.array(photoSchema).default([]),
+  configOptions: z.array(configOptionSchema).default([]),
   sections: z.array(sectionSchema),
   chemistry: z.array(chemistryRowSchema),
+  // Report-wide count band: "N need attention · N to monitor · N good".
+  itemCounts: z.object({
+    attention: z.number().int().nonnegative(),
+    monitor: z.number().int().nonnegative(),
+    good: z.number().int().nonnegative(),
+  }),
   lights: z.array(z.string()),
   filters: z.array(z.string()),
   pumps: z.array(z.string()),
@@ -102,3 +135,5 @@ export const assessmentSchema = z.object({
 });
 
 export type AssessmentData = z.infer<typeof assessmentSchema>;
+export type ReportItem = z.infer<typeof reportItemSchema>;
+export type ReportUnit = z.infer<typeof reportUnitSchema>;
