@@ -4,21 +4,24 @@ import { buildReportPresentation } from "@/lib/report-presentation";
 import { generateAssessmentPdf } from "@/lib/pdf-generator";
 import { uploadAssessmentPdf } from "@/lib/google-drive";
 import { upsertContact, createTask } from "@/lib/hubspot";
+import { uploadPdfToSupabase } from "@/lib/supabase";
 import { logAssessmentToSkimmer } from "@/lib/skimmer";
 
 /**
- * Assessment Wizard submit. FOUR outputs are orchestrated from this ONE route:
+ * Assessment Wizard submit. Outputs orchestrated from this ONE route:
  *   1. Generate PDF              ← WIRED (returned to the tech as download)
  *   2. Upload PDF to Drive       ← STUBBED (throws, caught)
  *   3. HubSpot contact + tasks   ← STUBBED (throws, caught)
- *   4. Make webhook (full body)  ← WIRED; skips cleanly if the URL isn't set
+ *   4. Upload PDF to Supabase    ← WIRED; skips cleanly if not configured → pdf_url
+ *   5. Make webhook              ← WIRED; posts assessment (photo base64 stripped)
+ *                                  + pdf_url. Skips cleanly if the URL isn't set.
  *
  * Each output is wrapped independently — a failure in one never kills the
  * others, and crucially never blocks the PDF. We report exactly what landed in
  * `results` so the tech standing at the pool sees the real state, and stream the
  * PDF back base64-encoded for an immediate download.
  *
- * No env vars / credentials are required for v1 to succeed (PDF only).
+ * No env vars / credentials are required for the PDF to succeed.
  */
 export const runtime = "nodejs";
 
@@ -31,7 +34,7 @@ export async function POST(req: NextRequest) {
     );
   }
   const data = parsed.data;
-  const results = { pdf: false, drive: false, hubspot: false, skimmer: false };
+  const results = { pdf: false, drive: false, hubspot: false, supabase: false, skimmer: false };
 
   // 1. PDF — the one output that must work in v1.
   //    First build the customer-facing WORDING (Claude polish + summary). This
@@ -71,11 +74,28 @@ export async function POST(req: NextRequest) {
     console.error("HubSpot step failed (stubbed):", e);
   }
 
-  // 4. Make webhook — POST the FULL assessment (Make creates the HubSpot ticket,
-  //    logs Skimmer, etc.). Skips cleanly when the webhook URL isn't configured.
-  //    Own try/catch so a webhook failure never blocks the PDF.
+  // 4. Supabase — upload the PDF, get a signed URL to hand to Make. Skips cleanly
+  //    when not configured (returns null). NEVER blocks submit: on failure the
+  //    Make POST still fires below, just without pdf_url.
+  let pdfUrl: string | null = null;
   try {
-    results.skimmer = await logAssessmentToSkimmer(data);
+    if (pdf) {
+      // Traceable, sanitized object name: customer-date-jobId (session as fallback).
+      const stamp = data.jobId || data.details.session || `${Date.now()}`;
+      const storagePath =
+        `${safeName}-${data.details.date || "report"}-${stamp}`.replace(/[^a-z0-9-]+/gi, "-") + ".pdf";
+      pdfUrl = await uploadPdfToSupabase(pdf, storagePath);
+      results.supabase = pdfUrl !== null;
+    }
+  } catch (e) {
+    console.error("Supabase upload failed:", e);
+  }
+
+  // 5. Make webhook — POST the assessment (photo base64 stripped) + pdf_url. Make
+  //    creates the HubSpot ticket, logs Skimmer, etc. Skips cleanly when the URL
+  //    isn't set. Own try/catch so a webhook failure never blocks the PDF.
+  try {
+    results.skimmer = await logAssessmentToSkimmer(data, pdfUrl);
   } catch (e) {
     console.error("Make webhook step failed:", e);
   }

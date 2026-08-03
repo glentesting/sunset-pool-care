@@ -86,6 +86,7 @@ export type SubmitResults = {
   pdf: boolean;
   drive: boolean;
   hubspot: boolean;
+  supabase: boolean;
   skimmer: boolean;
 };
 
