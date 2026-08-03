@@ -189,7 +189,7 @@ function SubmittedScreen({ results }: { results: SubmitResults }) {
     { key: "drive", label: "Uploaded to Google Drive", stubbed: true },
     { key: "hubspot", label: "HubSpot contact & tasks", stubbed: true },
     { key: "supabase", label: "PDF uploaded to Supabase", stubbed: true },
-    { key: "skimmer", label: "Sent to Make (HubSpot ticket)", stubbed: true },
+    { key: "make", label: "Sent to Make (HubSpot ticket)", stubbed: true },
   ];
   return (
     <div className="space-y-6 py-4 text-center">

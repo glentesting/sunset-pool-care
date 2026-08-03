@@ -87,7 +87,7 @@ export type SubmitResults = {
   drive: boolean;
   hubspot: boolean;
   supabase: boolean;
-  skimmer: boolean;
+  make: boolean;
 };
 
 export type AssessmentState = {

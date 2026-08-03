@@ -5,7 +5,7 @@ import { generateAssessmentPdf } from "@/lib/pdf-generator";
 import { uploadAssessmentPdf } from "@/lib/google-drive";
 import { upsertContact, createTask } from "@/lib/hubspot";
 import { uploadPdfToSupabase } from "@/lib/supabase";
-import { logAssessmentToSkimmer } from "@/lib/skimmer";
+import { logAssessmentToMake } from "@/lib/make";
 
 /**
  * Assessment Wizard submit. Outputs orchestrated from this ONE route:
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     );
   }
   const data = parsed.data;
-  const results = { pdf: false, drive: false, hubspot: false, supabase: false, skimmer: false };
+  const results = { pdf: false, drive: false, hubspot: false, supabase: false, make: false };
 
   // 1. PDF — the one output that must work in v1.
   //    First build the customer-facing WORDING (Claude polish + summary). This
@@ -96,11 +96,11 @@ export async function POST(req: NextRequest) {
     console.error("Supabase upload failed:", e);
   }
 
-  // 5. Make webhook — POST the assessment (photo base64 stripped) + pdf_url. Make
-  //    creates the HubSpot ticket, logs Skimmer, etc. Skips cleanly when the URL
+  // 5. Make webhook — POST the assessment (photo base64 stripped) + pdf_url +
+  //    ticket_body. Make creates the HubSpot ticket. Skips cleanly when the URL
   //    isn't set. Own try/catch so a webhook failure never blocks the PDF.
   try {
-    results.skimmer = await logAssessmentToSkimmer(data, pdfUrl, polishedOverall);
+    results.make = await logAssessmentToMake(data, pdfUrl, polishedOverall);
   } catch (e) {
     console.error("Make webhook step failed:", e);
   }

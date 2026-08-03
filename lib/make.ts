@@ -1,10 +1,10 @@
 /**
  * Make.com webhook — the assessment's outbound integration point.
  *
- * On submit we POST the ENTIRE assessment to a Make scenario, which does the
- * downstream work (create the HubSpot ticket, log to Skimmer, etc.). We route
- * through Make rather than calling those APIs directly so the office can build
- * and edit the automation on the Make side without a code change here.
+ * On submit we POST the ENTIRE assessment to a Make scenario, which creates the
+ * HubSpot ticket (and any other downstream work). We route through Make rather
+ * than calling those APIs directly so the office can build and edit the
+ * automation on the Make side without a code change here.
  *
  * The body is the full AssessmentData — customer identity (incl. email),
  * session/date/inspector, configuration, every section with its derived rating +
@@ -21,14 +21,14 @@
  * summary the office reads to work the HubSpot ticket, so Make doesn't have to
  * walk the nested structure. The structured data stays alongside it.
  *
- * Set MAKE_SKIMMER_WEBHOOK_URL to the Make webhook URL. When it's unset the call
- * is SKIPPED cleanly (returns false, never throws) so local/dev submits and the
- * PDF are never blocked.
+ * Set MAKE_ASSESSMENT_WEBHOOK_URL to the Make webhook URL. When it's unset the
+ * call is SKIPPED cleanly (returns false, never throws) so local/dev submits and
+ * the PDF are never blocked.
  */
 import "server-only";
 import type { AssessmentData, ReportItem } from "@/lib/validation/assessment";
 
-const MAKE_WEBHOOK_URL = process.env.MAKE_SKIMMER_WEBHOOK_URL;
+const MAKE_WEBHOOK_URL = process.env.MAKE_ASSESSMENT_WEBHOOK_URL;
 const TIMEOUT_MS = 15000;
 
 const FLAGGED = new Set(["ATTENTION", "MONITOR"]);
@@ -137,9 +137,9 @@ function buildWebhookBody(data: AssessmentData, pdfUrl: string | null, ticketBod
  * POST the assessment (photo base64 stripped, + pdf_url + ticket_body) to Make.
  * `overallNotes` is the polished overall-assessment note (for ticket_body).
  * @returns true when Make accepted it; false when the webhook isn't configured.
- * @throws on network error or a non-2xx response (caller records skimmer=false).
+ * @throws on network error or a non-2xx response (caller records make=false).
  */
-export async function logAssessmentToSkimmer(
+export async function logAssessmentToMake(
   data: AssessmentData,
   pdfUrl: string | null,
   overallNotes: string
