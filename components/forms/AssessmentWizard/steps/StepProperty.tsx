@@ -1,12 +1,27 @@
 "use client";
+import { useState } from "react";
 import { useAssessment, type BodyOfWater } from "../state";
 import { POOL_TYPES } from "../config";
+import { EMAIL_ERROR } from "../summary";
+import { isValidEmail } from "@/lib/validation/email";
 import { TextField, SelectField } from "../shared/Field";
 
 export default function StepProperty() {
   const { state, dispatch } = useAssessment();
   const p = state.property;
   const d = state.details;
+
+  // Email is required. Show the inline error once the field has been touched
+  // (blurred), so it doesn't shout on an untouched form. Submit is gated
+  // separately in canSubmit, so the error also surfaces at Review.
+  const [emailTouched, setEmailTouched] = useState(false);
+  const emailInvalid = !isValidEmail(p.customerEmail);
+  const emailError =
+    emailTouched && emailInvalid
+      ? p.customerEmail.trim()
+        ? "That email doesn't look right — double-check it."
+        : EMAIL_ERROR
+      : undefined;
 
   return (
     <div className="space-y-4">
@@ -21,6 +36,9 @@ export default function StepProperty() {
         type="email"
         inputMode="email"
         placeholder="name@email.com"
+        required
+        error={emailError}
+        onBlur={() => setEmailTouched(true)}
         onChange={(v) => dispatch({ type: "setProperty", patch: { customerEmail: v } })}
       />
       <TextField

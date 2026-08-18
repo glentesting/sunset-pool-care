@@ -6,6 +6,7 @@
  * PDF can embed them. This makes the payload large — see payload.ts.
  */
 import { z } from "zod";
+import { isValidEmail } from "./email";
 
 export const ratingSchema = z.enum(["GOOD", "MONITOR", "ATTENTION", "N/A"]);
 
@@ -65,9 +66,15 @@ export const assessmentSchema = z.object({
   jobId: z.string().optional(),
   property: z.object({
     customerName: z.string().min(1, "Customer name is required"),
-    // Optional to submit (a tech may not have it) but always present. HubSpot
-    // match key + how the office reaches the customer.
-    customerEmail: z.string().default(""),
+    // Required — the HubSpot write keys off it, so a blank email is rejected here
+    // as well as blocked in the UI. Trimmed and shape-checked (shared validator).
+    customerEmail: z
+      .string()
+      .trim()
+      .refine(isValidEmail, "A valid customer email is required"),
+    // Derived from customerName in the payload builder (splitCustomerName).
+    customerFirstName: z.string().default(""),
+    customerLastName: z.string().default(""),
     customerPhone: z.string().default(""),
     serviceAddress: z.string(),
     city: z.string(),

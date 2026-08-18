@@ -16,22 +16,34 @@ export function TextField({
   label,
   value,
   onChange,
+  onBlur,
   placeholder,
   type = "text",
   inputMode,
+  required = false,
+  error,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  onBlur?: () => void;
   placeholder?: string;
   type?: string;
   inputMode?: "text" | "numeric" | "decimal" | "tel" | "email";
+  required?: boolean;
+  /** When set, the field shows an attention border + this message beneath it. */
+  error?: string;
 }) {
   const id = useId();
   return (
     <div>
       <label htmlFor={id} className={labelCls}>
         {label}
+        {required && (
+          <span className="text-attention" aria-hidden="true">
+            {" *"}
+          </span>
+        )}
       </label>
       <input
         id={id}
@@ -40,8 +52,12 @@ export function TextField({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className={inputCls}
+        onBlur={onBlur}
+        aria-required={required || undefined}
+        aria-invalid={error ? true : undefined}
+        className={`${inputCls} ${error ? "border-attention focus:border-attention focus:ring-attention/30" : ""}`}
       />
+      {error && <p className="mt-1 text-[13px] font-medium text-attention-dark">{error}</p>}
     </div>
   );
 }

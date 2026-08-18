@@ -19,7 +19,11 @@ import {
   type Rating,
 } from "./config";
 import { WIZARD_STEPS, type WizardStep } from "./steps";
+import { isValidEmail } from "@/lib/validation/email";
 import type { AssessmentState, ItemState } from "./state";
+
+/** Plain-language message for a missing/invalid customer email (shared UI + gate). */
+export const EMAIL_ERROR = "We need the customer's email to file this assessment.";
 
 // --- Spa derivation (single source — not asked a third time) ----------------
 
@@ -188,6 +192,7 @@ export function outstandingPhotoIssues(state: AssessmentState): string[] {
 export function canSubmit(state: AssessmentState): { ok: boolean; reasons: string[] } {
   const reasons: string[] = [];
   if (!state.property.customerName.trim()) reasons.push("Customer name is required.");
+  if (!isValidEmail(state.property.customerEmail)) reasons.push(EMAIL_ERROR);
   // Inspector name is captured once on Property & Inspection and reused here.
   if (!state.details.inspectorName.trim()) reasons.push("Inspector name is required.");
   if (!state.certification.certified) reasons.push("Inspector certification must be checked.");

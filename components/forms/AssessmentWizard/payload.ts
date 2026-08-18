@@ -56,6 +56,29 @@ function photosOf(map: Record<string, Photo>): { label: string; dataUrl: string 
     .map(([key, p]) => ({ label: (p.label ?? "").trim() || slotName(key), dataUrl: p.dataUrl }));
 }
 
+/**
+ * Split the customer's full name into first + last for the webhook payload
+ * (HubSpot wants them separate). `customerName` itself is left untouched.
+ *   - trim + collapse internal whitespace to single spaces
+ *   - ""        -> { first: "", last: "" }
+ *   - one token -> { first: token, last: "" }
+ *   - else      -> first token / everything after the first space, as-is
+ *     ("Mary Anne Van Der Berg" -> "Mary" / "Anne Van Der Berg")
+ */
+export function splitCustomerName(fullName: string): {
+  customerFirstName: string;
+  customerLastName: string;
+} {
+  const normalized = fullName.trim().replace(/\s+/g, " ");
+  if (!normalized) return { customerFirstName: "", customerLastName: "" };
+  const gap = normalized.indexOf(" ");
+  if (gap === -1) return { customerFirstName: normalized, customerLastName: "" };
+  return {
+    customerFirstName: normalized.slice(0, gap),
+    customerLastName: normalized.slice(gap + 1),
+  };
+}
+
 /** One rated/annotated item → a report row. Unrated + empty items return null. */
 function reportItem(def: ItemDef, st: ItemState | undefined): ReportItem | null {
   const status = itemRating(def, st);
@@ -186,7 +209,12 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
 
   return {
     jobId: state.jobId || undefined,
-    property: { ...state.property },
+    property: {
+      ...state.property,
+      // Email trimmed before it goes over the wire; first/last derived from name.
+      customerEmail: state.property.customerEmail.trim(),
+      ...splitCustomerName(state.property.customerName),
+    },
     details: { ...state.details },
     config: {
       surfaces: state.config.surfaces,
