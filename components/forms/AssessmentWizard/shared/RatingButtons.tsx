@@ -1,5 +1,5 @@
 "use client";
-import { RATINGS, type Rating } from "../config";
+import { RATINGS, RATING_DISPLAY, type Rating } from "../config";
 
 /**
  * Rating control — a refined SEGMENTED control (four divided segments in one
@@ -16,13 +16,6 @@ const SELECTED_FILL: Record<Rating, string> = {
   MONITOR: "bg-monitor-dark text-white",
   ATTENTION: "bg-attention-dark text-white",
   "N/A": "bg-stone-dark text-white",
-};
-
-const SHORT: Record<Rating, string> = {
-  GOOD: "Good",
-  MONITOR: "Monitor",
-  ATTENTION: "Attn",
-  "N/A": "N/A",
 };
 
 export default function RatingButtons({
@@ -48,7 +41,7 @@ export default function RatingButtons({
               size === "lg" ? "py-3.5 text-sm" : "py-2.5 text-[13px]"
             } ${active ? SELECTED_FILL[r] : "bg-white text-wiz-ink/75 hover:bg-wiz-surface"}`}
           >
-            {SHORT[r]}
+            {RATING_DISPLAY[r]}
           </button>
         );
       })}

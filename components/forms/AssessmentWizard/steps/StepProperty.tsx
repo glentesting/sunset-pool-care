@@ -113,7 +113,7 @@ export default function StepProperty() {
             label="Inspection Date"
             type="date"
             value={d.date}
-            onChange={(v) => dispatch({ type: "setDetails", patch: { date: v } })}
+            onChange={(v) => dispatch({ type: "setInspectionDate", date: v })}
           />
         </div>
         <dl className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-wiz-surface/70 p-3 text-center">

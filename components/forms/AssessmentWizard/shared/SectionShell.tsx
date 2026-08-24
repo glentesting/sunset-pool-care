@@ -1,7 +1,7 @@
 "use client";
 import type { ReactNode } from "react";
 import { useAssessment } from "../state";
-import { FLAGGED_RATINGS, getSection } from "../config";
+import { FLAGGED_RATINGS, RATING_DISPLAY, getSection } from "../config";
 import { sectionRating } from "../summary";
 import ItemRow from "./ItemRow";
 import PhotoSlot from "./PhotoSlot";
@@ -59,9 +59,9 @@ export default function SectionShell({
             <p className={groupLabel}>Checklist</p>
             {rating && (
               <span
-                className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${BADGE[rating]}`}
+                className={`rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide ${BADGE[rating]}`}
               >
-                {rating}
+                {RATING_DISPLAY[rating]}
               </span>
             )}
           </div>
@@ -100,7 +100,7 @@ export default function SectionShell({
 
       {needsPhoto && (
         <p className="rounded-lg border border-attention/20 bg-attention/5 px-3 py-2 text-[13px] font-medium text-attention">
-          A {rating} rating needs at least one photo before you can submit.
+          A {rating ? RATING_DISPLAY[rating] : ""} rating needs at least one photo before you can submit.
         </p>
       )}
 

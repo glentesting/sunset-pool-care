@@ -95,7 +95,11 @@ export function sectionRating(state: AssessmentState, sectionId: string): Rating
     const usesSalt = state.config.sanitization.includes(SALT_SANITIZER);
     for (const p of CHEMISTRY_PARAMS) {
       if (p.saltOnly && !usesSalt) continue;
-      ratings.push(state.chemistry[p.key]?.rating);
+      const row = state.chemistry[p.key];
+      // No reading → no status contribution (a rating without a measurement is
+      // meaningless and must not colour the section).
+      if (!(row?.reading ?? "").trim()) continue;
+      ratings.push(row?.rating);
     }
   }
 

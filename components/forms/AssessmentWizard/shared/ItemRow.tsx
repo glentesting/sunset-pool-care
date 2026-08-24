@@ -1,5 +1,5 @@
 "use client";
-import { RATINGS, type BinaryAnswer, type ItemDef, type Rating } from "../config";
+import { RATINGS, RATING_DISPLAY, type BinaryAnswer, type ItemDef, type Rating } from "../config";
 import { useAssessment, type ItemState } from "../state";
 
 /**
@@ -17,13 +17,6 @@ import { useAssessment, type ItemState } from "../state";
  * Sunlight legibility is a hard requirement: visible wiz-field borders, deep
  * fills with white text when selected, near-black labels, no ghost gray.
  */
-
-const RATING_SHORT: Record<Rating, string> = {
-  GOOD: "Good",
-  MONITOR: "Monitor",
-  ATTENTION: "ATTN",
-  "N/A": "NA",
-};
 
 const RATING_FILL: Record<Rating, string> = {
   GOOD: "bg-good-dark text-white",
@@ -127,7 +120,7 @@ function ConditionControl({
               active ? RATING_FILL[r] : "bg-white text-wiz-ink/75 hover:bg-wiz-surface"
             }`}
           >
-            {RATING_SHORT[r]}
+            {RATING_DISPLAY[r]}
           </button>
         );
       })}

@@ -15,6 +15,19 @@ import type { AssessmentState, ListKey } from "./state";
 export const RATINGS = ["GOOD", "MONITOR", "ATTENTION", "N/A"] as const;
 export type Rating = (typeof RATINGS)[number];
 
+/**
+ * Human-facing labels for the rating enums — the SINGLE source for how a rating
+ * renders to a person (wizard, badges, ticket). Title case, "Attn" not "ATTENTION".
+ * Internal enum values (GOOD/MONITOR/ATTENTION/N/A) are never changed. (The PDF
+ * keeps its own hardcoded copy on purpose — it's font/color-independent.)
+ */
+export const RATING_DISPLAY: Record<Rating, string> = {
+  GOOD: "Good",
+  MONITOR: "Monitor",
+  ATTENTION: "Attn",
+  "N/A": "N/A",
+};
+
 /** A flagged item (MONITOR / ATTENTION) must carry a photo before submit. */
 export const FLAGGED_RATINGS: Rating[] = ["MONITOR", "ATTENTION"];
 

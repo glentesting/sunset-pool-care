@@ -3,7 +3,7 @@ import { useAssessment, clearDraft, type SubmitResults } from "../state";
 import { canSubmit, overallCondition, sectionRollup, type OverallKey } from "../summary";
 import { buildSubmitPayload } from "../payload";
 import NotesField from "../shared/NotesField";
-import type { Rating } from "../config";
+import { RATING_DISPLAY as RATING_LABEL, type Rating } from "../config";
 
 const RATING_DOT: Record<Rating, string> = {
   GOOD: "bg-good",
@@ -16,12 +16,6 @@ const RATING_TEXT: Record<Rating, string> = {
   MONITOR: "text-monitor-dark",
   ATTENTION: "text-attention-dark",
   "N/A": "text-stone-dark",
-};
-const RATING_LABEL: Record<Rating, string> = {
-  GOOD: "Good",
-  MONITOR: "Monitor",
-  ATTENTION: "Attn",
-  "N/A": "N/A",
 };
 const OVERALL_ACCENT: Record<OverallKey, string> = {
   "not-rated": "text-stone-dark",
@@ -184,12 +178,24 @@ export default function StepReview() {
 }
 
 function SubmittedScreen({ results }: { results: SubmitResults }) {
-  const rows: { key: keyof SubmitResults; label: string; stubbed?: boolean }[] = [
-    { key: "pdf", label: "PDF report generated & downloaded" },
-    { key: "drive", label: "Uploaded to Google Drive", stubbed: true },
-    { key: "hubspot", label: "HubSpot contact & tasks", stubbed: true },
-    { key: "supabase", label: "PDF uploaded to Supabase", stubbed: true },
-    { key: "make", label: "Sent to Make (HubSpot ticket)", stubbed: true },
+  // Each row reflects the REAL outcome — a green check on success, a visible
+  // failure otherwise. No "pending setup" that lies when the code actually ran.
+  const supabaseFail =
+    results.supabaseReason === "not-configured"
+      ? "PDF upload skipped — Supabase not configured"
+      : results.supabaseReason === "error"
+        ? "PDF upload failed — see submit log"
+        : "PDF upload skipped — no PDF generated";
+  const rows: { ok: boolean; label: string }[] = [
+    {
+      ok: results.pdf,
+      label: results.pdf ? "PDF report generated & downloaded" : "PDF failed to generate",
+    },
+    { ok: results.supabase, label: results.supabase ? "PDF uploaded to Supabase" : supabaseFail },
+    {
+      ok: results.make,
+      label: results.make ? "Sent to Make (HubSpot ticket)" : "Not sent to Make — see submit log",
+    },
   ];
   return (
     <div className="space-y-6 py-4 text-center">
@@ -201,15 +207,14 @@ function SubmittedScreen({ results }: { results: SubmitResults }) {
         <p className="mt-1 text-sm text-wiz-ink/70">Your PDF should be downloading now.</p>
       </div>
       <ul className="divide-y divide-wiz-line border-y border-wiz-line text-left">
-        {rows.map((r) => (
-          <li key={r.key} className="flex items-center gap-3 py-3">
-            <span className={results[r.key] ? "text-good-dark" : "text-wiz-ink/30"}>
-              {results[r.key] ? "✓" : "○"}
+        {rows.map((r, i) => (
+          <li key={i} className="flex items-center gap-3 py-3">
+            <span className={r.ok ? "text-good-dark" : "text-attention-dark"}>
+              {r.ok ? "✓" : "✕"}
             </span>
-            <span className="flex-1 text-[13px] text-wiz-ink">{r.label}</span>
-            {r.stubbed && !results[r.key] && (
-              <span className="text-[11px] font-medium text-wiz-ink/60">pending setup</span>
-            )}
+            <span className={`flex-1 text-[13px] ${r.ok ? "text-wiz-ink" : "text-attention-dark"}`}>
+              {r.label}
+            </span>
           </li>
         ))}
       </ul>

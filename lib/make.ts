@@ -26,95 +26,74 @@
  * the PDF are never blocked.
  */
 import "server-only";
-import type { AssessmentData, ReportItem } from "@/lib/validation/assessment";
+import type { AssessmentData } from "@/lib/validation/assessment";
 
 const MAKE_WEBHOOK_URL = process.env.MAKE_ASSESSMENT_WEBHOOK_URL;
 const TIMEOUT_MS = 15000;
 
-const FLAGGED = new Set(["ATTENTION", "MONITOR"]);
-
-/** "Section — Item: STATUS — note" (unit heading folded in for per-unit items). */
-function formatFlagged(sectionTitle: string, unitHeading: string | null, it: ReportItem): string {
-  const where = unitHeading
-    ? `${sectionTitle} — ${unitHeading} — ${it.label}`
-    : `${sectionTitle} — ${it.label}`;
-  const note = it.note?.trim() ? ` — ${it.note.trim()}` : "";
-  return `${where}: ${it.status}${note}`;
-}
-
 /**
- * Pre-formatted plain-text ticket body for the office. Uses the polished item
- * notes already on `data` (same text as the PDF). `overallNotes` should be the
- * polished overall-assessment note.
+ * Compact triage summary for the HubSpot ticket description. HubSpot's plain-text
+ * description truncates behind "See more" at ~4 lines, so this is deliberately
+ * short — the PDF is the report; this just lets someone triage from the board.
+ * Shape:
+ *
+ *   Name · Address, City ZIP
+ *   email · phone
+ *
+ *   NEEDS ATTENTION — 1 item
+ *   Section — Item
+ *
+ *   View full report: https://…
+ *
+ * Attn items are listed (max 6, then "+N more"); Monitor is a count only.
+ * Chemistry and overall notes are NOT here — they live in the PDF.
  */
-export function buildTicketBody(
-  data: AssessmentData,
-  pdfUrl: string | null,
-  overallNotes: string
-): string {
+export function buildTicketBody(data: AssessmentData, pdfUrl: string | null): string {
   const p = data.property;
   const out: string[] = [];
 
-  // Customer.
-  out.push("CUSTOMER");
-  out.push(p.customerName || "—");
-  const cityZip = [p.city, p.zip].filter(Boolean).join(" ");
-  const addr = [p.serviceAddress, cityZip].filter(Boolean).join(", ");
-  if (addr) out.push(addr);
-  if (p.customerEmail?.trim()) out.push(p.customerEmail.trim());
-  if (p.customerPhone?.trim()) out.push(p.customerPhone.trim());
+  // Line 1: name · address, city zip
+  const cityZip = [p.city, p.zip].map((x) => x?.trim()).filter(Boolean).join(" ");
+  const addr = [p.serviceAddress?.trim(), cityZip].filter(Boolean).join(", ");
+  out.push([p.customerName?.trim() || "—", addr].filter(Boolean).join(" · "));
+
+  // Line 2: email · phone — omit either if blank, omit the line if both are blank.
+  const contact = [p.customerEmail?.trim(), p.customerPhone?.trim()].filter(Boolean).join(" · ");
+  if (contact) out.push(contact);
+
   out.push("");
 
-  // Overall condition + item counts.
-  const c = data.itemCounts;
-  out.push(`OVERALL: ${data.overall.label}`);
-  out.push(`${c.attention} need attention · ${c.monitor} to monitor · ${c.good} good`);
-  out.push("");
-
-  // Flagged items (ATTENTION / MONITOR) across section items, unit items, and
-  // config-option (sanitation / feature) ratings.
-  const flagged: string[] = [];
+  // Flagged items across section items, unit items, and config options. Chemistry
+  // is excluded (it's in the PDF). Attn is listed; Monitor is counted only.
+  const attn: string[] = [];
+  let monitor = 0;
+  const tally = (label: string, status?: string) => {
+    if (status === "ATTENTION") attn.push(label);
+    else if (status === "MONITOR") monitor += 1;
+  };
   for (const s of data.sections) {
-    for (const it of s.items) {
-      if (it.status && FLAGGED.has(it.status)) flagged.push(formatFlagged(s.title, null, it));
-    }
-    for (const u of s.units) {
-      for (const it of u.items) {
-        if (it.status && FLAGGED.has(it.status)) flagged.push(formatFlagged(s.title, u.heading, it));
-      }
-    }
+    for (const it of s.items) tally(`${s.title} — ${it.label}`, it.status);
+    for (const u of s.units)
+      for (const it of u.items) tally(`${s.title} — ${u.heading} — ${it.label}`, it.status);
   }
-  for (const o of data.configOptions) {
-    if (o.status && FLAGGED.has(o.status)) {
-      const note = o.note?.trim() ? ` — ${o.note.trim()}` : "";
-      flagged.push(`Configuration — ${o.label}: ${o.status}${note}`);
-    }
-  }
-  out.push("FLAGGED ITEMS");
-  out.push(flagged.length ? flagged.join("\n") : "None — all inspected items are Good or N/A.");
+  for (const o of data.configOptions) tally(`Configuration — ${o.label}`, o.status);
+
+  // Overall condition + Attn count.
+  const overall = data.overall.label.toUpperCase();
+  out.push(attn.length ? `${overall} — ${attn.length} item${attn.length === 1 ? "" : "s"}` : overall);
+
+  // One line per Attn item, capped at 6.
+  const CAP = 6;
+  for (const line of attn.slice(0, CAP)) out.push(line);
+  if (attn.length > CAP) out.push(`+${attn.length - CAP} more — see full report`);
+
+  // Monitor: count only.
+  if (monitor > 0) out.push(`${monitor} to monitor`);
+
   out.push("");
 
-  // Chemistry — every reading with value, ideal and status.
-  out.push("CHEMISTRY");
-  out.push(
-    data.chemistry
-      .map(
-        (ch) =>
-          `${ch.label}: ${ch.reading || "—"} (ideal ${ch.ideal})${ch.rating ? ` — ${ch.rating}` : ""}`
-      )
-      .join("\n")
-  );
-  out.push("");
-
-  // Overall notes (if any).
-  if (overallNotes.trim()) {
-    out.push("OVERALL NOTES");
-    out.push(overallNotes.trim());
-    out.push("");
-  }
-
-  // PDF link.
-  if (pdfUrl) out.push(`PDF: ${pdfUrl}`);
+  // PDF link — always the last line; a missing upload is made obvious, not silent.
+  out.push(`View full report: ${pdfUrl ?? "(PDF upload failed — see submit log)"}`);
 
   return out.join("\n").trim();
 }
@@ -135,18 +114,16 @@ function buildWebhookBody(data: AssessmentData, pdfUrl: string | null, ticketBod
 
 /**
  * POST the assessment (photo base64 stripped, + pdf_url + ticket_body) to Make.
- * `overallNotes` is the polished overall-assessment note (for ticket_body).
  * @returns true when Make accepted it; false when the webhook isn't configured.
  * @throws on network error or a non-2xx response (caller records make=false).
  */
 export async function logAssessmentToMake(
   data: AssessmentData,
-  pdfUrl: string | null,
-  overallNotes: string
+  pdfUrl: string | null
 ): Promise<boolean> {
   if (!MAKE_WEBHOOK_URL) return false; // not configured — skip cleanly, don't block submit
 
-  const ticketBody = buildTicketBody(data, pdfUrl, overallNotes);
+  const ticketBody = buildTicketBody(data, pdfUrl);
   const res = await fetch(MAKE_WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

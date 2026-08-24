@@ -309,6 +309,10 @@ function Thumbs({ photos }: { photos: Section["photos"] }) {
 
 function AssessmentReport({ data, presentation }: { data: AssessmentData; presentation: ReportPresentation }) {
   const { property, details, config, configPhotos, configOptions, sections, chemistry, itemCounts, overallNotes, overall, certification } = data;
+  // Defense in depth: only chemistry params WITH a reading are shown (the payload
+  // already drops reading-less ones — a status with no measurement is a false
+  // claim). If none were tested, the whole chemistry section is omitted below.
+  const chemRows = chemistry.filter((c) => (c.reading ?? "").trim() !== "");
 
   return (
     <Document title={`${SITE.shortName} Pool Assessment — ${property.customerName}`}>
@@ -387,7 +391,9 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
           <View style={s.metaColGap} />
           <View style={s.metaCol}>
             <Text style={s.colTitle}>Inspection</Text>
-            <Info label="Session" value={details.session} />
+            {/* Session id intentionally omitted from the customer PDF — it's an
+                internal identifier and the only header field with a date baked in,
+                so it can contradict the rest of the header. Still generated + stored. */}
             <Info label="Date / Time" value={[details.date, details.time].filter(Boolean).join(" ") || undefined} />
             <Info label="Inspector" value={details.inspectorName} />
 
@@ -427,24 +433,29 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
           />
         ))}
 
-        {/* Chemistry table */}
-        <Text style={s.sectionTitle}>Water Chemistry</Text>
-        <View style={s.tHead}>
-          <Text style={[s.tHeadCell, { flex: 2 }]}>Parameter</Text>
-          <Text style={[s.tHeadCell, { flex: 1 }]}>Reading</Text>
-          <Text style={[s.tHeadCell, { flex: 1 }]}>Ideal</Text>
-          <Text style={[s.tHeadCell, { width: 52, textAlign: "right" }]}>Status</Text>
-        </View>
-        {chemistry.map((c) => (
-          <View key={c.key} style={s.tRow}>
-            <Text style={{ flex: 2 }}>{c.label}</Text>
-            <Text style={{ flex: 1, fontFamily: "Helvetica-Bold" }}>{c.reading || "—"}</Text>
-            <Text style={{ flex: 1, color: GREY }}>{c.ideal}</Text>
-            <Text style={{ width: 52, textAlign: "right", fontFamily: "Helvetica-Bold", color: c.rating ? RATING_COLOR[c.rating] : STONE }}>
-              {c.rating ? RATING_LABEL[c.rating] : "—"}
-            </Text>
-          </View>
-        ))}
+        {/* Chemistry table — only params WITH a reading reach here (payload drops
+            reading-less ones). If none were tested, the whole section is omitted. */}
+        {chemRows.length > 0 && (
+          <>
+            <Text style={s.sectionTitle}>Water Chemistry</Text>
+            <View style={s.tHead}>
+              <Text style={[s.tHeadCell, { flex: 2 }]}>Parameter</Text>
+              <Text style={[s.tHeadCell, { flex: 1 }]}>Reading</Text>
+              <Text style={[s.tHeadCell, { flex: 1 }]}>Ideal</Text>
+              <Text style={[s.tHeadCell, { width: 52, textAlign: "right" }]}>Status</Text>
+            </View>
+            {chemRows.map((c) => (
+              <View key={c.key} style={s.tRow}>
+                <Text style={{ flex: 2 }}>{c.label}</Text>
+                <Text style={{ flex: 1, fontFamily: "Helvetica-Bold" }}>{c.reading || "—"}</Text>
+                <Text style={{ flex: 1, color: GREY }}>{c.ideal}</Text>
+                <Text style={{ width: 52, textAlign: "right", fontFamily: "Helvetica-Bold", color: c.rating ? RATING_COLOR[c.rating] : STONE }}>
+                  {c.rating ? RATING_LABEL[c.rating] : "—"}
+                </Text>
+              </View>
+            ))}
+          </>
+        )}
 
         {/* The Recommendations block is gone (spec 1.6) — pricing lives in the
             client's Skimmer quote, not the report. */}

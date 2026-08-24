@@ -84,10 +84,10 @@ export type SectionState = {
 
 export type SubmitResults = {
   pdf: boolean;
-  drive: boolean;
-  hubspot: boolean;
   supabase: boolean;
   make: boolean;
+  /** When supabase is false: why, so the submit row can be honest. */
+  supabaseReason?: "not-configured" | "error";
 };
 
 export type AssessmentState = {
@@ -109,6 +109,9 @@ export type AssessmentState = {
     additionalBodies: BodyOfWater[];
   };
   details: { session: string; date: string; time: string; inspectorName: string };
+  /** True once the tech edits the inspection date by hand — then it stops being
+   *  auto-restamped to today on load (persisted with the draft). */
+  dateDirty: boolean;
   config: {
     surfaces: string[];
     sanitization: string[];
@@ -166,6 +169,7 @@ type Action =
   | { type: "updateBody"; id: string; patch: Partial<BodyOfWater> }
   | { type: "removeBody"; id: string }
   | { type: "setDetails"; patch: Partial<AssessmentState["details"]> }
+  | { type: "setInspectionDate"; date: string }
   | { type: "setConfigList"; field: "surfaces" | "sanitization" | "features"; value: string }
   | { type: "setConfigPhoto"; slot: string; dataUrl: string | null }
   | { type: "setConfigPhotoLabel"; slot: string; label: string }
@@ -227,6 +231,7 @@ export function initialState(): AssessmentState {
       additionalBodies: [],
     },
     details: { session: "", date: "", time: "", inspectorName: "" },
+    dateDirty: false,
     config: { surfaces: [], sanitization: [], features: [], photos: {}, optionRatings: {} },
     sections: {},
     chemistry: {},
@@ -341,6 +346,9 @@ function reducer(s: AssessmentState, a: Action): AssessmentState {
 
     case "setDetails":
       return { ...s, details: { ...s.details, ...a.patch } };
+    case "setInspectionDate":
+      // A human edited the date → it wins and survives reloads (dateDirty).
+      return { ...s, details: { ...s.details, date: a.date }, dateDirty: true };
 
     case "setConfigList": {
       const list = s.config[a.field];
@@ -607,12 +615,14 @@ export function AssessmentProvider({ children }: { children: ReactNode }) {
     const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     const time = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
     const detailPatch: Partial<AssessmentState["details"]> = {};
-    // Always re-stamp the inspection DATE to today: a restored draft must not
-    // silently carry a prior session's date into a new one. Still editable — a
-    // tech filing yesterday's assessment can change it. (Time and session stay
-    // first-write-only so the session id remains a stable identifier.)
-    detailPatch.date = date;
-    if (!state.details.time) detailPatch.time = time;
+    // DATE: fill with today automatically, but only until the tech edits it — once
+    // they do (dateDirty), their value wins and survives reloads. This keeps a
+    // stale draft from carrying an old date forward WITHOUT silently overwriting a
+    // deliberately-set inspection date on a signed certification.
+    if (!state.dateDirty) detailPatch.date = date;
+    // TIME: auto-stamped meta (never hand-typed), so re-stamp to now on every load
+    // — same staleness fix as the date, without the manual-edit concern.
+    detailPatch.time = time;
     if (!state.details.session) {
       detailPatch.session = `SPC-${date.replace(/-/g, "")}-${time.replace(":", "")}`;
     }

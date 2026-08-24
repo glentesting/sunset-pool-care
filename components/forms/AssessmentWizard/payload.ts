@@ -182,17 +182,25 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
     };
   });
 
-  const chemistry = CHEMISTRY_PARAMS.filter((p) => !p.saltOnly || usesSalt).map((p) => {
-    const row = state.chemistry[p.key];
-    tally(counts, row?.rating);
-    return {
-      key: p.key,
-      label: p.label,
-      reading: row?.reading ?? "",
-      rating: row?.rating,
-      ideal: p.ideal,
-    };
-  });
+  // A chemistry parameter is scored + shown ONLY when it has an actual reading.
+  // No reading (empty / whitespace) → NO status, dropped from the report and the
+  // count band. A "Good" with no measurement would be a false safety claim; a
+  // rating can otherwise linger without a reading (manual tap, or a resumed
+  // draft), so we gate on the reading here, in the one place both the PDF and the
+  // count band read.
+  const chemistry = CHEMISTRY_PARAMS.filter((p) => !p.saltOnly || usesSalt)
+    .map((p) => ({ p, row: state.chemistry[p.key] }))
+    .filter(({ row }) => (row?.reading ?? "").trim() !== "")
+    .map(({ p, row }) => {
+      tally(counts, row?.rating);
+      return {
+        key: p.key,
+        label: p.label,
+        reading: (row?.reading ?? "").trim(),
+        rating: row?.rating,
+        ideal: p.ideal,
+      };
+    });
 
   // Selected sanitation / feature options with a rating or note (spec Pass 2).
   const configOptions: { label: string; status?: Rating; note: string }[] = [];
