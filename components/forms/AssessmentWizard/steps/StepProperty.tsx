@@ -105,12 +105,24 @@ export default function StepProperty() {
           value={d.inspectorName}
           onChange={(v) => dispatch({ type: "setDetails", patch: { inspectorName: v } })}
         />
-        <dl className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-wiz-surface/70 p-3 text-center">
+        {/* Date defaults to today (re-stamped each session so a stale draft never
+            carries an old date forward), but stays editable for filing an
+            earlier visit. */}
+        <div className="mt-3">
+          <TextField
+            label="Inspection Date"
+            type="date"
+            value={d.date}
+            onChange={(v) => dispatch({ type: "setDetails", patch: { date: v } })}
+          />
+        </div>
+        <dl className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-wiz-surface/70 p-3 text-center">
           <Meta label="Session" value={d.session} />
-          <Meta label="Date" value={d.date} />
           <Meta label="Time" value={d.time} />
         </dl>
-        <p className="mt-1.5 text-[12px] text-wiz-ink/60">Auto-filled from this device.</p>
+        <p className="mt-1.5 text-[12px] text-wiz-ink/60">
+          Date defaults to today — change it if you&rsquo;re filing an earlier visit.
+        </p>
       </div>
     </div>
   );

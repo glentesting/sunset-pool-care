@@ -1,10 +1,14 @@
 "use client";
-import type { ReactNode } from "react";
+import { useEffect, useLayoutEffect, type ReactNode } from "react";
 import { SITE } from "@/content/site";
 import { useAssessment } from "./state";
 import { getActiveSteps } from "./summary";
 import { PHASES, type Phase } from "./steps";
 import DemoLoadButton from "./DemoLoadButton";
+
+// Runs before paint on the client; falls back to useEffect on the server so it
+// doesn't warn during SSR.
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 /**
  * The persistent frame around every step: a quiet branded header (SPC wordmark +
@@ -30,6 +34,15 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
   const isWelcome = step?.id === "welcome";
   const isReview = step?.id === "review";
   const currentPhaseIdx = step ? PHASES.indexOf(step.phase) : 0;
+
+  // On every step change (forward or back), return to the top of the new step.
+  // The step body remounts (main key={idx}); keying on idx runs this after the
+  // new step commits but before paint, so the content never flashes at the old
+  // scroll offset. The page itself scrolls (min-h-screen + sticky header/footer),
+  // so target the window. Instant — no smooth-scroll delay on a 14-step form.
+  useIsoLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [idx]);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col bg-white">

@@ -602,12 +602,16 @@ export function AssessmentProvider({ children }: { children: ReactNode }) {
     if (Object.keys(patch).length) dispatch({ type: "setProperty", patch });
     if (jobId && !state.jobId) dispatch({ type: "setJobId", jobId });
 
-    // Auto-fill inspection details once.
+    // Auto-fill inspection details once, on load.
     const now = new Date();
     const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     const time = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
     const detailPatch: Partial<AssessmentState["details"]> = {};
-    if (!state.details.date) detailPatch.date = date;
+    // Always re-stamp the inspection DATE to today: a restored draft must not
+    // silently carry a prior session's date into a new one. Still editable — a
+    // tech filing yesterday's assessment can change it. (Time and session stay
+    // first-write-only so the session id remains a stable identifier.)
+    detailPatch.date = date;
     if (!state.details.time) detailPatch.time = time;
     if (!state.details.session) {
       detailPatch.session = `SPC-${date.replace(/-/g, "")}-${time.replace(":", "")}`;
