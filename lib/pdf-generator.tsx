@@ -31,6 +31,7 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { SITE } from "@/content/site";
+import { toDisplayCase } from "@/lib/display-case";
 import type { AssessmentData } from "@/lib/validation/assessment";
 
 // Load a logo from public/ once as a data URL (most reliable src across
@@ -311,13 +312,19 @@ function Thumbs({ photos }: { photos: Section["photos"] }) {
 
 function AssessmentReport({ data }: { data: AssessmentData }) {
   const { property, details, config, configPhotos, configOptions, sections, chemistry, itemCounts, overallNotes, overall, certification } = data;
+  // Display casing only — `data` still carries what the tech typed, and that is
+  // what the archive and the Make payload keep. Fixes both a lowercase and a
+  // caps-lock submit reaching the customer as typed. The zip is left alone.
+  const customerName = toDisplayCase(property.customerName);
+  const serviceAddress = toDisplayCase(property.serviceAddress);
+  const cityZip = [toDisplayCase(property.city), property.zip?.trim()].filter(Boolean).join(" ");
   // Defense in depth: only chemistry params WITH a reading are shown (the payload
   // already drops reading-less ones — a status with no measurement is a false
   // claim). If none were tested, the whole chemistry section is omitted below.
   const chemRows = chemistry.filter((c) => (c.reading ?? "").trim() !== "");
 
   return (
-    <Document title={`${SITE.shortName} Pool Assessment — ${property.customerName}`}>
+    <Document title={`${SITE.shortName} Pool Assessment — ${customerName}`}>
       <Page size="A4" style={s.page}>
         {/* Faint branding watermark (navy line-art) — first child so it paints
             behind content, `fixed` so it repeats on every page. */}
@@ -371,9 +378,9 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
         <View style={s.metaRow}>
           <View style={s.metaCol}>
             <Text style={s.colTitle}>Property</Text>
-            <Info label="Customer" value={property.customerName} />
-            <Info label="Address" value={property.serviceAddress} />
-            <Info label="City / ZIP" value={[property.city, property.zip].filter(Boolean).join(" ") || undefined} />
+            <Info label="Customer" value={customerName} />
+            <Info label="Address" value={serviceAddress} />
+            <Info label="City / ZIP" value={cityZip || undefined} />
             <Info label="Pool Type" value={property.poolType} />
             <Info label="Approx. Size" value={property.poolSize} />
             <Info label="Last Change" value={property.lastWaterChangeUnknown ? "Unknown" : property.lastWaterChange} />
@@ -473,7 +480,7 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
         </View>
 
         <Text style={s.footer} fixed>
-          {SITE.name} · {SITE.phone} · {SITE.email} — Prepared for {property.customerName}
+          {SITE.name} · {SITE.phone} · {SITE.email} — Prepared for {customerName}
         </Text>
       </Page>
     </Document>
