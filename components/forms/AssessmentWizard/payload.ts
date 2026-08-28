@@ -29,6 +29,7 @@ import {
   overallCondition,
   sectionRating,
 } from "./summary";
+import { emptyItemCounts, tallyItem } from "@/lib/report-scoring";
 import { unitHeading } from "./shared/UnitList";
 import type { AssessmentState, ItemState, Photo } from "./state";
 
@@ -97,16 +98,12 @@ function reportItem(def: ItemDef, st: ItemState | undefined): ReportItem | null 
   };
 }
 
-function tally(counts: { attention: number; monitor: number; good: number }, r?: Rating) {
-  if (r === "ATTENTION") counts.attention += 1;
-  else if (r === "MONITOR") counts.monitor += 1;
-  else if (r === "GOOD") counts.good += 1;
-}
+
 
 export function buildSubmitPayload(state: AssessmentState): AssessmentData {
   const usesSalt = state.config.sanitization.includes(SALT_SANITIZER);
   const spaPresent = isSpaPresent(state);
-  const counts = { attention: 0, monitor: 0, good: 0 };
+  const counts = emptyItemCounts();
 
   const sections = SECTIONS.map((s) => {
     // Auto-skipped spa is reported as N/A with nothing attached.
@@ -132,7 +129,7 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
       .filter((d) => !d.conditional || d.conditional(state))
       .map((d) => reportItem(d, stateItems[d.id]))
       .filter((r): r is ReportItem => r !== null);
-    for (const r of items) tally(counts, r.status);
+    for (const r of items) tallyItem(counts, r.status);
 
     // Spa's own Last Water Change rides as a row on the spa section.
     if (s.id === "spa") {
@@ -153,7 +150,7 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
         const uItems = unitCfg.defs
           .map((d) => reportItem(d, stateItems[`${u.id}:${d.id}`]))
           .filter((r): r is ReportItem => r !== null);
-        for (const r of uItems) tally(counts, r.status);
+        for (const r of uItems) tallyItem(counts, r.status);
 
         let heading = unitHeading(singular, i, u);
         if (u.location?.trim()) heading += ` · ${u.location.trim()}`;
@@ -192,7 +189,7 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
     .map((p) => ({ p, row: state.chemistry[p.key] }))
     .filter(({ row }) => (row?.reading ?? "").trim() !== "")
     .map(({ p, row }) => {
-      tally(counts, row?.rating);
+      tallyItem(counts, row?.rating);
       return {
         key: p.key,
         label: p.label,
@@ -209,7 +206,7 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
     if (!o) return;
     const note = (o.note ?? "").trim();
     if (!o.rating && !note) return;
-    tally(counts, o.rating);
+    tallyItem(counts, o.rating);
     configOptions.push({ label: opt, status: o.rating, note });
   };
   state.config.sanitization.forEach((o) => pushOption("sanitation", o));

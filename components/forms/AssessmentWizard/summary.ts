@@ -19,6 +19,12 @@ import {
   type Rating,
 } from "./config";
 import { WIZARD_STEPS, type WizardStep } from "./steps";
+import {
+  emptySectionCounts,
+  overallFromSectionCounts,
+  worstRating,
+  type OverallKey,
+} from "@/lib/report-scoring";
 import { isValidEmail } from "@/lib/validation/email";
 import type { AssessmentState, ItemState } from "./state";
 
@@ -47,7 +53,7 @@ export function derivedSpaType(state: AssessmentState): string {
 
 // --- Derived section rating (worst wins) ------------------------------------
 
-const SEVERITY: Record<Rating, number> = { "N/A": 0, GOOD: 1, MONITOR: 2, ATTENTION: 3 };
+
 
 /**
  * A single item's effective rating.
@@ -65,15 +71,7 @@ export function itemRating(def: ItemDef, st: ItemState | undefined): Rating | un
   return st.rating;
 }
 
-/** Worst of a list of ratings; undefined entries are ignored. */
-function worst(ratings: (Rating | undefined)[]): Rating | undefined {
-  let out: Rating | undefined;
-  for (const r of ratings) {
-    if (!r) continue;
-    if (!out || SEVERITY[r] > SEVERITY[out]) out = r;
-  }
-  return out;
-}
+
 
 /**
  * The section rating is DERIVED — sections no longer carry a manual rating.
@@ -114,7 +112,7 @@ export function sectionRating(state: AssessmentState, sectionId: string): Rating
     }
   }
 
-  return worst(ratings);
+  return worstRating(ratings);
 }
 
 // --- Active steps (dynamic) -------------------------------------------------
@@ -136,7 +134,9 @@ export function sectionRollup(state: AssessmentState): SectionRollup[] {
   }));
 }
 
-export type OverallKey = "not-rated" | "good" | "monitor" | "attention";
+// The overall-condition key lives with the scoring rules; re-exported for the
+// wizard components that already import it from here.
+export type { OverallKey };
 
 /**
  * Derive overall condition from ACTUAL section ratings — never default to "Good".
@@ -154,7 +154,7 @@ export function overallCondition(state: AssessmentState): {
   label: string;
   counts: Record<Rating, number>;
 } {
-  const counts: Record<Rating, number> = { GOOD: 0, MONITOR: 0, ATTENTION: 0, "N/A": 0 };
+  const counts = emptySectionCounts();
   let actuallyRated = 0;
   const spaAutoSkipped = !isSpaPresent(state);
   for (const s of SECTIONS) {
@@ -162,23 +162,7 @@ export function overallCondition(state: AssessmentState): {
     if (r) counts[r] += 1;
     if (r && !(s.id === "spa" && spaAutoSkipped)) actuallyRated += 1;
   }
-
-  let key: OverallKey;
-  let label: string;
-  if (actuallyRated === 0) {
-    key = "not-rated";
-    label = "Not Yet Rated";
-  } else if (counts.ATTENTION > 0) {
-    key = "attention";
-    label = "Needs Attention";
-  } else if (counts.MONITOR > 0) {
-    key = "monitor";
-    label = "Monitor Recommended";
-  } else {
-    key = "good";
-    label = "Good Condition";
-  }
-  return { key, label, counts };
+  return overallFromSectionCounts(counts, actuallyRated);
 }
 
 /** Sections whose DERIVED rating is MONITOR/ATTENTION but that have no photo. */
