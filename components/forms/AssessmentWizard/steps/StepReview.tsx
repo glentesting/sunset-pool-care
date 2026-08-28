@@ -186,12 +186,29 @@ function SubmittedScreen({ results }: { results: SubmitResults }) {
       : results.supabaseReason === "error"
         ? "PDF upload failed — see submit log"
         : "PDF upload skipped — no PDF generated";
+
+  // Raw assessment data (the JSON archive + its photo files). A partial photo
+  // upload is a real failure — a re-render would come back missing images — so
+  // it shows as one, with the count, rather than a green check.
+  const photos = results.dataPhotos ?? { total: 0, uploaded: 0 };
+  const photosLost = photos.total - photos.uploaded;
+  const dataLabel = !results.data
+    ? results.dataReason === "not-configured"
+      ? "Assessment data not saved — Supabase not configured"
+      : "Assessment data failed to save — see submit log"
+    : photosLost > 0
+      ? `Assessment data saved — ${photosLost} of ${photos.total} photos failed to upload`
+      : photos.total > 0
+        ? `Assessment data saved (${photos.total} photo${photos.total === 1 ? "" : "s"})`
+        : "Assessment data saved (no photos)";
+
   const rows: { ok: boolean; label: string }[] = [
     {
       ok: results.pdf,
       label: results.pdf ? "PDF report generated & downloaded" : "PDF failed to generate",
     },
     { ok: results.supabase, label: results.supabase ? "PDF uploaded to Supabase" : supabaseFail },
+    { ok: results.data && photosLost === 0, label: dataLabel },
     {
       ok: results.make,
       label: results.make ? "Sent to Make (HubSpot ticket)" : "Not sent to Make — see submit log",

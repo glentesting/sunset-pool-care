@@ -3,19 +3,31 @@ import { assessmentSchema } from "@/lib/validation/assessment";
 import { buildReportPresentation } from "@/lib/report-presentation";
 import { generateAssessmentPdf } from "@/lib/pdf-generator";
 import { uploadPdfToSupabase } from "@/lib/supabase";
+import { archiveAssessment } from "@/lib/assessment-archive";
+import { generateReportId } from "@/lib/report-id";
+import { reportViewerUrl } from "@/lib/site-url";
 import { logAssessmentToMake } from "@/lib/make";
 
 /**
- * Assessment Wizard submit. Three real outputs, each in its own try/catch so a
+ * Assessment Wizard submit. Four real outputs, each in its own try/catch so a
  * failure in one never kills the others and never blocks the PDF:
  *   1. Generate PDF           — returned to the tech as a download.
  *   2. Upload PDF to Supabase — private "assessment-pdfs" bucket → 1-yr signed URL.
- *   3. Make webhook           — posts the assessment (photo base64 stripped) +
- *                               pdf_url + ticket_body; Make creates the HubSpot ticket.
+ *   3. Archive the raw data   — the same bucket gets <stem>.json (the complete
+ *                               payload), the photos as separate image files, and
+ *                               an index/<reportId>.json pointer, so the report
+ *                               can be reopened and re-rendered later.
+ *   4. Make webhook           — posts the assessment (photo base64 stripped) +
+ *                               reportId + pdf_url + ticket_body; Make creates
+ *                               the HubSpot ticket.
+ *
+ * Everything is keyed by `reportId` — a random, unguessable public handle minted
+ * here (lib/report-id.ts). It names the stored pair and it is the URL of the
+ * public viewer at /r/<reportId>, which is the link the ticket carries.
  *
  * `results` reports exactly what landed so the submit screen tells the truth.
- * Supabase carries a reason on failure ("not-configured" | "error") so the row is
- * diagnosable rather than a vague stub.
+ * Supabase and the archive each carry a reason on failure ("not-configured" |
+ * "error") so the row is diagnosable rather than a vague stub.
  */
 export const runtime = "nodejs";
 
@@ -28,18 +40,26 @@ export async function POST(req: NextRequest) {
     );
   }
   const data = parsed.data;
+  const reportId = generateReportId();
   const results: {
     pdf: boolean;
     supabase: boolean;
+    data: boolean;
     make: boolean;
     supabaseReason?: "not-configured" | "error";
-  } = { pdf: false, supabase: false, make: false };
+    dataReason?: "not-configured" | "error";
+    dataPhotos?: { total: number; uploaded: number };
+    reportId: string;
+  } = { pdf: false, supabase: false, data: false, make: false, reportId };
 
   // 1. PDF. buildReportPresentation is presentation-only, never throws (falls
   //    back to raw notes), and mutates the polished per-item notes onto `data`.
+  //    We hold onto the presentation so the archive stores the exact wording
+  //    this render used — a regenerated report then reads identically.
   let pdf: Buffer | null = null;
+  let presentation: Awaited<ReturnType<typeof buildReportPresentation>> | undefined;
   try {
-    const presentation = await buildReportPresentation(data);
+    presentation = await buildReportPresentation(data);
     pdf = await generateAssessmentPdf(data, presentation);
     results.pdf = true;
   } catch (e) {
@@ -49,16 +69,23 @@ export async function POST(req: NextRequest) {
   const safeName = (data.property.customerName || "customer").replace(/[^a-z0-9]+/gi, "-");
   const filename = `${safeName}-pool-assessment-${data.details.date || "report"}.pdf`;
 
+  // Shared filename stem for the stored pair, e.g.
+  //   Dale-Whitaker-2026-08-24-a7f3k2.pdf
+  //   Dale-Whitaker-2026-08-24-a7f3k2.json
+  // The stamp is the reportId — the old jobId/session stamp was timestamp-based
+  // and so guessable, and this makes the pair obvious in a bucket listing.
+  const stem = `${safeName}-${data.details.date || "report"}-${reportId}`.replace(
+    /[^a-z0-9-]+/gi,
+    "-"
+  );
+  const pdfPath = `${stem}.pdf`;
+
   // 2. Supabase — upload the PDF, get a signed URL for Make. Distinguishes
   //    "uploaded" / "not configured" / "error" so the submit row can't lie.
   let pdfUrl: string | null = null;
   if (pdf) {
     try {
-      // Traceable, sanitized object name: customer-date-jobId (session as fallback).
-      const stamp = data.jobId || data.details.session || `${Date.now()}`;
-      const storagePath =
-        `${safeName}-${data.details.date || "report"}-${stamp}`.replace(/[^a-z0-9-]+/gi, "-") + ".pdf";
-      pdfUrl = await uploadPdfToSupabase(pdf, storagePath);
+      pdfUrl = await uploadPdfToSupabase(pdf, pdfPath);
       if (pdfUrl) results.supabase = true;
       else results.supabaseReason = "not-configured"; // env vars unset — nothing sent
     } catch (e) {
@@ -67,15 +94,36 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 3. Make webhook — never blocks the PDF; still fires (without pdf_url) if the
-  //    upload didn't produce a URL.
+  // 3. Archive the raw assessment. Runs even when the PDF or its upload failed —
+  //    the structured data is exactly what's unrecoverable otherwise, so it's
+  //    worth keeping on its own. archiveAssessment never throws.
+  const archive = await archiveAssessment({
+    data,
+    presentation,
+    reportId,
+    stem,
+    pdfPath: results.supabase ? pdfPath : null,
+  });
+  results.data = archive.ok;
+  results.dataReason = archive.reason;
+  results.dataPhotos = archive.photos;
+
+  // 4. Make webhook — never blocks the PDF; still fires (without pdf_url) if the
+  //    upload didn't produce a URL. ticket_body links to the viewer, but only
+  //    when the archive landed — otherwise /r/<reportId> would 404 and the raw
+  //    signed URL is the honest fallback.
   try {
-    results.make = await logAssessmentToMake(data, pdfUrl);
+    results.make = await logAssessmentToMake(
+      data,
+      pdfUrl,
+      reportId,
+      archive.ok ? reportViewerUrl(reportId) : null
+    );
   } catch (e) {
     console.error("Make webhook step failed:", e);
   }
 
-  const allOk = results.pdf && results.supabase && results.make;
+  const allOk = results.pdf && results.supabase && results.data && results.make;
   return NextResponse.json(
     {
       ok: allOk,
