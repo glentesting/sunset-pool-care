@@ -111,25 +111,40 @@ export async function reviseAndRegenerate(opts: {
   // later writer then wins, and the earlier one's revision entries are lost,
   // which is precisely the property an append-only log is supposed to hold.
   //
-  // Accepted deliberately for four people in one office, not overlooked. If it
-  // ever needs closing, the approach is worked out — don't re-derive it:
+  // Accepted deliberately for four people in one office, not overlooked. Notes
+  // toward closing it, INCLUDING A DEAD END, so neither gets re-derived:
   //
-  //   Supabase Storage 409s on an existing object unless `x-upsert: true` is
-  //   sent, and uploadObject sets that header explicitly, so a create-only
-  //   primitive is already there and simply unused. Give uploadObject an upsert
-  //   flag, and have each save claim `revisions/<reportId>/<n>.json` — where
-  //   n = revisions.length + 1 — created WITHOUT upsert, before the version copy
-  //   and before the PDF overwrite. First writer wins the key; the loser gets a
-  //   409 and shows the same "someone else saved" message it shows now, this
-  //   time for real rather than by luck of timing. A loser touches nothing,
-  //   because the claim precedes every destructive write. The numbered objects
-  //   become the revision history as a side effect.
+  //   The primitive is there. Supabase Storage 409s on an existing object
+  //   unless `x-upsert: true` is sent, and uploadObject sets that header
+  //   explicitly, so create-only is available and simply unused.
   //
-  //   Preferred over a lock object: no TTL, no stale-lock recovery, and no way
-  //   for a crashed request to wedge a report. The cost is that it changes the
-  //   storage layer's write contract, which every other caller shares, and it
-  //   needs verification built around genuinely concurrent requests — a race
-  //   passes any single-threaded test trivially.
+  //   The obvious use of it DOES NOT WORK. Claiming `revisions/<reportId>/<n>`
+  //   with n = revisions.length + 1, created without upsert, before the
+  //   destructive writes: first writer wins, loser 409s, and it looks like a
+  //   clean compare-and-swap. But every failure path below this point returns
+  //   WITHOUT advancing revisions.length — a photo that can't be read, a failed
+  //   render, three version-copy failures, either write failure — and a crash
+  //   returns nothing at all. The claim key stays taken while n stays the same,
+  //   so every later save recomputes the same n, 409s, and is told someone else
+  //   saved. Forever. That wedges the report permanently, which is the exact
+  //   failure a lock's TTL exists to recover from, so this buys nothing.
+  //
+  //   Probing for the first FREE n instead removes the wedge and the mutual
+  //   exclusion with it: two concurrent saves simply take different numbers and
+  //   both proceed, which is the bug this was meant to fix.
+  //
+  //   What would work is a write-ahead log rather than a lock: make the claim
+  //   object BE the committed next archive, so creating it is the commit. The
+  //   PDF overwrite and pointer update become a replayable tail — a later
+  //   request that finds a committed revision the pointer hasn't caught up to
+  //   finishes it instead of being blocked by it. No TTL and no wedge, because
+  //   an abandoned claim is resumable work rather than a held resource.
+  //
+  //   That is real machinery, not a flag on uploadObject: it changes the
+  //   storage layer's write contract that every caller shares, makes each write
+  //   idempotent under replay, and needs verification built around genuinely
+  //   concurrent requests, since a race passes any single-threaded test
+  //   trivially. Worth knowing before anyone estimates it as small.
   if (revisionStamp(archive) !== loadedAt) {
     return {
       ok: false,
