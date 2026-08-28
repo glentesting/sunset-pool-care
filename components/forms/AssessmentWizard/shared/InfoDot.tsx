@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 
 /**
  * A small, tasteful "i" marker. Tap to toggle a one-line popover; tap outside to
- * close. Uses the wizard's own wiz-* tokens. Used in exactly two places (water
- * chemistry readings, recommendations) — keep it that way; don't clutter.
+ * close. Uses the wizard's own wiz-* tokens. Used in exactly one place (water
+ * chemistry readings) — keep it that way; don't clutter.
  */
 export default function InfoDot({ text, label = "More info" }: { text: string; label?: string }) {
   const [open, setOpen] = useState(false);

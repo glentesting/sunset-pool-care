@@ -234,37 +234,6 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
 
   s.certification = { certified: true };
 
-  // Pre-written AI presentation text so the demo report SHOWS both AI features
-  // without an API key. Same human-voice rules as the real output (plain,
-  // spoken, short). Keyed by section id for the polished notes.
-  s.presentation = {
-    summary:
-      "Maria's pool is in good shape overall. The main thing to take care of soon is the pump motor — it's making a bearing noise and should be replaced in the next month or so. The filter pressure's running a little high and there's some minor cracking near the coping to keep an eye on, but nothing urgent. Chlorine was low the day we checked, so that's worth getting back up.",
-    polishedNotes: {
-      pump: "The pump motor's making a bearing noise — we'd recommend replacing it in the next month or so.",
-      filtration: "Filter pressure's running a little high, so it's due for a cleaning.",
-      decking: "There's some minor cracking near the coping worth keeping an eye on.",
-    },
-    // Polished recommendation item text, keyed by the rec's sourceKey (robust to
-    // order). Mirrors what the live polish pass would produce.
-    // Recommendation sentences do NOT restate timing — the timeframe prints on
-    // its own line. (Mirrors the live polishRecItem behavior.)
-    recBySourceKey: {
-      "section:pump": "Replace the pump motor — it's making a bearing noise.",
-      "chem:free_chlorine": "Free chlorine was low at 1.5 (target 3–5 ppm) — worth getting it back up.",
-      "section:filtration": "Filter pressure's running a little high and it's due for a cleaning.",
-      "section:decking": "There's some minor cracking near the coping.",
-    },
-    overallNotes:
-      "Pool's in good shape overall — a few items are flagged for service in the sections above.",
-    // Raw misspelled photo labels → cleaned tags (so ?demo=1 shows the label
-    // rule working without a key). Tag cleanup only — not reworded to sentences.
-    photoLabels: {
-      "pump mtr & serial plate": "pump motor & serial plate",
-      "crackng nr coping": "cracking near coping",
-    },
-  };
-
   // Land on Review & Submit (last active step).
   s.step = getActiveSteps(s).length - 1;
   return s;

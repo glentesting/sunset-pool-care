@@ -32,7 +32,6 @@ import {
 } from "@react-pdf/renderer";
 import { SITE } from "@/content/site";
 import type { AssessmentData } from "@/lib/validation/assessment";
-import type { ReportPresentation } from "@/lib/report-presentation";
 
 // Load a logo from public/ once as a data URL (most reliable src across
 // react-pdf versions / serverless). Returns null if unreadable so the report
@@ -110,7 +109,6 @@ const s = StyleSheet.create({
 
   // AI overview paragraph under the condition band — its own zone (breathing
   // room above; the hairline rule below separates it from the meta block).
-  summary: { fontSize: 9.5, color: NAVY, lineHeight: 1.5, marginTop: 8 },
   // Subtle hairline divider (wiz-line tone) for premium separation.
   rule: { borderBottomWidth: 0.5, borderBottomColor: LINE, marginTop: 12, marginBottom: 12 },
 
@@ -307,7 +305,7 @@ function Thumbs({ photos }: { photos: Section["photos"] }) {
   );
 }
 
-function AssessmentReport({ data, presentation }: { data: AssessmentData; presentation: ReportPresentation }) {
+function AssessmentReport({ data }: { data: AssessmentData }) {
   const { property, details, config, configPhotos, configOptions, sections, chemistry, itemCounts, overallNotes, overall, certification } = data;
   // Defense in depth: only chemistry params WITH a reading are shown (the payload
   // already drops reading-less ones — a status with no measurement is a false
@@ -365,15 +363,6 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
           </View>
         </View>
 
-        {/* AI overview paragraph (from structured findings only); omitted on
-            fallback. Sits in its own zone, fenced by a hairline rule. */}
-        {presentation.summary ? (
-          <>
-            <Text style={s.summary}>{presentation.summary}</Text>
-            <View style={s.rule} />
-          </>
-        ) : null}
-
         {/* Two-column meta: Property | Inspection + Configuration */}
         <View style={s.metaRow}>
           <View style={s.metaCol}>
@@ -429,7 +418,7 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
           <SectionBlock
             key={sec.id}
             sec={sec}
-            note={presentation.polishedNotes[sec.id] || sec.notes}
+            note={sec.notes}
           />
         ))}
 
@@ -459,10 +448,10 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
 
         {/* The Recommendations block is gone (spec 1.6) — pricing lives in the
             client's Skimmer quote, not the report. */}
-        {presentation.overallNotes || overallNotes ? (
+        {overallNotes ? (
           <>
             <Text style={s.sectionTitle}>Overall Assessment Notes</Text>
-            <Text>{presentation.overallNotes || overallNotes}</Text>
+            <Text>{overallNotes}</Text>
           </>
         ) : null}
 
@@ -487,9 +476,6 @@ function AssessmentReport({ data, presentation }: { data: AssessmentData; presen
   );
 }
 
-export async function generateAssessmentPdf(
-  data: AssessmentData,
-  presentation: ReportPresentation = { polishedNotes: {} }
-): Promise<Buffer> {
-  return renderToBuffer(<AssessmentReport data={data} presentation={presentation} />);
+export async function generateAssessmentPdf(data: AssessmentData): Promise<Buffer> {
+  return renderToBuffer(<AssessmentReport data={data} />);
 }

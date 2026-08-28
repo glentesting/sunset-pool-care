@@ -7,7 +7,7 @@
  * for that layout; this module is just the transport.
  *
  * Uses the Storage REST API directly via fetch (no SDK dependency, serverless-
- * light — same approach as lib/anthropic.ts). The bucket is PRIVATE; we return a
+ * light). The bucket is PRIVATE; we return a
  * long-lived SIGNED url so the file isn't publicly guessable but the link keeps
  * working for Make's fetch and for later ticket access.
  *

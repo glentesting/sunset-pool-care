@@ -4,6 +4,9 @@
  *
  * v2: section + config photos (compressed JPEG data URLs) ARE included so the
  * PDF can embed them. This makes the payload large — see payload.ts.
+ *
+ * v3: the AI presentation layer is gone. The tech's own words go into the report
+ * verbatim, so there is no `presentation` key and nothing rewrites notes.
  */
 import { z } from "zod";
 import { isValidEmail } from "./email";
@@ -130,19 +133,6 @@ export const assessmentSchema = z.object({
     date: z.string(),
     certified: z.literal(true, { message: "Inspector must certify the report" }),
   }),
-  // Presentation-only WORDING (never findings). Normally filled server-side by
-  // the Claude step; the ?demo=1 path pre-fills it so the sample report shows
-  // the AI features with no API key. Optional — absence triggers AI/fallback.
-  presentation: z
-    .object({
-      summary: z.string().optional(),
-      polishedNotes: z.record(z.string(), z.string()).optional(),
-      recBySourceKey: z.record(z.string(), z.string()).optional(),
-      overallNotes: z.string().optional(),
-      // raw photo label -> cleaned tag (demo passthrough so ?demo=1 previews it)
-      photoLabels: z.record(z.string(), z.string()).optional(),
-    })
-    .optional(),
 });
 
 export type AssessmentData = z.infer<typeof assessmentSchema>;
