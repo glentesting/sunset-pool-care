@@ -29,6 +29,7 @@ import {
   overallCondition,
   sectionRating,
 } from "./summary";
+import { splitCustomerName } from "@/lib/customer-name";
 import { emptyItemCounts, tallyItem } from "@/lib/report-scoring";
 import { unitHeading } from "./shared/UnitList";
 import type { AssessmentState, ItemState, Photo } from "./state";
@@ -55,29 +56,6 @@ function photosOf(map: Record<string, Photo>): { label: string; dataUrl: string 
   return Object.entries(map)
     .filter(([, p]) => Boolean(p?.dataUrl))
     .map(([key, p]) => ({ label: (p.label ?? "").trim() || slotName(key), dataUrl: p.dataUrl }));
-}
-
-/**
- * Split the customer's full name into first + last for the webhook payload
- * (HubSpot wants them separate). `customerName` itself is left untouched.
- *   - trim + collapse internal whitespace to single spaces
- *   - ""        -> { first: "", last: "" }
- *   - one token -> { first: token, last: "" }
- *   - else      -> first token / everything after the first space, as-is
- *     ("Mary Anne Van Der Berg" -> "Mary" / "Anne Van Der Berg")
- */
-export function splitCustomerName(fullName: string): {
-  customerFirstName: string;
-  customerLastName: string;
-} {
-  const normalized = fullName.trim().replace(/\s+/g, " ");
-  if (!normalized) return { customerFirstName: "", customerLastName: "" };
-  const gap = normalized.indexOf(" ");
-  if (gap === -1) return { customerFirstName: normalized, customerLastName: "" };
-  return {
-    customerFirstName: normalized.slice(0, gap),
-    customerLastName: normalized.slice(gap + 1),
-  };
 }
 
 /** One rated/annotated item → a report row. Unrated + empty items return null. */

@@ -50,6 +50,7 @@ const TIMEOUT_MS = 15000;
  *   Section — Item
  *
  *   View full report: https://…
+ *   Office review: https://…
  *
  * Attn items are listed (max 6, then "+N more"); Monitor is a count only.
  * Chemistry and overall notes are NOT here — they live in the PDF.
@@ -63,7 +64,8 @@ const TIMEOUT_MS = 15000;
 export function buildTicketBody(
   data: AssessmentData,
   pdfUrl: string | null,
-  reportUrl: string | null
+  reportUrl: string | null,
+  reviewUrl: string | null
 ): string {
   const p = data.property;
   const out: string[] = [];
@@ -110,11 +112,12 @@ export function buildTicketBody(
 
   out.push("");
 
-  // Report link — always the last line; a missing upload is made obvious, not
-  // silent. Prefer the viewer; fall back to the raw signed url only when the
-  // archive didn't land and so /r/<reportId> would 404.
+  // Report links, last. The first is what a customer may be sent; the second is
+  // the internal review screen and must never be forwarded — hence the labels.
+  // A missing upload is made obvious rather than silent.
   const link = reportUrl ?? pdfUrl ?? "(PDF upload failed — see submit log)";
   out.push(`View full report: ${link}`);
+  if (reviewUrl) out.push(`Office review: ${reviewUrl}`);
 
   return out.join("\n").trim();
 }
@@ -145,8 +148,10 @@ function buildWebhookBody(
 /**
  * POST the assessment (photo base64 stripped, + reportId + pdf_url +
  * ticket_body) to Make.
- * @param reportUrl the /r/<reportId> viewer link for ticket_body's last line,
- *   or null when the archive didn't land (then it falls back to pdf_url).
+ * @param reportUrl the /r/<reportId> viewer link for ticket_body, or null when
+ *   the archive didn't land (then it falls back to pdf_url).
+ * @param reviewUrl the INTERNAL office review link, or null when there's no
+ *   archive to review.
  * @returns true when Make accepted it; false when the webhook isn't configured.
  * @throws on network error or a non-2xx response (caller records make=false).
  */
@@ -154,11 +159,12 @@ export async function logAssessmentToMake(
   data: AssessmentData,
   pdfUrl: string | null,
   reportId: string,
-  reportUrl: string | null
+  reportUrl: string | null,
+  reviewUrl: string | null
 ): Promise<boolean> {
   if (!MAKE_WEBHOOK_URL) return false; // not configured — skip cleanly, don't block submit
 
-  const ticketBody = buildTicketBody(data, pdfUrl, reportUrl);
+  const ticketBody = buildTicketBody(data, pdfUrl, reportUrl, reviewUrl);
   const res = await fetch(MAKE_WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

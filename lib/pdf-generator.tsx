@@ -317,7 +317,7 @@ function Thumbs({ photos }: { photos: Section["photos"] }) {
   );
 }
 
-function AssessmentReport({ data }: { data: AssessmentData }) {
+function AssessmentReport({ data, revisedOn }: { data: AssessmentData; revisedOn?: string }) {
   const { property, details, config, configPhotos, configOptions, sections, chemistry, itemCounts, overallNotes, overall, certification } = data;
   // Display casing only — `data` still carries what the tech typed, and that is
   // what the archive and the Make payload keep. Fixes both a lowercase and a
@@ -484,6 +484,11 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
             {certification.inspectorName}
             {certification.date ? `   ·   ${certification.date}` : ""}
           </Text>
+          {/* Regenerated reports only. A homeowner has no use for who in the
+              office touched it or what changed — just that it was revised. */}
+          {revisedOn ? (
+            <Text style={{ marginTop: 3, color: GREY }}>Revised {revisedOn}</Text>
+          ) : null}
         </View>
 
         <Text style={s.footer} fixed>
@@ -494,6 +499,14 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
   );
 }
 
-export async function generateAssessmentPdf(data: AssessmentData): Promise<Buffer> {
-  return renderToBuffer(<AssessmentReport data={data} />);
+/**
+ * @param options.revisedOn date to print as a quiet "Revised …" line by the
+ *   certification. Omitted for a first-generation report, which must carry no
+ *   such line at all.
+ */
+export async function generateAssessmentPdf(
+  data: AssessmentData,
+  options?: { revisedOn?: string }
+): Promise<Buffer> {
+  return renderToBuffer(<AssessmentReport data={data} revisedOn={options?.revisedOn} />);
 }

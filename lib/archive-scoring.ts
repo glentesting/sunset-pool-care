@@ -78,19 +78,40 @@ function rateSection(section: ScorableSection, data: ScorableAssessment): Rating
   return worstRating(ratings);
 }
 
+/** True when there is no spa on site, so the spa section is an automatic N/A. */
+export function isSpaAbsent(data: { spaType: string }): boolean {
+  return data.spaType === SPA_ABSENT;
+}
+
+/**
+ * The headline from a set of FINAL section ratings.
+ *
+ * Separate from rescoreAssessment because the office can override a section's
+ * rating by hand: the save path derives ratings from items, lets an explicit
+ * override win, and then asks this for the headline — so the two never come from
+ * different arithmetic.
+ */
+export function overallFromSectionRatings(
+  sectionIds: string[],
+  ratings: Record<string, Rating | undefined>,
+  spaAbsent: boolean
+) {
+  const counts = emptySectionCounts();
+  let actuallyRated = 0;
+  for (const id of sectionIds) {
+    const r = ratings[id];
+    if (r) counts[r] += 1;
+    // The auto-N/A spa counts in the band but is not something a human rated.
+    if (r && !(id === SPA_SECTION_ID && spaAbsent)) actuallyRated += 1;
+  }
+  return overallFromSectionCounts(counts, actuallyRated);
+}
+
 /** Recompute every derived score from the assessment's own contents. */
 export function rescoreAssessment(data: ScorableAssessment): Rescored {
   const sectionRatings: Record<string, Rating | undefined> = {};
-  const sectionCounts = emptySectionCounts();
-  const spaAutoSkipped = data.spaType === SPA_ABSENT;
-  let actuallyRated = 0;
-
   for (const section of data.sections) {
-    const rating = rateSection(section, data);
-    sectionRatings[section.id] = rating;
-    if (rating) sectionCounts[rating] += 1;
-    // The auto-N/A spa counts in the band but is not something a human rated.
-    if (rating && !(section.id === SPA_SECTION_ID && spaAutoSkipped)) actuallyRated += 1;
+    sectionRatings[section.id] = rateSection(section, data);
   }
 
   // Per-ITEM band: every section item, every per-unit item, every rated config
@@ -109,6 +130,10 @@ export function rescoreAssessment(data: ScorableAssessment): Rescored {
   return {
     sectionRatings,
     itemCounts,
-    overall: overallFromSectionCounts(sectionCounts, actuallyRated),
+    overall: overallFromSectionRatings(
+      data.sections.map((s) => s.id),
+      sectionRatings,
+      isSpaAbsent(data)
+    ),
   };
 }

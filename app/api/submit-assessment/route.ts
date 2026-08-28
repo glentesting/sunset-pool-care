@@ -4,7 +4,7 @@ import { generateAssessmentPdf } from "@/lib/pdf-generator";
 import { uploadPdfToSupabase } from "@/lib/supabase";
 import { archiveAssessment } from "@/lib/assessment-archive";
 import { generateReportId } from "@/lib/report-id";
-import { reportViewerUrl } from "@/lib/site-url";
+import { reportReviewUrl, reportViewerUrl } from "@/lib/site-url";
 import { logAssessmentToMake } from "@/lib/make";
 
 /**
@@ -111,7 +111,8 @@ export async function POST(req: NextRequest) {
       data,
       pdfUrl,
       reportId,
-      archive.ok ? reportViewerUrl(reportId) : null
+      archive.ok ? reportViewerUrl(reportId) : null,
+      archive.ok ? reportReviewUrl(reportId) : null
     );
   } catch (e) {
     console.error("Make webhook step failed:", e);
