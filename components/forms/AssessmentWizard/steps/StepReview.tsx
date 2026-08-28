@@ -177,6 +177,39 @@ export default function StepReview() {
   );
 }
 
+/**
+ * Visual state of the submit screen. A tech needs two things at a glance: did
+ * the report get out, and is there anything to do about it.
+ *
+ *   good      everything landed
+ *   monitor   the office HAS the report, but the internal copy didn't save —
+ *             nothing to redo on site
+ *   attention the office did not get the report
+ */
+const TONE = {
+  good: {
+    mark: "✓",
+    ring: "bg-good/10 text-good-dark",
+    heading: "Report sent",
+    headingClass: "text-wiz-ink",
+    box: "",
+  },
+  monitor: {
+    mark: "!",
+    ring: "bg-monitor/10 text-monitor-dark",
+    heading: "Sent — but not fully saved",
+    headingClass: "text-monitor-dark",
+    box: "border-monitor/25 bg-monitor/5 text-monitor-dark",
+  },
+  attention: {
+    mark: "!",
+    ring: "bg-attention/10 text-attention-dark",
+    heading: "Report didn't reach the office",
+    headingClass: "text-attention-dark",
+    box: "border-attention/25 bg-attention/5 text-attention-dark",
+  },
+} as const;
+
 function SubmittedScreen({ results }: { results: SubmitResults }) {
   // Each row reflects the REAL outcome — a green check on success, a visible
   // failure otherwise. No "pending setup" that lies when the code actually ran.
@@ -214,27 +247,71 @@ function SubmittedScreen({ results }: { results: SubmitResults }) {
       label: results.make ? "Sent to Make (HubSpot ticket)" : "Not sent to Make — see submit log",
     },
   ];
+
+  // The delivery path is the PDF, its upload, and the ticket. The archive is an
+  // internal durability copy — losing it doesn't stop the office getting the
+  // report, so it must not be reported as if the report went missing.
+  const officeHasIt = results.pdf && results.supabase && results.make;
+  const allOk = rows.every((r) => r.ok);
+  const tone = TONE[allOk ? "good" : officeHasIt ? "monitor" : "attention"];
+
+  // Plain language for someone standing at a pool who has never heard of any of
+  // the systems in the rows below. Says what happened, and what to do about it.
+  const problem = allOk
+    ? null
+    : officeHasIt
+      ? "The office has your report. A backup copy didn't save — nothing to redo, just show this screen to Brian or Brent."
+      : results.pdf
+        ? "Report saved to your phone, but it didn't reach the office. Show this screen to Brian or Brent."
+        : "The report didn't generate, and nothing reached the office. Show this screen to Brian or Brent.";
+
   return (
     <div className="space-y-6 py-4 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-good/10 text-xl text-good-dark">
-        ✓
+      <div
+        className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full text-xl ${tone.ring}`}
+      >
+        {tone.mark}
       </div>
       <div>
-        <h2 className="font-display text-2xl font-semibold text-wiz-ink">Report Generated</h2>
-        <p className="mt-1 text-sm text-wiz-ink/70">Your PDF should be downloading now.</p>
+        <h2 className={`font-display text-2xl font-semibold ${tone.headingClass}`}>
+          {tone.heading}
+        </h2>
+        {/* Only claim the download when a PDF actually exists. */}
+        {results.pdf && (
+          <p className="mt-1 text-sm text-wiz-ink/70">Your PDF should be downloading now.</p>
+        )}
       </div>
-      <ul className="divide-y divide-wiz-line border-y border-wiz-line text-left">
-        {rows.map((r, i) => (
-          <li key={i} className="flex items-center gap-3 py-3">
-            <span className={r.ok ? "text-good-dark" : "text-attention-dark"}>
-              {r.ok ? "✓" : "✕"}
-            </span>
-            <span className={`flex-1 text-[13px] ${r.ok ? "text-wiz-ink" : "text-attention-dark"}`}>
-              {r.label}
-            </span>
-          </li>
-        ))}
-      </ul>
+
+      {problem && (
+        <p className={`rounded-lg border p-4 text-left text-[13px] font-medium leading-relaxed ${tone.box}`}>
+          {problem}
+        </p>
+      )}
+
+      {/* The per-step rows are useless to a tech but the first thing anyone
+          debugging wants, so they're kept and folded away — and forced open
+          whenever something failed, so a problem can never hide behind a tap. */}
+      <details open={!allOk} className="group rounded-lg border border-wiz-line text-left">
+        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-[13px] font-semibold text-wiz-ink/70 [&::-webkit-details-marker]:hidden">
+          Technical details
+          <span className="text-wiz-ink/40 transition-transform group-open:rotate-180" aria-hidden>
+            ▾
+          </span>
+        </summary>
+        <ul className="divide-y divide-wiz-line border-t border-wiz-line px-4">
+          {rows.map((r, i) => (
+            <li key={i} className="flex items-center gap-3 py-3">
+              <span className={r.ok ? "text-good-dark" : "text-attention-dark"}>
+                {r.ok ? "✓" : "✕"}
+              </span>
+              <span className={`flex-1 text-[13px] ${r.ok ? "text-wiz-ink" : "text-attention-dark"}`}>
+                {r.label}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </details>
+
       <button
         type="button"
         onClick={() => window.location.reload()}
