@@ -23,6 +23,11 @@ That's it. The link the customer already has now opens the corrected report.
 inspection date; any note; any Good / Monitor / Attention rating; and the
 caption under any photo.
 
+Some rows are a straight Yes/No question rather than a rating — things like
+"Algae Presence" or "GFCI Outlets". Those give you a Yes/No box instead, which
+is what the tech answered and what the report prints. The Good or Attention
+behind it follows automatically from your answer.
+
 **You can't change:** the chemistry readings, the photos themselves, or the
 inspector's name and certification. Chemistry numbers are measurements the tech
 took at the pool — if one is wrong, the pool needs re-testing, not retyping.
@@ -67,9 +72,12 @@ why it's worth getting the fix right rather than making six passes at it.
   changes again — nothing of yours was saved, and nothing of theirs was lost.
 - **"That code isn't right."** Check the office code. The same message appears
   for a broken link, so it's worth checking both.
+- **"The record of this change didn't save."** Rare, and it means the opposite
+  of the others: the customer's link IS showing your corrected report, but the
+  office copy of what you changed didn't record. Don't redo the edit — tell
+  whoever manages the site.
 - **Anything else.** If a message says nothing was changed, then nothing was —
-  the old report is still on the customer's link, untouched. Nothing is ever
-  half-saved.
+  the old report is still on the customer's link, untouched.
 
 Previous versions of a report are kept. Nothing you do here destroys a copy that
 a customer might already have in their inbox.

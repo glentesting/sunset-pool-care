@@ -41,11 +41,27 @@ const RATING_TEXT: Record<Rating, string> = {
   "N/A": "N/A",
 };
 const NOT_RATED = "— not rated —";
+const NOT_ANSWERED = "— not answered —";
 
-/** Render a stored value for the log. */
-function forLog(value: string, isRating: boolean): string {
-  if (isRating) return value ? (RATING_TEXT[value as Rating] ?? value) : NOT_RATED;
+/** Render a stored value for the log, the way the report shows it. */
+function forLog(value: string, kind: FieldDef["kind"]): string {
+  if (kind === "rating") return value ? (RATING_TEXT[value as Rating] ?? value) : NOT_RATED;
+  if (kind === "binary") return value ? (value === "yes" ? "Yes" : "No") : NOT_ANSWERED;
   return value;
+}
+
+/**
+ * Which answer the tech's checklist counted as the good one, recovered from what
+ * was stored. `itemRating` derives GOOD when the answer matches goodAnswer and
+ * ATTENTION otherwise, so the stored pair determines it: a GOOD item's own answer
+ * IS the good one, and an ATTENTION item's is the other one. The archive doesn't
+ * carry the item definitions, and this is exact rather than a guess.
+ */
+function goodAnswerOf(item: { answer?: "yes" | "no"; status?: Rating }): "yes" | "no" {
+  if (!item.answer) return "yes";
+  if (item.status === "GOOD") return item.answer;
+  if (item.status === "ATTENTION") return item.answer === "yes" ? "no" : "yes";
+  return "yes";
 }
 
 /**
@@ -62,8 +78,11 @@ export type FieldDef = {
   row: string;
   /** Which column the field occupies in the review form. */
   slot: "rating" | "note" | "value" | "caption";
-  /** Ratings are constrained to the four values; anything else is rejected. */
-  kind: "text" | "rating";
+  /**
+   * Ratings are constrained to the four values and binary answers to yes/no;
+   * anything else is rejected.
+   */
+  kind: "text" | "rating" | "binary";
   get: () => string;
   set: (value: string) => void;
 };
@@ -138,9 +157,24 @@ export function editableFields(a: AssessmentArchive): FieldDef[] {
       () => section.notes, (v) => (section.notes = v));
 
     section.items.forEach((item, i) => {
-      add("rating", "rating", `sections[${s}].items[${i}].status`, title, item.label,
-        `${title} > ${item.label} > rating`,
-        () => item.status ?? "", (v) => (item.status = (v || undefined) as Rating | undefined));
+      // A binary item's badge prints its ANSWER, not its rating, so offering a
+      // rating select here would let the office turn a row red while it still
+      // read "No" — colour and text asserting different things. Edit the answer
+      // and derive the rating from it, exactly as the wizard does.
+      if (item.answer) {
+        const good = goodAnswerOf(item);
+        add("rating", "binary", `sections[${s}].items[${i}].answer`, title, item.label,
+          `${title} > ${item.label} > answer`,
+          () => item.answer ?? "",
+          (v) => {
+            item.answer = (v || undefined) as "yes" | "no" | undefined;
+            item.status = item.answer ? (item.answer === good ? "GOOD" : "ATTENTION") : undefined;
+          });
+      } else {
+        add("rating", "rating", `sections[${s}].items[${i}].status`, title, item.label,
+          `${title} > ${item.label} > rating`,
+          () => item.status ?? "", (v) => (item.status = (v || undefined) as Rating | undefined));
+      }
       add("note", "text", `sections[${s}].items[${i}].note`, title, item.label,
         `${title} > ${item.label} > note`, () => item.note, (v) => (item.note = v));
     });
@@ -203,9 +237,12 @@ export function applyAndDiff(
   for (const field of editableFields(target)) {
     const raw = submitted[field.path];
     if (typeof raw !== "string") continue; // absent or wrong type — keep stored
-    const next = field.kind === "rating" ? raw.trim() : raw;
+    const next = field.kind === "text" ? raw : raw.trim();
     if (field.kind === "rating" && next !== "" && !RATINGS.includes(next as Rating)) {
       continue; // not a rating we recognise — ignore rather than corrupt the report
+    }
+    if (field.kind === "binary" && next !== "" && next !== "yes" && next !== "no") {
+      continue; // same: a binary item answers yes or no, or it was never answered
     }
     const prev = field.get();
     if (prev === next) continue;
@@ -214,8 +251,8 @@ export function applyAndDiff(
     changedPaths.add(field.path);
     entries.push({
       field: field.label,
-      from: forLog(prev, field.kind === "rating"),
-      to: forLog(next, field.kind === "rating"),
+      from: forLog(prev, field.kind),
+      to: forLog(next, field.kind),
     });
   }
 

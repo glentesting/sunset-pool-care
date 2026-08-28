@@ -68,7 +68,8 @@ export type ReviseResult = {
     | "photo-read-failed"
     | "version-copy-failed"
     | "pdf-failed"
-    | "write-failed";
+    | "write-failed"
+    | "record-write-failed";
   message: string;
   entries?: RevisionEntry[];
   /** Photos the original lost at submit time and that no longer exist. */
@@ -171,10 +172,17 @@ export async function reviseAndRegenerate(opts: {
   }
 
   // --- Preserve the version that may already be in a customer's inbox. ---
-  const pdfPath = archive.pdfPath ?? index.pdfPath;
+  //
+  // A report whose original PDF upload failed has no stored path: there is no
+  // previous version to keep, and the regenerated PDF is the first one it has
+  // ever had. Deriving the key from the archive's own key puts it where the
+  // naming convention says it belongs, so the public viewer starts working
+  // instead of reporting the report unavailable forever.
+  const storedPdfPath = archive.pdfPath ?? index.pdfPath;
+  const pdfPath = storedPdfPath ?? index.jsonPath.replace(/\.json$/i, ".pdf");
   const versions = [...(archive.pdfVersions ?? [])];
-  if (pdfPath) {
-    const current = await readObjectBytes(pdfPath);
+  if (storedPdfPath) {
+    const current = await readObjectBytes(storedPdfPath);
     if (!current) {
       return {
         ok: false,
@@ -182,7 +190,14 @@ export async function reviseAndRegenerate(opts: {
         message: "Couldn't read the existing report to keep a copy of it, so nothing was changed.",
       };
     }
-    const versionKey = `${pdfPath.replace(/\.pdf$/i, "")}-v${versions.length + 1}.pdf`;
+    const versionKey = await freeVersionKey(storedPdfPath, versions.length + 1);
+    if (!versionKey) {
+      return {
+        ok: false,
+        status: "version-copy-failed",
+        message: "Couldn't find anywhere to keep a copy of the previous report, so nothing was changed.",
+      };
+    }
     try {
       await uploadObject(versionKey, current.bytes, "application/pdf");
       versions.push(versionKey);
@@ -199,8 +214,24 @@ export async function reviseAndRegenerate(opts: {
   next.pdfPath = pdfPath;
 
   // --- Overwrite in place: SAME key, so the customer's link serves the new PDF. ---
+  //
+  // These are independent object writes with no transaction across them, so the
+  // two ways this can half-succeed get DIFFERENT answers. Reporting "nothing was
+  // changed" after the customer's copy has already been replaced would send the
+  // office chasing an edit that in fact went out.
   try {
-    if (pdfPath) await uploadObject(pdfPath, new Uint8Array(pdf), "application/pdf");
+    await uploadObject(pdfPath, new Uint8Array(pdf), "application/pdf");
+  } catch (e) {
+    console.error(`Revision ${reportId}: PDF write failed:`, e);
+    return {
+      ok: false,
+      status: "write-failed",
+      message:
+        "The corrected report couldn't be saved. The customer's link still shows the original — nothing was changed.",
+    };
+  }
+
+  try {
     await uploadObject(index.jsonPath, JSON.stringify(next), "application/json");
     await uploadObject(
       reportIndexPath(reportId),
@@ -210,11 +241,12 @@ export async function reviseAndRegenerate(opts: {
       "application/json"
     );
   } catch (e) {
-    console.error(`Revision ${reportId}: write failed:`, e);
+    console.error(`Revision ${reportId}: record write failed:`, e);
     return {
       ok: false,
-      status: "write-failed",
-      message: "The updated report couldn't be saved. Nothing was sent to the customer link.",
+      status: "record-write-failed",
+      message:
+        "The customer's link now shows the corrected report, but the record of this change didn't save. Don't redo the edit — tell whoever manages the site.",
     };
   }
 
@@ -243,6 +275,27 @@ export async function reviseAndRegenerate(opts: {
 export function revisionStamp(archive: AssessmentArchive): string {
   const revisions = archive.revisions ?? [];
   return revisions.length ? `${revisions.length}:${revisions[revisions.length - 1].at}` : "0";
+}
+
+/**
+ * The next `-vN` key that is not already taken, starting at `from`.
+ *
+ * Deriving the number from `pdfVersions.length` alone is not enough. If a
+ * revision replaced the PDF but failed before the archive was written, the list
+ * never advanced while a `-vN` object exists — and the next attempt would copy
+ * the ALREADY-CORRECTED PDF over it, destroying the only surviving copy of the
+ * version a customer may be holding. So probe, and never overwrite a version.
+ *
+ * @returns the free key, or null if the run of taken keys is implausibly long,
+ *   which is a broken bucket rather than a report with 50 revisions.
+ */
+async function freeVersionKey(pdfPath: string, from: number): Promise<string | null> {
+  const stem = pdfPath.replace(/\.pdf$/i, "");
+  for (let n = from; n < from + 50; n++) {
+    const key = `${stem}-v${n}.pdf`;
+    if (!(await readObjectBytes(key))) return key;
+  }
+  return null;
 }
 
 function todayIso(): string {

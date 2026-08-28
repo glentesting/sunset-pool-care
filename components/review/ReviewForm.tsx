@@ -25,6 +25,17 @@ const RATINGS = [
   { value: "N/A", label: "N/A" },
 ];
 
+/**
+ * Binary checklist items answer a question rather than carry a rating, and the
+ * report prints that answer. The rating behind it is derived from this, so the
+ * badge's text and its colour can never disagree.
+ */
+const ANSWERS = [
+  { value: "", label: "—" },
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+];
+
 export type ReadOnlyBits = {
   chemistry: { label: string; reading: string; ideal: string; rating?: string }[];
   inspectorName: string;
@@ -320,7 +331,8 @@ function RowCell({
         const value = draft[f.path] ?? "";
         const dirty = value !== f.value;
         const ring = dirty ? "border-wiz-accent bg-wiz-accent/5" : "border-wiz-field";
-        if (f.kind === "rating") {
+        if (f.kind === "rating" || f.kind === "binary") {
+          const options = f.kind === "binary" ? ANSWERS : RATINGS;
           return (
             <select
               key={f.path}
@@ -329,7 +341,7 @@ function RowCell({
               onChange={(e) => dispatch({ type: "set", path: f.path, value: e.target.value })}
               className={`w-full rounded border p-1.5 text-[13px] text-wiz-ink ${ring}`}
             >
-              {RATINGS.map((r) => (
+              {options.map((r) => (
                 <option key={r.value} value={r.value}>
                   {r.label}
                 </option>
