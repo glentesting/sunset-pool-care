@@ -37,11 +37,16 @@
  */
 import "server-only";
 import type { AssessmentData } from "@/lib/validation/assessment";
-import type { ReportPresentation } from "@/lib/report-presentation";
 import { isSupabaseConfigured, readJsonObject, uploadObject } from "@/lib/supabase";
 
-/** Bump when the archive shape changes so an older file is still readable. */
-export const ARCHIVE_SCHEMA_VERSION = 1;
+/**
+ * Bump when the archive shape changes so an older file is still readable.
+ *   1 — original shape.
+ *   2 — `presentation` removed with the AI wording layer; the report now renders
+ *       the tech's own text, so there is no separate wording to store. Version-1
+ *       archives may still carry that key; readers can ignore it.
+ */
+export const ARCHIVE_SCHEMA_VERSION = 2;
 
 /** A photo in the archive: its caption plus the bucket key holding the bytes. */
 export type ArchivedPhoto = {
@@ -74,12 +79,6 @@ export type AssessmentArchive = {
   overallNotes: string;
   overall: AssessmentData["overall"];
   certification: AssessmentData["certification"];
-  /**
-   * The presentation-only WORDING used for this render (Claude's polished notes
-   * + summary). Stored so a regenerated PDF reads identically instead of being
-   * re-worded on every re-render.
-   */
-  presentation?: ReportPresentation;
 };
 
 /**
@@ -174,14 +173,13 @@ function collectPhotos(data: AssessmentData): PhotoRef[] {
  */
 export async function archiveAssessment(opts: {
   data: AssessmentData;
-  presentation?: ReportPresentation;
   reportId: string;
   /** Shared filename stem, e.g. `Dale-Whitaker-2026-08-24-a7f3k2`. */
   stem: string;
   /** Bucket key of the uploaded PDF, or null when there isn't one. */
   pdfPath: string | null;
 }): Promise<ArchiveResult> {
-  const { data, presentation, reportId, stem, pdfPath } = opts;
+  const { data, reportId, stem, pdfPath } = opts;
   const refs = collectPhotos(data);
   const photos = { total: refs.length, uploaded: 0 };
 
@@ -241,7 +239,6 @@ export async function archiveAssessment(opts: {
       overallNotes: data.overallNotes,
       overall: data.overall,
       certification: data.certification,
-      presentation,
     };
 
     // 2. The archive itself.

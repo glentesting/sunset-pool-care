@@ -46,7 +46,7 @@ const TIMEOUT_MS = 15000;
  *   Name · Address, City ZIP
  *   email · phone
  *
- *   NEEDS ATTENTION — 1 item
+ *   Needs Attention — 1 item
  *   Section — Item
  *
  *   View full report: https://…
@@ -94,8 +94,10 @@ export function buildTicketBody(
   }
   for (const o of data.configOptions) tally(`Configuration — ${o.label}`, o.status);
 
-  // Overall condition + Attn count.
-  const overall = data.overall.label.toUpperCase();
+  // Overall condition + Attn count. The label is already title case coming out
+  // of overallCondition ("Needs Attention", "Good Condition") — printed as-is,
+  // since SHOUTING it added nothing but noise in the ticket.
+  const overall = data.overall.label;
   out.push(attn.length ? `${overall} — ${attn.length} item${attn.length === 1 ? "" : "s"}` : overall);
 
   // One line per Attn item, capped at 6.

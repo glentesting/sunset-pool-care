@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { assessmentSchema } from "@/lib/validation/assessment";
-import { buildReportPresentation } from "@/lib/report-presentation";
 import { generateAssessmentPdf } from "@/lib/pdf-generator";
 import { uploadPdfToSupabase } from "@/lib/supabase";
 import { archiveAssessment } from "@/lib/assessment-archive";
@@ -52,15 +51,11 @@ export async function POST(req: NextRequest) {
     reportId: string;
   } = { pdf: false, supabase: false, data: false, make: false, reportId };
 
-  // 1. PDF. buildReportPresentation is presentation-only, never throws (falls
-  //    back to raw notes), and mutates the polished per-item notes onto `data`.
-  //    We hold onto the presentation so the archive stores the exact wording
-  //    this render used — a regenerated report then reads identically.
+  // 1. PDF. Renders the tech's own words verbatim — there is no rewriting step
+  //    between the wizard and the report any more.
   let pdf: Buffer | null = null;
-  let presentation: Awaited<ReturnType<typeof buildReportPresentation>> | undefined;
   try {
-    presentation = await buildReportPresentation(data);
-    pdf = await generateAssessmentPdf(data, presentation);
+    pdf = await generateAssessmentPdf(data);
     results.pdf = true;
   } catch (e) {
     console.error("PDF step failed:", e);
@@ -99,7 +94,6 @@ export async function POST(req: NextRequest) {
   //    worth keeping on its own. archiveAssessment never throws.
   const archive = await archiveAssessment({
     data,
-    presentation,
     reportId,
     stem,
     pdfPath: results.supabase ? pdfPath : null,
