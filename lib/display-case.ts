@@ -26,11 +26,16 @@
  *     "3Rd", and "1420" / "85249" are left alone.
  *   - Every separator, space and other character is preserved verbatim.
  *
- * Known gap: a state abbreviation typed into the city or address field ("AZ")
- * is not in KEEP_UPPER and comes out "Az". There is no state field in the
- * assessment — city and zip are separate — so it only shows up when a tech types
- * one into a field that isn't for it. Add it to KEEP_UPPER if that turns out to
- * happen in practice.
+ * Only AZ is kept from the state abbreviations, deliberately. The rest collide
+ * with real words and name particles once they are upper-cased: DE (Delaware) and
+ * LA (Louisiana) would freeze "DE LA CRUZ" into "DE LA Cruz", and IN / OR / OK /
+ * ME / HI / PA / ID are ordinary English. SPC works only in Arizona and city and
+ * zip are separate fields, so AZ is the only code that can realistically be typed
+ * and it collides with nothing.
+ *
+ * If SPC ever works outside Arizona, the rule that would carry more of them is
+ * positional — preserve a state code only as the final token or immediately
+ * before a 5-digit zip — rather than by membership alone.
  */
 
 /**
@@ -45,7 +50,7 @@ const WORDS = new RegExp(`[^${SEPARATORS}]+`, "g");
  * intent by shape alone. Generational suffixes and compass directionals — both
  * of which turn up in real names and Arizona street addresses.
  */
-const KEEP_UPPER = new Set(["II", "III", "IV", "JR", "SR", "NE", "NW", "SE", "SW"]);
+const KEEP_UPPER = new Set(["II", "III", "IV", "JR", "SR", "NE", "NW", "SE", "SW", "AZ"]);
 
 /** Title-case a name or address for display. Returns "" for empty input. */
 export function toDisplayCase(value: string | null | undefined): string {

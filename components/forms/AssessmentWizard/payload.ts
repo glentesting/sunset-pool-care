@@ -85,8 +85,11 @@ function reportItem(def: ItemDef, st: ItemState | undefined): ReportItem | null 
   const status = itemRating(def, st);
   const note = (st?.note ?? "").trim();
   const reading = (st?.reading ?? "").trim();
-  // "Unrated items render nothing" — but keep a bare note/reading if the tech
-  // bothered to write one.
+  // An item with nothing on it renders nothing — silence means nothing to
+  // report. A note or reading WITHOUT a rating still comes through, because a
+  // tech who wrote one meant something by it and the customer should see it; the
+  // report prints such a row with an EMPTY status column rather than a dash, so
+  // it never implies a rating nobody gave (see ItemBadge in lib/pdf-generator).
   if (!status && !note && !reading) return null;
   return {
     label: def.label,
