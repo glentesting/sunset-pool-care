@@ -19,7 +19,13 @@
  *
  * The body also carries a top-level `ticket_body` — a pre-formatted plain-text
  * summary the office reads to work the HubSpot ticket, so Make doesn't have to
- * walk the nested structure. The structured data stays alongside it.
+ * walk the nested structure. The structured data stays alongside it — plus a
+ * top-level `reportId`, the handle for the archived assessment in Supabase and
+ * the last segment of the /r/<reportId> viewer URL.
+ *
+ * Make reads property.customerFirstName, customerLastName, customerEmail,
+ * customerPhone, serviceAddress, city, zip, pdf_url and ticket_body BY EXACT
+ * NAME. Do not rename or remove any of them.
  *
  * Set MAKE_ASSESSMENT_WEBHOOK_URL to the Make webhook URL. When it's unset the
  * call is SKIPPED cleanly (returns false, never throws) so local/dev submits and
@@ -47,8 +53,18 @@ const TIMEOUT_MS = 15000;
  *
  * Attn items are listed (max 6, then "+N more"); Monitor is a count only.
  * Chemistry and overall notes are NOT here — they live in the PDF.
+ *
+ * The last line is the /r/<reportId> VIEWER url, not the raw signed Supabase url
+ * — the signed url is ~400 characters, unreadable in a ticket, force-downloads
+ * rather than displaying, and expires. The viewer link is short, renders the PDF
+ * in the browser, mints its own signed url on each load, and is safe to forward
+ * to a customer. `pdf_url` still carries the signed url for Make's own use.
  */
-export function buildTicketBody(data: AssessmentData, pdfUrl: string | null): string {
+export function buildTicketBody(
+  data: AssessmentData,
+  pdfUrl: string | null,
+  reportUrl: string | null
+): string {
   const p = data.property;
   const out: string[] = [];
 
@@ -92,18 +108,30 @@ export function buildTicketBody(data: AssessmentData, pdfUrl: string | null): st
 
   out.push("");
 
-  // PDF link — always the last line; a missing upload is made obvious, not silent.
-  out.push(`View full report: ${pdfUrl ?? "(PDF upload failed — see submit log)"}`);
+  // Report link — always the last line; a missing upload is made obvious, not
+  // silent. Prefer the viewer; fall back to the raw signed url only when the
+  // archive didn't land and so /r/<reportId> would 404.
+  const link = reportUrl ?? pdfUrl ?? "(PDF upload failed — see submit log)";
+  out.push(`View full report: ${link}`);
 
   return out.join("\n").trim();
 }
 
-/** Drop photo base64 (keep the caption/label) and attach pdf_url + ticket_body. */
-function buildWebhookBody(data: AssessmentData, pdfUrl: string | null, ticketBody: string) {
+/**
+ * Drop photo base64 (keep the caption/label) and attach reportId + pdf_url +
+ * ticket_body. Additive only — no existing key is renamed or removed.
+ */
+function buildWebhookBody(
+  data: AssessmentData,
+  pdfUrl: string | null,
+  ticketBody: string,
+  reportId: string
+) {
   const stripPhotos = (photos: { label: string; dataUrl: string }[]) =>
     photos.map((p) => ({ label: p.label }));
   return {
     ...data,
+    reportId,
     // Omit pdf_url entirely when the upload didn't happen (never send null/empty).
     ...(pdfUrl ? { pdf_url: pdfUrl } : {}),
     ticket_body: ticketBody,
@@ -113,21 +141,26 @@ function buildWebhookBody(data: AssessmentData, pdfUrl: string | null, ticketBod
 }
 
 /**
- * POST the assessment (photo base64 stripped, + pdf_url + ticket_body) to Make.
+ * POST the assessment (photo base64 stripped, + reportId + pdf_url +
+ * ticket_body) to Make.
+ * @param reportUrl the /r/<reportId> viewer link for ticket_body's last line,
+ *   or null when the archive didn't land (then it falls back to pdf_url).
  * @returns true when Make accepted it; false when the webhook isn't configured.
  * @throws on network error or a non-2xx response (caller records make=false).
  */
 export async function logAssessmentToMake(
   data: AssessmentData,
-  pdfUrl: string | null
+  pdfUrl: string | null,
+  reportId: string,
+  reportUrl: string | null
 ): Promise<boolean> {
   if (!MAKE_WEBHOOK_URL) return false; // not configured — skip cleanly, don't block submit
 
-  const ticketBody = buildTicketBody(data, pdfUrl);
+  const ticketBody = buildTicketBody(data, pdfUrl, reportUrl);
   const res = await fetch(MAKE_WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(buildWebhookBody(data, pdfUrl, ticketBody)),
+    body: JSON.stringify(buildWebhookBody(data, pdfUrl, ticketBody, reportId)),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!res.ok) {

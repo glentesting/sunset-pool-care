@@ -85,9 +85,17 @@ export type SectionState = {
 export type SubmitResults = {
   pdf: boolean;
   supabase: boolean;
+  /** The raw assessment archive (JSON + photo files + viewer index) landed. */
+  data: boolean;
   make: boolean;
   /** When supabase is false: why, so the submit row can be honest. */
   supabaseReason?: "not-configured" | "error";
+  /** When data is false: why. Same honest-status rule as supabaseReason. */
+  dataReason?: "not-configured" | "error";
+  /** Photo files attempted vs. landed — a partial upload must be visible. */
+  dataPhotos?: { total: number; uploaded: number };
+  /** Public handle for this report; the /r/<reportId> viewer URL. */
+  reportId?: string;
 };
 
 export type AssessmentState = {
