@@ -190,10 +190,14 @@ const r = StyleSheet.create({
   bandCaption: { fontSize: 6, color: GREY, textAlign: "center", marginTop: 1 },
 });
 
-/** Item badge: binary items show YES/NO; condition items show the rating word. */
+/**
+ * Item badge: binary items show Yes/No; condition items show the rating word.
+ * Title case matches every other status on the report (Good / Monitor / Attn /
+ * N/A); the colour still comes from the resolved status, unchanged.
+ */
 function ItemBadge({ status, answer }: { status?: string; answer?: "yes" | "no" }) {
   const color = status ? RATING_COLOR[status] : STONE;
-  const text = answer ? answer.toUpperCase() : status ? RATING_LABEL[status] : "—";
+  const text = answer ? (answer === "yes" ? "Yes" : "No") : status ? RATING_LABEL[status] : "—";
   return <Text style={[r.badge, { color }]}>{text}</Text>;
 }
 
