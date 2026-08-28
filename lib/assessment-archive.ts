@@ -38,6 +38,7 @@
 import "server-only";
 import type { AssessmentData } from "@/lib/validation/assessment";
 import { isSupabaseConfigured, readJsonObject, uploadObject } from "@/lib/supabase";
+import type { RevisionEntry } from "@/lib/revision-log";
 
 /**
  * Bump when the archive shape changes so an older file is still readable.
@@ -45,8 +46,10 @@ import { isSupabaseConfigured, readJsonObject, uploadObject } from "@/lib/supaba
  *   2 — `presentation` removed with the AI wording layer; the report now renders
  *       the tech's own text, so there is no separate wording to store. Version-1
  *       archives may still carry that key; readers can ignore it.
+ *   3 — `revisions` added: the append-only office edit log. Absent on 1 and 2,
+ *       which simply means the report has never been revised.
  */
-export const ARCHIVE_SCHEMA_VERSION = 2;
+export const ARCHIVE_SCHEMA_VERSION = 3;
 
 /** A photo in the archive: its caption plus the bucket key holding the bytes. */
 export type ArchivedPhoto = {
@@ -79,6 +82,17 @@ export type AssessmentArchive = {
   overallNotes: string;
   overall: AssessmentData["overall"];
   certification: AssessmentData["certification"];
+  /**
+   * Append-only log of office edits. Internal: it never reaches the customer
+   * PDF or the public /r/<reportId> page. Absent means never revised.
+   */
+  revisions?: RevisionEntry[];
+  /**
+   * Bucket keys of superseded PDFs, oldest first. A revision copies the live PDF
+   * here BEFORE overwriting it, so a version already sent to a customer is never
+   * destroyed.
+   */
+  pdfVersions?: string[];
 };
 
 /**
@@ -239,6 +253,8 @@ export async function archiveAssessment(opts: {
       overallNotes: data.overallNotes,
       overall: data.overall,
       certification: data.certification,
+      // A fresh submit has no edits yet; the office review screen appends here.
+      revisions: [],
     };
 
     // 2. The archive itself.

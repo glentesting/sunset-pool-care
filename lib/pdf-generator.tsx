@@ -194,11 +194,18 @@ const r = StyleSheet.create({
 /**
  * Item badge: binary items show Yes/No; condition items show the rating word.
  * Title case matches every other status on the report (Good / Monitor / Attn /
- * N/A); the colour still comes from the resolved status, unchanged.
+ * N/A); the colour comes from the resolved status, unchanged.
+ *
+ * An UNRATED item renders an empty column, never a dash. An item can reach the
+ * report with a note but no rating — a tech wrote something without scoring it —
+ * and a dash there reads as a rating, implying somebody assessed the item and
+ * landed on neutral. Nobody did. Same failure as a blank chemistry row printing
+ * "Good": a visual element asserting an assessment that never happened. The
+ * badge keeps its width so the rows either side stay aligned.
  */
 function ItemBadge({ status, answer }: { status?: string; answer?: "yes" | "no" }) {
   const color = status ? RATING_COLOR[status] : STONE;
-  const text = answer ? (answer === "yes" ? "Yes" : "No") : status ? RATING_LABEL[status] : "—";
+  const text = answer ? (answer === "yes" ? "Yes" : "No") : status ? RATING_LABEL[status] : "";
   return <Text style={[r.badge, { color }]}>{text}</Text>;
 }
 
@@ -310,7 +317,7 @@ function Thumbs({ photos }: { photos: Section["photos"] }) {
   );
 }
 
-function AssessmentReport({ data }: { data: AssessmentData }) {
+function AssessmentReport({ data, revisedOn }: { data: AssessmentData; revisedOn?: string }) {
   const { property, details, config, configPhotos, configOptions, sections, chemistry, itemCounts, overallNotes, overall, certification } = data;
   // Display casing only — `data` still carries what the tech typed, and that is
   // what the archive and the Make payload keep. Fixes both a lowercase and a
@@ -477,6 +484,11 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
             {certification.inspectorName}
             {certification.date ? `   ·   ${certification.date}` : ""}
           </Text>
+          {/* Regenerated reports only. A homeowner has no use for who in the
+              office touched it or what changed — just that it was revised. */}
+          {revisedOn ? (
+            <Text style={{ marginTop: 3, color: GREY }}>Revised {revisedOn}</Text>
+          ) : null}
         </View>
 
         <Text style={s.footer} fixed>
@@ -487,6 +499,14 @@ function AssessmentReport({ data }: { data: AssessmentData }) {
   );
 }
 
-export async function generateAssessmentPdf(data: AssessmentData): Promise<Buffer> {
-  return renderToBuffer(<AssessmentReport data={data} />);
+/**
+ * @param options.revisedOn date to print as a quiet "Revised …" line by the
+ *   certification. Omitted for a first-generation report, which must carry no
+ *   such line at all.
+ */
+export async function generateAssessmentPdf(
+  data: AssessmentData,
+  options?: { revisedOn?: string }
+): Promise<Buffer> {
+  return renderToBuffer(<AssessmentReport data={data} revisedOn={options?.revisedOn} />);
 }

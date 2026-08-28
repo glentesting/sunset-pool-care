@@ -118,6 +118,33 @@ export async function readJsonObject<T>(path: string): Promise<T | null> {
 }
 
 /**
+ * Read one object's raw bytes. Used to pull archived photos back for a
+ * regenerated PDF, and to copy a PDF to a versioned key before overwriting it.
+ * @returns bytes + content type, or null when the object isn't there.
+ * @throws never — callers decide what a missing object means.
+ */
+export async function readObjectBytes(
+  path: string
+): Promise<{ bytes: Uint8Array<ArrayBuffer>; contentType: string } | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const res = await fetch(`${storageBase()}/storage/v1/object/${objectPathFor(path)}`, {
+      headers: { Authorization: `Bearer ${SERVICE_KEY}` },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    const bytes = new Uint8Array(buf.byteLength);
+    bytes.set(new Uint8Array(buf));
+    return { bytes, contentType: res.headers.get("content-type") || "application/octet-stream" };
+  } catch (e) {
+    console.error(`Supabase read failed for ${path}:`, e);
+    return null;
+  }
+}
+
+/**
  * Upload the report PDF and return a signed URL.
  * @returns the signed URL on success; null when Supabase isn't configured (skip).
  * @throws on a real upload/sign failure so the caller records supabase=false.

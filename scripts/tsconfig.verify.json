@@ -1,0 +1,15 @@
+{
+  "//": "Compiles the scoring pair on its own so verify-archive-scoring.mjs can exercise it in plain Node. Both files are runtime-dependency-free (type-only imports erase), which is what makes this possible.",
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2022",
+    "outDir": "/tmp/spc-scoring",
+    "declaration": false,
+    "jsx": "react-jsx",
+    "skipLibCheck": true
+  },
+  "include": ["../lib/report-scoring.ts", "../lib/archive-scoring.ts"]
+}

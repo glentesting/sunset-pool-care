@@ -31,9 +31,14 @@ export function siteBaseUrl(): string {
   return FALLBACK;
 }
 
-/** Public viewer URL for one assessment. */
+/** Public viewer URL for one assessment — safe to forward to a customer. */
 export function reportViewerUrl(reportId: string): string {
   return `${siteBaseUrl()}/r/${reportId}`;
+}
+
+/** INTERNAL office review URL. Never send this to a customer. */
+export function reportReviewUrl(reportId: string): string {
+  return `${siteBaseUrl()}/assessment/review/${reportId}`;
 }
 
 function withProtocol(host: string): string {

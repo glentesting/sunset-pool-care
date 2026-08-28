@@ -12,6 +12,8 @@ import { z } from "zod";
 import { isValidEmail } from "./email";
 
 export const ratingSchema = z.enum(["GOOD", "MONITOR", "ATTENTION", "N/A"]);
+/** The canonical rating union. lib/report-scoring.ts scores against this. */
+export type Rating = z.infer<typeof ratingSchema>;
 
 const photoSchema = z.object({ label: z.string(), dataUrl: z.string() });
 

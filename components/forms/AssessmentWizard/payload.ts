@@ -29,6 +29,8 @@ import {
   overallCondition,
   sectionRating,
 } from "./summary";
+import { splitCustomerName } from "@/lib/customer-name";
+import { emptyItemCounts, tallyItem } from "@/lib/report-scoring";
 import { unitHeading } from "./shared/UnitList";
 import type { AssessmentState, ItemState, Photo } from "./state";
 
@@ -56,36 +58,16 @@ function photosOf(map: Record<string, Photo>): { label: string; dataUrl: string 
     .map(([key, p]) => ({ label: (p.label ?? "").trim() || slotName(key), dataUrl: p.dataUrl }));
 }
 
-/**
- * Split the customer's full name into first + last for the webhook payload
- * (HubSpot wants them separate). `customerName` itself is left untouched.
- *   - trim + collapse internal whitespace to single spaces
- *   - ""        -> { first: "", last: "" }
- *   - one token -> { first: token, last: "" }
- *   - else      -> first token / everything after the first space, as-is
- *     ("Mary Anne Van Der Berg" -> "Mary" / "Anne Van Der Berg")
- */
-export function splitCustomerName(fullName: string): {
-  customerFirstName: string;
-  customerLastName: string;
-} {
-  const normalized = fullName.trim().replace(/\s+/g, " ");
-  if (!normalized) return { customerFirstName: "", customerLastName: "" };
-  const gap = normalized.indexOf(" ");
-  if (gap === -1) return { customerFirstName: normalized, customerLastName: "" };
-  return {
-    customerFirstName: normalized.slice(0, gap),
-    customerLastName: normalized.slice(gap + 1),
-  };
-}
-
 /** One rated/annotated item → a report row. Unrated + empty items return null. */
 function reportItem(def: ItemDef, st: ItemState | undefined): ReportItem | null {
   const status = itemRating(def, st);
   const note = (st?.note ?? "").trim();
   const reading = (st?.reading ?? "").trim();
-  // "Unrated items render nothing" — but keep a bare note/reading if the tech
-  // bothered to write one.
+  // An item with nothing on it renders nothing — silence means nothing to
+  // report. A note or reading WITHOUT a rating still comes through, because a
+  // tech who wrote one meant something by it and the customer should see it; the
+  // report prints such a row with an EMPTY status column rather than a dash, so
+  // it never implies a rating nobody gave (see ItemBadge in lib/pdf-generator).
   if (!status && !note && !reading) return null;
   return {
     label: def.label,
@@ -97,16 +79,12 @@ function reportItem(def: ItemDef, st: ItemState | undefined): ReportItem | null 
   };
 }
 
-function tally(counts: { attention: number; monitor: number; good: number }, r?: Rating) {
-  if (r === "ATTENTION") counts.attention += 1;
-  else if (r === "MONITOR") counts.monitor += 1;
-  else if (r === "GOOD") counts.good += 1;
-}
+
 
 export function buildSubmitPayload(state: AssessmentState): AssessmentData {
   const usesSalt = state.config.sanitization.includes(SALT_SANITIZER);
   const spaPresent = isSpaPresent(state);
-  const counts = { attention: 0, monitor: 0, good: 0 };
+  const counts = emptyItemCounts();
 
   const sections = SECTIONS.map((s) => {
     // Auto-skipped spa is reported as N/A with nothing attached.
@@ -132,7 +110,7 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
       .filter((d) => !d.conditional || d.conditional(state))
       .map((d) => reportItem(d, stateItems[d.id]))
       .filter((r): r is ReportItem => r !== null);
-    for (const r of items) tally(counts, r.status);
+    for (const r of items) tallyItem(counts, r.status);
 
     // Spa's own Last Water Change rides as a row on the spa section.
     if (s.id === "spa") {
@@ -153,7 +131,7 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
         const uItems = unitCfg.defs
           .map((d) => reportItem(d, stateItems[`${u.id}:${d.id}`]))
           .filter((r): r is ReportItem => r !== null);
-        for (const r of uItems) tally(counts, r.status);
+        for (const r of uItems) tallyItem(counts, r.status);
 
         let heading = unitHeading(singular, i, u);
         if (u.location?.trim()) heading += ` · ${u.location.trim()}`;
@@ -192,7 +170,7 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
     .map((p) => ({ p, row: state.chemistry[p.key] }))
     .filter(({ row }) => (row?.reading ?? "").trim() !== "")
     .map(({ p, row }) => {
-      tally(counts, row?.rating);
+      tallyItem(counts, row?.rating);
       return {
         key: p.key,
         label: p.label,
@@ -209,7 +187,7 @@ export function buildSubmitPayload(state: AssessmentState): AssessmentData {
     if (!o) return;
     const note = (o.note ?? "").trim();
     if (!o.rating && !note) return;
-    tally(counts, o.rating);
+    tallyItem(counts, o.rating);
     configOptions.push({ label: opt, status: o.rating, note });
   };
   state.config.sanitization.forEach((o) => pushOption("sanitation", o));
