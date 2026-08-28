@@ -10,7 +10,9 @@
  * Order matters, and every risky step fails closed:
  *   1. re-read the stored archive — the CLIENT IS NOT TRUSTED for old values,
  *      the write whitelist, or the diff;
- *   2. reject a stale save so two people can't silently clobber each other;
+ *   2. reject a save made against a version someone else has already replaced
+ *      (a read, not a compare-and-swap — see the check itself for what that
+ *      does and does not cover);
  *   3. apply only whitelisted fields, and record what changed;
  *   4. re-score from the result: an explicit section-rating override wins, an
  *      edited section is re-derived, an untouched section is left as filed;
@@ -101,6 +103,33 @@ export async function reviseAndRegenerate(opts: {
   const { index, archive } = loaded;
 
   // Staleness: the stamp advances on every successful revision.
+  //
+  // This catches the case that actually happens — two people with the report
+  // open, minutes apart — and it is a READ, not a compare-and-swap. Two saves
+  // that both start before either finishes still both pass: a PDF render sits
+  // between this check and the writes, and nothing revalidates in between. The
+  // later writer then wins, and the earlier one's revision entries are lost,
+  // which is precisely the property an append-only log is supposed to hold.
+  //
+  // Accepted deliberately for four people in one office, not overlooked. If it
+  // ever needs closing, the approach is worked out — don't re-derive it:
+  //
+  //   Supabase Storage 409s on an existing object unless `x-upsert: true` is
+  //   sent, and uploadObject sets that header explicitly, so a create-only
+  //   primitive is already there and simply unused. Give uploadObject an upsert
+  //   flag, and have each save claim `revisions/<reportId>/<n>.json` — where
+  //   n = revisions.length + 1 — created WITHOUT upsert, before the version copy
+  //   and before the PDF overwrite. First writer wins the key; the loser gets a
+  //   409 and shows the same "someone else saved" message it shows now, this
+  //   time for real rather than by luck of timing. A loser touches nothing,
+  //   because the claim precedes every destructive write. The numbered objects
+  //   become the revision history as a side effect.
+  //
+  //   Preferred over a lock object: no TTL, no stale-lock recovery, and no way
+  //   for a crashed request to wedge a report. The cost is that it changes the
+  //   storage layer's write contract, which every other caller shares, and it
+  //   needs verification built around genuinely concurrent requests — a race
+  //   passes any single-threaded test trivially.
   if (revisionStamp(archive) !== loadedAt) {
     return {
       ok: false,
