@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Logo from "@/components/layout/Logo";
 import CopyLinkButton from "@/components/report/CopyLinkButton";
+import ReportPdfSection from "@/components/report/ReportPdfSection";
 import { buttonClasses } from "@/components/ui/Button";
 import { SITE } from "@/content/site";
 import { telHref } from "@/components/layout/navLinks";
 import { readReportIndex } from "@/lib/assessment-archive";
+import { toDisplayCase } from "@/lib/display-case";
 import { isReportId } from "@/lib/report-id";
 
 /**
@@ -44,8 +46,14 @@ export default async function ReportViewerPage({
   const report = isReportId(reportId) ? await readReportIndex(reportId) : null;
   if (!report) notFound(); // renders ./not-found.tsx with a 404
 
-  const cityZip = [report.city, report.zip].map((s) => s?.trim()).filter(Boolean).join(" ");
-  const address = [report.serviceAddress?.trim(), cityZip].filter(Boolean).join(", ");
+  // Display casing only — the stored assessment, the archived JSON and the Make
+  // payload all keep the value exactly as the tech typed it. The zip is left
+  // alone (digits), the street and city get the same treatment as the name.
+  const customerName = toDisplayCase(report.customerName);
+  const cityZip = [toDisplayCase(report.city), report.zip?.trim()]
+    .filter(Boolean)
+    .join(" ");
+  const address = [toDisplayCase(report.serviceAddress), cityZip].filter(Boolean).join(", ");
   const pdfHref = `/r/${reportId}/pdf`;
 
   return (
@@ -57,65 +65,37 @@ export default async function ReportViewerPage({
           Pool Condition Assessment
         </p>
         <h1 className="mt-2 text-[28px] leading-tight text-navy sm:text-[34px]">
-          {report.customerName || "Your pool report"}
+          {customerName || "Your pool report"}
         </h1>
         {address && <p className="mt-1.5 text-[15px] text-navy/70">{address}</p>}
         {report.date && (
           <p className="mt-0.5 text-[13px] text-navy/55">Inspected {formatDate(report.date)}</p>
         )}
 
-        {/* Actions sit above the viewer so they're reachable on a phone without
-            scrolling past a tall embed. Full-width stacked on small screens.
-            Download is offered only when there's actually a PDF behind it. */}
-        <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
-          {report.pdfPath && (
-            <a
-              href={`${pdfHref}?download=1`}
-              className={buttonClasses({ variant: "primary", className: "w-full sm:w-auto" })}
-            >
-              Download PDF
-            </a>
-          )}
-          <CopyLinkButton
-            className={buttonClasses({
-              variant: report.pdfPath ? "secondary" : "primary",
-              className: "w-full sm:w-auto",
-            })}
-          />
-        </div>
-
+        {/* Actions always sit above the report, so they're reachable on a phone
+            without scrolling past a tall embed. ReportPdfSection decides between
+            the inline viewer and a "View report" button — see its docblock. */}
         {report.pdfPath ? (
+          <ReportPdfSection
+            pdfHref={pdfHref}
+            reportTitle={`Pool assessment report for ${customerName || "this property"}`}
+          />
+        ) : (
           <>
-            <div className="mt-7 overflow-hidden rounded-xl border border-line bg-white shadow-card">
-              <iframe
-                src={pdfHref}
-                title={`Pool assessment report for ${report.customerName || "this property"}`}
-                className="h-[68vh] min-h-[420px] w-full sm:h-[80vh]"
+            {/* No PDF behind this report: offer only what actually works. */}
+            <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
+              <CopyLinkButton
+                className={buttonClasses({ variant: "primary", className: "w-full sm:w-auto" })}
               />
             </div>
-            {/* Mobile browsers vary in how much of an embedded PDF they'll
-                actually render — a plain escape hatch beats a stuck viewer. */}
-            <p className="mt-3 text-center text-[13px] text-navy/60">
-              Report not showing?{" "}
-              <a
-                href={pdfHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-orange-dark underline underline-offset-2"
-              >
-                Open it in a new tab
-              </a>
-              .
+            <p className="mt-7 rounded-xl border border-line bg-white p-6 text-[15px] leading-relaxed text-navy/75 shadow-card">
+              The PDF for this assessment isn&apos;t available yet. Give us a call at{" "}
+              <a href={telHref(SITE.phone)} className="font-semibold text-orange-dark">
+                {SITE.phone}
+              </a>{" "}
+              and we&apos;ll get it to you.
             </p>
           </>
-        ) : (
-          <p className="mt-7 rounded-xl border border-line bg-white p-6 text-[15px] leading-relaxed text-navy/75 shadow-card">
-            The PDF for this assessment isn&apos;t available yet. Give us a call at{" "}
-            <a href={telHref(SITE.phone)} className="font-semibold text-orange-dark">
-              {SITE.phone}
-            </a>{" "}
-            and we&apos;ll get it to you.
-          </p>
         )}
       </main>
 
