@@ -165,16 +165,23 @@ export function overallCondition(state: AssessmentState): {
   return overallFromSectionCounts(counts, actuallyRated);
 }
 
+/**
+ * ONE section (step) owes a photo: its DERIVED rating is MONITOR/ATTENTION and it
+ * carries no photo. This is the "one photo per STEP" rule — a single photo
+ * satisfies the whole step no matter how many items on it are flagged (the count
+ * of flagged items is irrelevant). Used both to block advancing past the step
+ * (WizardChrome) and as the Review backstop below, so the two never disagree.
+ */
+export function sectionNeedsPhoto(state: AssessmentState, sectionId: string): boolean {
+  const rating = sectionRating(state, sectionId);
+  if (!rating || !FLAGGED_RATINGS.includes(rating)) return false;
+  const hasPhoto = Object.values(state.sections[sectionId]?.photos ?? {}).some((p) => p?.dataUrl);
+  return !hasPhoto;
+}
+
 /** Sections whose DERIVED rating is MONITOR/ATTENTION but that have no photo. */
 export function outstandingPhotoIssues(state: AssessmentState): string[] {
-  const issues: string[] = [];
-  for (const s of SECTIONS) {
-    const rating = sectionRating(state, s.id);
-    if (!rating || !FLAGGED_RATINGS.includes(rating)) continue;
-    const hasPhoto = Object.values(state.sections[s.id]?.photos ?? {}).some((p) => p?.dataUrl);
-    if (!hasPhoto) issues.push(s.title);
-  }
-  return issues;
+  return SECTIONS.filter((s) => sectionNeedsPhoto(state, s.id)).map((s) => s.title);
 }
 
 export function canSubmit(state: AssessmentState): { ok: boolean; reasons: string[] } {

@@ -87,6 +87,14 @@
   --color-wiz-line: #d3d8de;       /* was line — hairlines / dividers */
   --color-wiz-field: #8d99a7;      /* was field — input borders */
 
+  /* Corner radius for the wizard's interactive vocabulary — selection buttons,
+   * chips, segmented rating controls and status badges. Frozen with the other
+   * wiz-* tokens and referenced as `rounded-wiz`. This is the ONE place the
+   * chip/selector radius is set: retune it here and every control follows. A
+   * small modern radius, deliberately NOT a full pill. (Structural cards keep
+   * their own larger rounded-xl; genuinely circular dots/icons stay rounded-full.) */
+  --radius-wiz: 0.5rem;
+
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 

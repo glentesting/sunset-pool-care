@@ -59,7 +59,7 @@ export default function SectionShell({
             <p className={groupLabel}>Checklist</p>
             {rating && (
               <span
-                className={`rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide ${BADGE[rating]}`}
+                className={`rounded-wiz px-2.5 py-1 text-[11px] font-bold tracking-wide ${BADGE[rating]}`}
               >
                 {RATING_DISPLAY[rating]}
               </span>
@@ -99,8 +99,9 @@ export default function SectionShell({
       </div>
 
       {needsPhoto && (
-        <p className="rounded-lg border border-attention/20 bg-attention/5 px-3 py-2 text-[13px] font-medium text-attention">
-          A {rating ? RATING_DISPLAY[rating] : ""} rating needs at least one photo before you can submit.
+        <p className="rounded-wiz border border-attention/20 bg-attention/5 px-3 py-2 text-[13px] font-medium text-attention">
+          This step has an item rated {rating ? RATING_DISPLAY[rating] : ""} — add at least one photo
+          above to continue to the next step.
         </p>
       )}
 

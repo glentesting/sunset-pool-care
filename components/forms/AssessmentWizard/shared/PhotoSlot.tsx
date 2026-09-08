@@ -12,7 +12,7 @@ const MAX_LABEL = 60;
  */
 function CameraGlyph() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M4 8.5A1.5 1.5 0 0 1 5.5 7h1.8l.9-1.5h7.6L16.7 7h1.8A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9Z"
         stroke="currentColor"
@@ -73,14 +73,14 @@ export default function PhotoSlot({
         <>
           <div className="relative overflow-hidden rounded-lg border border-wiz-line">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={value} alt={label} className="h-28 w-full object-cover" />
-            <span className="absolute inset-x-0 bottom-0 bg-wiz-ink/70 px-2 py-1 text-[11px] font-medium text-white">
+            <img src={value} alt={label} className="h-20 w-full object-cover" />
+            <span className="absolute inset-x-0 bottom-0 bg-wiz-ink/70 px-2 py-0.5 text-[11px] font-medium text-white">
               {label}
             </span>
             <button
               type="button"
               onClick={() => onChange(null)}
-              className="absolute right-1.5 top-1.5 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-medium text-wiz-ink/70 shadow-card"
+              className="absolute right-1.5 top-1.5 rounded-wiz bg-white/95 px-2 py-0.5 text-[11px] font-medium text-wiz-ink/70 shadow-card"
             >
               Remove
             </button>
@@ -100,7 +100,7 @@ export default function PhotoSlot({
       ) : (
         <label
           htmlFor={inputId}
-          className={`flex h-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-center text-[13px] font-medium transition-colors ${
+          className={`flex h-20 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed px-2 text-center text-[12px] font-medium leading-tight transition-colors ${
             missing
               ? "border-attention bg-attention/5 text-attention-dark"
               : "border-wiz-field bg-wiz-surface/60 text-wiz-ink/70 hover:border-wiz-ink/40"
@@ -111,8 +111,8 @@ export default function PhotoSlot({
           ) : (
             <>
               <CameraGlyph />
-              <span className="px-2">{label}</span>
-              {required && <span className="text-[11px] text-wiz-ink/60">Required</span>}
+              <span>{label}</span>
+              {required && <span className="text-[10px] text-wiz-ink/60">Required</span>}
             </>
           )}
         </label>

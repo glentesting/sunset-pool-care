@@ -1,6 +1,7 @@
 "use client";
 import { RATINGS, RATING_DISPLAY, type BinaryAnswer, type ItemDef, type Rating } from "../config";
 import { useAssessment, type ItemState } from "../state";
+import NotesField from "./NotesField";
 
 /**
  * THE checklist item control — built once, reused for every line item.
@@ -85,16 +86,14 @@ export default function ItemRow({
         </p>
       )}
 
-      <input
-        type="text"
-        value={st.note}
-        onChange={(e) =>
-          dispatch({ type: "setItemNote", sectionId, itemId: key, note: e.target.value })
-        }
-        placeholder="Note (optional)"
-        aria-label={`Note for ${item.label}`}
-        className="mt-2 w-full rounded-md border border-wiz-field bg-white px-2 py-1.5 text-[13px] text-wiz-ink placeholder:text-wiz-ink/55 focus:border-wiz-accent focus:outline-none focus:ring-1 focus:ring-wiz-accent/30"
-      />
+      <div className="mt-2">
+        <NotesField
+          value={st.note}
+          onChange={(note) => dispatch({ type: "setItemNote", sectionId, itemId: key, note })}
+          placeholder="Note (optional)"
+          ariaLabel={`Note for ${item.label}`}
+        />
+      </div>
     </div>
   );
 }
@@ -107,7 +106,7 @@ function ConditionControl({
   onPick: (r: Rating) => void;
 }) {
   return (
-    <div className="flex divide-x divide-wiz-field overflow-hidden rounded-lg border border-wiz-field bg-white">
+    <div className="flex divide-x divide-wiz-field overflow-hidden rounded-wiz border border-wiz-field bg-white">
       {RATINGS.map((r) => {
         const active = value === r;
         return (
@@ -139,7 +138,7 @@ function BinaryControl({
 }) {
   const answers: BinaryAnswer[] = ["yes", "no"];
   return (
-    <div className="flex divide-x divide-wiz-field overflow-hidden rounded-lg border border-wiz-field bg-white">
+    <div className="flex divide-x divide-wiz-field overflow-hidden rounded-wiz border border-wiz-field bg-white">
       {answers.map((a) => {
         const active = value === a;
         const isGood = a === goodAnswer;

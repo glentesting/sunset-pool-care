@@ -113,7 +113,7 @@ export function Chip({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`rounded-full border px-3.5 py-2 text-sm font-medium transition-colors ${
+      className={`rounded-wiz border px-3.5 py-2 text-sm font-medium transition-colors ${
         active
           ? "border-wiz-accent bg-wiz-accent/15 text-wiz-accent-dark"
           : "border-wiz-field bg-white text-wiz-ink/80 hover:border-wiz-ink/40"

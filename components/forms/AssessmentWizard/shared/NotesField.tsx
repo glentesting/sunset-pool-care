@@ -1,10 +1,24 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 /**
- * Notes textarea with BEST-EFFORT voice-to-text (Web Speech API). The mic
- * button only renders when the API exists; everything degrades cleanly to
- * typing if it doesn't (iOS Safari is unreliable, so we never block on it).
+ * THE note field — used for every note in the wizard: item notes, section notes,
+ * unit-item notes, config-option notes and the Overall Assessment Notes box.
+ *
+ * Two behaviours every note gets:
+ *  - AUTO-GROW: slim (one line) at rest, grows with the content up to a cap
+ *    (~7 lines) then scrolls internally, so a tech can read back a long note
+ *    without it pushing the rest of the form off screen. Resizing runs before
+ *    paint on every change (typing AND dictation) so the field never flashes at
+ *    the wrong height and the page never jumps under the tech's thumb.
+ *  - DICTATE: best-effort voice-to-text (Web Speech API). The mic button only
+ *    renders when the API exists; everything degrades cleanly to typing if it
+ *    doesn't (iOS Safari is unreliable, so we never block on it). Dictated text
+ *    APPENDS to whatever's already in the field.
+ *
+ * `label` is optional: section/overall notes pass one; compact item and
+ * config-option notes pass none (and `ariaLabel` instead, so the control is
+ * still named for screen readers).
  */
 
 // Minimal shapes for the non-standard, vendor-prefixed Speech Recognition API.
@@ -34,16 +48,27 @@ function getRecognitionCtor(): (new () => RecognitionLike) | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
+// Runs before paint on the client, falls back to useEffect during SSR so it
+// doesn't warn — the field must be sized before the browser shows it.
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+// Auto-grow ceiling. Past this many lines the field scrolls internally instead
+// of growing without bound and shoving the form down.
+const MAX_LINES = 7;
+
 export default function NotesField({
   label,
   value,
   onChange,
   placeholder,
+  ariaLabel,
 }: {
-  label: string;
+  label?: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  /** Accessible name when there's no visible label (compact item/option notes). */
+  ariaLabel?: string;
 }) {
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
@@ -51,6 +76,24 @@ export default function NotesField({
   const baseRef = useRef(""); // field text before this dictation session
   const finalRef = useRef(""); // finalized dictation text — persists across auto-restarts
   const activeRef = useRef(false); // tech is actively dictating (drives the auto-restart)
+  const taRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grow: collapse to measure, then grow to fit up to the cap. Because this
+  // runs in a layout effect (before paint) the transient collapse is never
+  // visible, so there's no flicker and no scroll jump.
+  useIsoLayoutEffect(() => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const cs = getComputedStyle(el);
+    const lineH = parseFloat(cs.lineHeight) || 20;
+    const padding = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) || 0;
+    const border = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth) || 0;
+    const max = lineH * MAX_LINES + padding + border;
+    const next = Math.min(el.scrollHeight, max);
+    el.style.height = `${next}px`;
+    el.style.overflowY = el.scrollHeight > max ? "auto" : "hidden";
+  }, [value]);
 
   useEffect(() => {
     // Client-only feature detection: window/SpeechRecognition aren't available
@@ -135,29 +178,42 @@ export default function NotesField({
     }
   }
 
+  // The header row only exists if there's something to put in it — a visible
+  // label, or the Dictate control. Compact notes with neither render just the
+  // field, keeping them slim (matters when repeated across ~90 items).
+  const showHeader = Boolean(label) || supported;
+
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between">
-        <label className="text-[13px] font-medium text-wiz-ink">{label}</label>
-        {supported && (
-          <button
-            type="button"
-            onClick={toggle}
-            aria-pressed={listening}
-            className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
-              listening ? "text-attention" : "text-wiz-accent-dark hover:bg-wiz-accent/10"
-            }`}
-          >
-            {listening ? "● Stop" : "Dictate"}
-          </button>
-        )}
-      </div>
+      {showHeader && (
+        <div className="mb-1 flex items-center justify-between gap-2">
+          {label ? (
+            <label className="text-[13px] font-medium text-wiz-ink">{label}</label>
+          ) : (
+            <span aria-hidden />
+          )}
+          {supported && (
+            <button
+              type="button"
+              onClick={toggle}
+              aria-pressed={listening}
+              className={`shrink-0 rounded-wiz px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                listening ? "text-attention" : "text-wiz-accent-dark hover:bg-wiz-accent/10"
+              }`}
+            >
+              {listening ? "● Stop" : "Dictate"}
+            </button>
+          )}
+        </div>
+      )}
       <textarea
+        ref={taRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder ?? "Type or dictate notes…"}
-        rows={3}
-        className="w-full rounded-lg border border-wiz-field p-3 text-base text-wiz-ink placeholder:text-wiz-ink/50 focus:border-wiz-accent focus:outline-none focus:ring-2 focus:ring-wiz-accent/30"
+        aria-label={!label && ariaLabel ? ariaLabel : undefined}
+        rows={1}
+        className="block w-full resize-none rounded-wiz border border-wiz-field bg-white px-3 py-2 text-base text-wiz-ink placeholder:text-wiz-ink/50 focus:border-wiz-accent focus:outline-none focus:ring-2 focus:ring-wiz-accent/30"
       />
     </div>
   );

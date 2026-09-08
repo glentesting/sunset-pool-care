@@ -2,7 +2,7 @@
 import { useEffect, useLayoutEffect, type ReactNode } from "react";
 import { SITE } from "@/content/site";
 import { useAssessment } from "./state";
-import { getActiveSteps } from "./summary";
+import { getActiveSteps, sectionNeedsPhoto } from "./summary";
 import { PHASES, type Phase } from "./steps";
 import DemoLoadButton from "./DemoLoadButton";
 
@@ -34,6 +34,11 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
   const isWelcome = step?.id === "welcome";
   const isReview = step?.id === "review";
   const currentPhaseIdx = step ? PHASES.indexOf(step.phase) : 0;
+
+  // Photo gate: a section step whose derived rating is flagged must carry a photo
+  // before the tech can advance. Enforced here (block Next) so they don't walk
+  // all 13 steps and discover the debt at Review; Back is never blocked.
+  const owesPhoto = step?.sectionId ? sectionNeedsPhoto(state, step.sectionId) : false;
 
   // On every step change (forward or back), return to the top of the new step.
   // The step body remounts (main key={idx}); keying on idx runs this after the
@@ -86,25 +91,33 @@ export default function WizardChrome({ children }: { children: ReactNode }) {
       {!isWelcome && !state.submitted && <DemoLoadButton floating />}
 
       {!state.submitted && (
-        <footer className="sticky bottom-0 flex gap-3 border-t border-wiz-line bg-white/95 px-5 py-3 backdrop-blur">
-          {!isWelcome && (
-            <button
-              type="button"
-              onClick={() => dispatch({ type: "back" })}
-              className="rounded-lg border border-wiz-field px-5 py-3 text-sm font-semibold text-wiz-ink transition-colors hover:bg-wiz-surface"
-            >
-              Back
-            </button>
+        <footer className="sticky bottom-0 border-t border-wiz-line bg-white/95 px-5 py-3 backdrop-blur">
+          {owesPhoto && !isReview && (
+            <p className="mb-2 text-[12px] font-medium text-attention">
+              Add at least one photo above to continue — this step has a flagged item that needs one.
+            </p>
           )}
-          {!isWelcome && !isReview && (
-            <button
-              type="button"
-              onClick={() => dispatch({ type: "next" })}
-              className="flex-1 rounded-lg bg-wiz-action py-3 text-sm font-semibold text-white transition-colors hover:bg-wiz-action-dark"
-            >
-              Next
-            </button>
-          )}
+          <div className="flex gap-3">
+            {!isWelcome && (
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "back" })}
+                className="rounded-lg border border-wiz-field px-5 py-3 text-sm font-semibold text-wiz-ink transition-colors hover:bg-wiz-surface"
+              >
+                Back
+              </button>
+            )}
+            {!isWelcome && !isReview && (
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "next" })}
+                disabled={owesPhoto}
+                className="flex-1 rounded-lg bg-wiz-action py-3 text-sm font-semibold text-white transition-colors hover:bg-wiz-action-dark disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+              </button>
+            )}
+          </div>
         </footer>
       )}
     </div>

@@ -28,7 +28,7 @@ export default function RatingButtons({
   size?: "lg" | "sm";
 }) {
   return (
-    <div className="flex divide-x divide-wiz-field overflow-hidden rounded-xl border border-wiz-field bg-white">
+    <div className="flex divide-x divide-wiz-field overflow-hidden rounded-wiz border border-wiz-field bg-white">
       {RATINGS.map((r) => {
         const active = value === r;
         return (

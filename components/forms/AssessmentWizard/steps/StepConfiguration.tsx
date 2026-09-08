@@ -6,17 +6,13 @@ import {
   SANITIZATION_OPTIONS,
   FEATURE_OPTIONS,
   RATINGS,
+  RATING_DISPLAY,
   type Rating,
 } from "../config";
 import { Chip } from "../shared/Field";
 import PhotoSlot from "../shared/PhotoSlot";
+import NotesField from "../shared/NotesField";
 
-const RATING_SHORT: Record<Rating, string> = {
-  GOOD: "Good",
-  MONITOR: "Monitor",
-  ATTENTION: "ATTN",
-  "N/A": "NA",
-};
 const RATING_FILL: Record<Rating, string> = {
   GOOD: "bg-good-dark text-white",
   MONITOR: "bg-monitor-dark text-white",
@@ -145,7 +141,7 @@ function OptionRating({ keyId, label }: { keyId: string; label: string }) {
   return (
     <div className="mt-2 rounded-lg border border-wiz-line bg-wiz-surface/50 p-2.5">
       <p className="mb-1.5 text-[12px] font-semibold text-wiz-ink">{label}</p>
-      <div className="flex divide-x divide-wiz-field overflow-hidden rounded-lg border border-wiz-field bg-white">
+      <div className="flex divide-x divide-wiz-field overflow-hidden rounded-wiz border border-wiz-field bg-white">
         {RATINGS.map((r) => {
           const active = cur.rating === r;
           return (
@@ -158,18 +154,19 @@ function OptionRating({ keyId, label }: { keyId: string; label: string }) {
                 active ? RATING_FILL[r] : "bg-white text-wiz-ink/75 hover:bg-wiz-surface"
               }`}
             >
-              {RATING_SHORT[r]}
+              {RATING_DISPLAY[r]}
             </button>
           );
         })}
       </div>
-      <input
-        type="text"
-        value={cur.note ?? ""}
-        onChange={(e) => dispatch({ type: "setConfigOptionNote", key: keyId, note: e.target.value })}
-        placeholder="Note (optional)"
-        className="mt-2 w-full rounded-md border border-wiz-field bg-white px-2 py-1.5 text-[13px] text-wiz-ink placeholder:text-wiz-ink/55 focus:border-wiz-accent focus:outline-none focus:ring-1 focus:ring-wiz-accent/30"
-      />
+      <div className="mt-2">
+        <NotesField
+          value={cur.note ?? ""}
+          onChange={(note) => dispatch({ type: "setConfigOptionNote", key: keyId, note })}
+          placeholder="Note (optional)"
+          ariaLabel={`Note for ${label}`}
+        />
+      </div>
     </div>
   );
 }
