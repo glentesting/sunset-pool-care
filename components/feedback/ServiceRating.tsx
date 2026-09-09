@@ -173,7 +173,9 @@ function MakeItRight({ rating, contactId }: { rating: number; contactId: string 
 
 /**
  * Bare/invalid link: let them pick a rating right here. Carries c through when
- * present so the chosen rating still lands on the contact's record.
+ * present so the chosen rating still lands on the contact's record. Hrefs are
+ * query-only so the customer stays on whichever path they arrived at — /review,
+ * or its /r SMS alias — instead of the URL switching under them.
  */
 function StarPicker({ contactId }: { contactId: string }) {
   const suffix = contactId ? `&c=${encodeURIComponent(contactId)}` : "";
@@ -189,7 +191,7 @@ function StarPicker({ contactId }: { contactId: string }) {
         {[1, 2, 3, 4, 5].map((n) => (
           <Link
             key={n}
-            href={`/review?r=${n}${suffix}`}
+            href={`?r=${n}${suffix}`}
             aria-label={`${n} star${n > 1 ? "s" : ""}`}
             className="text-5xl leading-none text-navy/20 transition-colors hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
           >
