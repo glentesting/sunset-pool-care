@@ -28,9 +28,41 @@ export const ASSESSMENT_PDF_BUCKET = "assessment-pdfs";
 export const SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365;
 const TIMEOUT_MS = 20000;
 
-/** True when the storage env vars are present. Callers skip cleanly when false. */
+/**
+ * True when the storage env vars are present.
+ *
+ * CONFIGURED IS NOT HEALTHY. A free-tier Supabase project auto-pauses after
+ * roughly a week of inactivity, and a paused project still has both env vars —
+ * it reports configured:true and fails every storage call. Any code that treats
+ * this as "healthy", or that treats a storage failure as "the thing isn't set
+ * up", gets a paused project exactly backwards. Callers must decide on the
+ * RESULT of a call, not on this. See isStorageAsleepError below.
+ */
 export function isSupabaseConfigured(): boolean {
   return Boolean(SUPABASE_URL && SERVICE_KEY);
+}
+
+/**
+ * Does this failure look like a paused / still-waking project rather than a
+ * genuine misconfiguration?
+ *
+ * Confirmed signature from the Aug 24 and Sep 9 outages — a paused project
+ * answers every storage operation with:
+ *   upload 544: {"statusCode":"544","error":"DatabaseTimeout",
+ *                "message":"The connection to the database timed out"}
+ * and reports configured:true throughout. A project that is WAKING can return
+ * the same 544 (or simply time out) on the first call and succeed moments later,
+ * which is why the keep-alive retries once before calling it a failure.
+ */
+export function isStorageAsleepError(message: string | undefined): boolean {
+  if (!message) return false;
+  const m = message.toLowerCase();
+  return (
+    m.includes("544") ||
+    m.includes("databasetimeout") ||
+    m.includes("timed out") ||
+    m.includes("timeout")
+  );
 }
 
 /** Absolute Storage API base, trailing slashes trimmed. */

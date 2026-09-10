@@ -217,7 +217,7 @@ function SubmittedScreen({ results }: { results: SubmitResults }) {
     results.supabaseReason === "not-configured"
       ? "PDF upload skipped — Supabase not configured"
       : results.supabaseReason === "error"
-        ? "PDF upload failed — see submit log"
+        ? "PDF upload failed — see details below"
         : "PDF upload skipped — no PDF generated";
 
   // Raw assessment data (the JSON archive + its photo files). A partial photo
@@ -228,7 +228,7 @@ function SubmittedScreen({ results }: { results: SubmitResults }) {
   const dataLabel = !results.data
     ? results.dataReason === "not-configured"
       ? "Assessment data not saved — Supabase not configured"
-      : "Assessment data failed to save — see submit log"
+      : "Assessment data failed to save — see details below"
     : photosLost > 0
       ? `Assessment data saved — ${photosLost} of ${photos.total} photos failed to upload`
       : photos.total > 0
@@ -244,7 +244,7 @@ function SubmittedScreen({ results }: { results: SubmitResults }) {
     { ok: results.data && photosLost === 0, label: dataLabel },
     {
       ok: results.make,
-      label: results.make ? "Sent to Make (HubSpot ticket)" : "Not sent to Make — see submit log",
+      label: results.make ? "Sent to Make (HubSpot ticket)" : "Not sent to Make — see details below",
     },
   ];
 
@@ -285,6 +285,18 @@ function SubmittedScreen({ results }: { results: SubmitResults }) {
       {problem && (
         <p className={`rounded-lg border p-4 text-left text-[13px] font-medium leading-relaxed ${tone.box}`}>
           {problem}
+        </p>
+      )}
+
+      {/* When nothing reached the office, the PDF sitting in this phone's downloads
+          is the ONLY copy of the assessment that exists. That is the difference
+          between an inconvenience and a permanently lost job, so it gets full
+          weight in the main flow — never folded into the technical details below,
+          which a tech standing at a pool will not open. */}
+      {results.pdf && !officeHasIt && (
+        <p className="rounded-lg border-2 border-attention bg-attention/10 p-4 text-left text-sm font-semibold leading-relaxed text-attention-dark">
+          Don&rsquo;t delete the report that just downloaded — right now it&rsquo;s the
+          only copy. Send it to the office today.
         </p>
       )}
 
