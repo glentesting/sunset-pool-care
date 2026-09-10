@@ -29,7 +29,14 @@ export async function GET(
     return new NextResponse("Report not found", { status: 404 });
   }
 
-  const index = await readReportIndex(reportId);
+  // A storage failure must not 404 — the embedded viewer would tell the customer
+  // the report is gone. 502 keeps it honestly a "come back shortly".
+  const read = await readReportIndex(reportId);
+  if (read.status === "unavailable") {
+    console.error(`Report ${reportId}: storage unavailable:`, read.error);
+    return new NextResponse("Report temporarily unavailable", { status: 502 });
+  }
+  const index = read.status === "ok" ? read.value : null;
   if (!index?.pdfPath) {
     return new NextResponse("Report not found", { status: 404 });
   }

@@ -128,51 +128,104 @@ export async function createSignedUrl(
 }
 
 /**
+ * The outcome of reading one object.
+ *
+ * ABSENT AND UNAVAILABLE ARE NOT THE SAME THING, and collapsing them into `null`
+ * is how a storage outage gets reported to a customer as "your report doesn't
+ * exist". A paused project fails every read with a 544 DatabaseTimeout, so for
+ * the twelve days that went unnoticed every stored report would have rendered as
+ * permanently deleted — to the customer on /r/<id> as a 404, and to the office as
+ * "check the link, it may have been copied incompletely". Only a genuine
+ * not-found means the object isn't there.
+ */
+export type StorageRead<T> =
+  | { status: "ok"; value: T }
+  | { status: "absent" }
+  | { status: "unavailable"; error: string };
+
+/**
+ * Supabase Storage answers a missing object with a 404 — and, in some versions,
+ * a 400 whose BODY carries statusCode "404" / error "not_found". Both are real
+ * absence. Everything else is the storage layer failing.
+ *
+ * Where it is ambiguous this errs toward "unavailable" on purpose: telling
+ * someone to try again when the object is genuinely gone is a much smaller harm
+ * than telling them their report does not exist when it does.
+ */
+function looksAbsent(status: number, body: string): boolean {
+  if (status === 404) return true;
+  return status === 400 && /"statusCode"\s*:\s*"?404"?|not_?found/i.test(body);
+}
+
+/** Shared request for both readers — same auth, timeout and no-store semantics. */
+function getObject(path: string): Promise<Response> {
+  return fetch(`${storageBase()}/storage/v1/object/${objectPathFor(path)}`, {
+    headers: { Authorization: `Bearer ${SERVICE_KEY}` },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    cache: "no-store",
+  });
+}
+
+/**
  * Read one JSON object back out of the bucket with the service key (no signing
  * round-trip needed server-side).
- * @returns the parsed object, or null when it doesn't exist / isn't valid JSON.
- * @throws never — a missing report must render a friendly page, not a stack trace.
+ * @throws never — callers decide what absent and unavailable each mean.
  */
-export async function readJsonObject<T>(path: string): Promise<T | null> {
-  if (!isSupabaseConfigured()) return null;
+export async function readJsonObject<T>(path: string): Promise<StorageRead<T>> {
+  // Unconfigured is not absence: we cannot see the bucket at all, so we have no
+  // basis for claiming anything about what is or isn't in it.
+  if (!isSupabaseConfigured()) {
+    return { status: "unavailable", error: "Storage is not configured" };
+  }
   try {
-    const res = await fetch(`${storageBase()}/storage/v1/object/${objectPathFor(path)}`, {
-      headers: { Authorization: `Bearer ${SERVICE_KEY}` },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-      cache: "no-store",
-    });
-    if (!res.ok) return null; // 404 for an unknown id is the expected path
-    return (await res.json()) as T;
+    const res = await getObject(path);
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      if (looksAbsent(res.status, body)) return { status: "absent" };
+      return { status: "unavailable", error: `read ${res.status}: ${body}` };
+    }
+    // A body that won't parse is a broken object, not a missing one — it throws
+    // into the catch below and is reported as unavailable.
+    return { status: "ok", value: (await res.json()) as T };
   } catch (e) {
-    console.error(`Supabase read failed for ${path}:`, e);
-    return null;
+    const error = e instanceof Error ? e.message : String(e);
+    console.error(`Supabase read failed for ${path}:`, error);
+    return { status: "unavailable", error };
   }
 }
 
 /**
  * Read one object's raw bytes. Used to pull archived photos back for a
  * regenerated PDF, and to copy a PDF to a versioned key before overwriting it.
- * @returns bytes + content type, or null when the object isn't there.
- * @throws never — callers decide what a missing object means.
+ * @throws never — callers decide what absent and unavailable each mean.
  */
 export async function readObjectBytes(
   path: string
-): Promise<{ bytes: Uint8Array<ArrayBuffer>; contentType: string } | null> {
-  if (!isSupabaseConfigured()) return null;
+): Promise<StorageRead<{ bytes: Uint8Array<ArrayBuffer>; contentType: string }>> {
+  if (!isSupabaseConfigured()) {
+    return { status: "unavailable", error: "Storage is not configured" };
+  }
   try {
-    const res = await fetch(`${storageBase()}/storage/v1/object/${objectPathFor(path)}`, {
-      headers: { Authorization: `Bearer ${SERVICE_KEY}` },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
+    const res = await getObject(path);
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      if (looksAbsent(res.status, body)) return { status: "absent" };
+      return { status: "unavailable", error: `read ${res.status}: ${body}` };
+    }
     const buf = await res.arrayBuffer();
     const bytes = new Uint8Array(buf.byteLength);
     bytes.set(new Uint8Array(buf));
-    return { bytes, contentType: res.headers.get("content-type") || "application/octet-stream" };
+    return {
+      status: "ok",
+      value: {
+        bytes,
+        contentType: res.headers.get("content-type") || "application/octet-stream",
+      },
+    };
   } catch (e) {
-    console.error(`Supabase read failed for ${path}:`, e);
-    return null;
+    const error = e instanceof Error ? e.message : String(e);
+    console.error(`Supabase read failed for ${path}:`, error);
+    return { status: "unavailable", error };
   }
 }
 

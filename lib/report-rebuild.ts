@@ -28,9 +28,12 @@ async function rehydrate(photo: ArchivedPhoto): Promise<
 > {
   if (!photo.storageKey) return { kind: "lost" };
   const object = await readObjectBytes(photo.storageKey);
-  if (!object) return { kind: "error", key: photo.storageKey };
-  const base64 = Buffer.from(object.bytes).toString("base64");
-  return { kind: "ok", dataUrl: `data:${object.contentType};base64,${base64}` };
+  // Both absent and unavailable are failures here, and deliberately so: a photo
+  // the archive says exists must be re-embedded or the rebuild aborts. Silently
+  // dropping it would hand the customer a regenerated report with images missing.
+  if (object.status !== "ok") return { kind: "error", key: photo.storageKey };
+  const base64 = Buffer.from(object.value.bytes).toString("base64");
+  return { kind: "ok", dataUrl: `data:${object.value.contentType};base64,${base64}` };
 }
 
 export async function rebuildAssessmentData(
