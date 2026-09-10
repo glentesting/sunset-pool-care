@@ -24,7 +24,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-execSync("npx tsc -p " + join(here, "tsconfig.verify.json"), { stdio: "inherit" });
+// Quoted: a checkout path can contain spaces (OneDrive folders routinely do),
+// and an unquoted -p argument makes tsc parse the second word as a flag.
+execSync(`npx tsc -p "${join(here, "tsconfig.verify.json")}"`, { stdio: "inherit" });
 const { rescoreAssessment } = createRequire(import.meta.url)("/tmp/spc-scoring/archive-scoring.js");
 
 const dir = process.argv[2];
