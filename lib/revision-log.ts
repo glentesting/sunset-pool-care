@@ -199,7 +199,11 @@ export function editableFields(a: AssessmentArchive): FieldDef[] {
   });
 
   // --- Overall ---
-  add("note", "text", "overallNotes", "Overall", "", "Overall assessment notes",
+  // Named for what the tech and the customer both see: the wizard labels this
+  // field "What We Found" and the PDF heads the block with it. The office is
+  // where a report gets corrected, so the log should not call the field
+  // something neither of them recognises.
+  add("note", "text", "overallNotes", "Overall", "", "What We Found",
     () => a.overallNotes, (v) => (a.overallNotes = v));
 
   return out;
