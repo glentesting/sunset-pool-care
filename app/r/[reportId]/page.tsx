@@ -43,8 +43,19 @@ export default async function ReportViewerPage({
 }) {
   const { reportId } = await params;
   // Shape-check before touching storage — a junk id shouldn't cost a round trip.
-  const report = isReportId(reportId) ? await readReportIndex(reportId) : null;
-  if (!report) notFound(); // renders ./not-found.tsx with a 404
+  if (!isReportId(reportId)) notFound();
+
+  const read = await readReportIndex(reportId);
+  // A storage failure is NOT a missing report. Telling a customer their report
+  // doesn't exist because the database was asleep is the worst thing this page
+  // can do, and it is what it did for twelve days. Absence still 404s; anything
+  // else says "try again" on the branded page, with the phone number.
+  if (read.status === "unavailable") {
+    console.error(`Report ${reportId}: storage unavailable:`, read.error);
+    return <ReportUnavailable />;
+  }
+  if (read.status === "absent") notFound(); // renders ./not-found.tsx with a 404
+  const report = read.value;
 
   // Display casing only — the stored assessment, the archived JSON and the Make
   // payload all keep the value exactly as the tech typed it. The zip is left
@@ -99,6 +110,43 @@ export default async function ReportViewerPage({
         )}
       </main>
 
+      <SiteFooter />
+    </div>
+  );
+}
+
+/**
+ * Shown when the report exists but storage can't be reached right now.
+ *
+ * Deliberately NOT a 404 and deliberately not alarming: the customer's report is
+ * fine and their link still works, so this asks them to come back rather than
+ * implying anything was lost. Same branded shell and the same phone number as the
+ * real page, and no mention of any internal system — "temporarily unavailable" is
+ * all a customer needs, or wants, to know.
+ */
+function ReportUnavailable() {
+  return (
+    <div className="flex min-h-screen flex-col bg-sand">
+      <SiteHeader />
+      <main className="mx-auto w-full max-w-4xl flex-1 px-5 py-8 sm:px-6 sm:py-12">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-orange-dark">
+          Pool Condition Assessment
+        </p>
+        <h1 className="mt-2 text-[28px] leading-tight text-navy sm:text-[34px]">
+          This report is temporarily unavailable
+        </h1>
+        <p className="mt-7 rounded-xl border border-line bg-white p-6 text-[15px] leading-relaxed text-navy/75 shadow-card">
+          Your report hasn&rsquo;t gone anywhere and this link will keep working — we just
+          can&rsquo;t load it at the moment. Please try again in a few minutes.
+          <br />
+          <br />
+          If it still doesn&rsquo;t open, give us a call at{" "}
+          <a href={telHref(SITE.phone)} className="font-semibold text-orange-dark">
+            {SITE.phone}
+          </a>{" "}
+          and we&rsquo;ll get it to you.
+        </p>
+      </main>
       <SiteFooter />
     </div>
   );

@@ -37,7 +37,12 @@
  */
 import "server-only";
 import type { AssessmentData } from "@/lib/validation/assessment";
-import { isSupabaseConfigured, readJsonObject, uploadObject } from "@/lib/supabase";
+import {
+  isSupabaseConfigured,
+  readJsonObject,
+  uploadObject,
+  type StorageRead,
+} from "@/lib/supabase";
 import type { RevisionEntry } from "@/lib/revision-log";
 
 /**
@@ -129,8 +134,14 @@ export function reportIndexPath(reportId: string): string {
   return `${INDEX_PREFIX}${reportId}.json`;
 }
 
-/** Look up a report's pointer object. Returns null for an unknown id. */
-export function readReportIndex(reportId: string): Promise<ReportIndex | null> {
+/**
+ * Look up a report's pointer object.
+ *
+ * Returns "absent" only for an id that genuinely isn't in the bucket. A storage
+ * failure comes back as "unavailable" and must NEVER be shown as a missing
+ * report — see StorageRead.
+ */
+export function readReportIndex(reportId: string): Promise<StorageRead<ReportIndex>> {
   return readJsonObject<ReportIndex>(reportIndexPath(reportId));
 }
 

@@ -5,6 +5,7 @@ import { hasReviewAccess, isReviewConfigured } from "@/lib/review-access";
 import { loadReport, revisionStamp } from "@/lib/report-revision";
 import { serializeFields } from "@/lib/revision-log";
 import { isReportId } from "@/lib/report-id";
+import { isStorageAsleepError } from "@/lib/supabase";
 import { reportViewerUrl } from "@/lib/site-url";
 
 /**
@@ -32,8 +33,27 @@ export default async function ReviewPage({
   }
 
   const { reportId } = await params;
-  const loaded = isReportId(reportId) ? await loadReport(reportId) : null;
-  if (!loaded) {
+  const loaded = isReportId(reportId) ? await loadReport(reportId) : ({ status: "absent" } as const);
+
+  // "Couldn't read storage" is not "bad link". Blaming the link during an outage
+  // sends the office re-copying a URL that was fine, while the actual problem is
+  // that the database is asleep. Office-facing, so it can name the real cause.
+  if (loaded.status === "unavailable") {
+    return (
+      <div className="mx-auto max-w-md px-6 py-24 text-center">
+        <h1 className="font-display text-xl font-semibold text-wiz-ink">
+          Report storage is temporarily unavailable
+        </h1>
+        <p className="mt-2 text-sm text-wiz-ink/70">
+          {isStorageAsleepError(loaded.error)
+            ? "This usually means the database is waking up. Wait a minute and reload — the report is fine, and nothing has been changed."
+            : "The report couldn't be loaded right now. Try again in a few minutes — the report is fine, and nothing has been changed."}
+        </p>
+      </div>
+    );
+  }
+
+  if (loaded.status === "absent") {
     return (
       <div className="mx-auto max-w-md px-6 py-24 text-center">
         <h1 className="font-display text-xl font-semibold text-wiz-ink">Report not found</h1>

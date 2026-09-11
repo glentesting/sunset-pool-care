@@ -35,7 +35,13 @@ import { splitCustomerName } from "@/lib/customer-name";
 import { generateAssessmentPdf } from "@/lib/pdf-generator";
 import { rebuildAssessmentData } from "@/lib/report-rebuild";
 import { applyAndDiff, stampEntries, type RevisionEntry } from "@/lib/revision-log";
-import { isSupabaseConfigured, readJsonObject, readObjectBytes, uploadObject } from "@/lib/supabase";
+import {
+  isStorageAsleepError,
+  isSupabaseConfigured,
+  readJsonObject,
+  readObjectBytes,
+  uploadObject,
+} from "@/lib/supabase";
 
 /** Customer fields whose edits do NOT reach HubSpot — surfaced to the office. */
 const CUSTOMER_FIELD_PATHS: Record<string, string> = {
@@ -47,15 +53,23 @@ const CUSTOMER_FIELD_PATHS: Record<string, string> = {
   "property.zip": "ZIP",
 };
 
-export type LoadedReport = { index: ReportIndex; archive: AssessmentArchive };
+/**
+ * A report load, with "it isn't there" kept strictly separate from "we couldn't
+ * look". Callers must render those differently: one is a dead link, the other is
+ * a live report behind an outage.
+ */
+export type LoadReportResult =
+  | { status: "ok"; index: ReportIndex; archive: AssessmentArchive }
+  | { status: "absent" }
+  | { status: "unavailable"; error: string };
 
-/** Read a report's pointer and its archive. null when either is missing. */
-export async function loadReport(reportId: string): Promise<LoadedReport | null> {
+/** Read a report's pointer and its archive, propagating absent vs unavailable. */
+export async function loadReport(reportId: string): Promise<LoadReportResult> {
   const index = await readReportIndex(reportId);
-  if (!index) return null;
-  const archive = await readJsonObject<AssessmentArchive>(index.jsonPath);
-  if (!archive) return null;
-  return { index, archive };
+  if (index.status !== "ok") return index;
+  const archive = await readJsonObject<AssessmentArchive>(index.value.jsonPath);
+  if (archive.status !== "ok") return archive;
+  return { status: "ok", index: index.value, archive: archive.value };
 }
 
 export type ReviseResult = {
@@ -66,6 +80,8 @@ export type ReviseResult = {
     | "no-changes"
     | "stale"
     | "not-found"
+    /** Storage couldn't be read — the report is fine, we just can't see it now. */
+    | "storage-unavailable"
     | "not-configured"
     | "photo-read-failed"
     | "version-copy-failed"
@@ -96,8 +112,22 @@ export async function reviseAndRegenerate(opts: {
     return { ok: false, status: "not-configured", message: "Report storage isn't configured." };
   }
 
+  // A read failure must fail LOUDLY rather than masquerade as a missing report:
+  // "that report couldn't be found" would send the office hunting a bad link
+  // while the truth is the storage layer is down. Nothing has been written at
+  // this point, so returning here leaves the stored report untouched.
   const loaded = await loadReport(reportId);
-  if (!loaded) {
+  if (loaded.status === "unavailable") {
+    console.error(`Revision ${reportId}: storage unavailable on load:`, loaded.error);
+    return {
+      ok: false,
+      status: "storage-unavailable",
+      message: isStorageAsleepError(loaded.error)
+        ? "Report storage is temporarily unavailable — it looks like it's waking up. Wait a minute and try again. Nothing was changed."
+        : "Report storage is temporarily unavailable, so nothing was changed. Try again in a few minutes.",
+    };
+  }
+  if (loaded.status === "absent") {
     return { ok: false, status: "not-found", message: "That report couldn't be found." };
   }
   const { index, archive } = loaded;
@@ -227,7 +257,7 @@ export async function reviseAndRegenerate(opts: {
   const versions = [...(archive.pdfVersions ?? [])];
   if (storedPdfPath) {
     const current = await readObjectBytes(storedPdfPath);
-    if (!current) {
+    if (current.status !== "ok") {
       return {
         ok: false,
         status: "version-copy-failed",
@@ -243,7 +273,7 @@ export async function reviseAndRegenerate(opts: {
       };
     }
     try {
-      await uploadObject(versionKey, current.bytes, "application/pdf");
+      await uploadObject(versionKey, current.value.bytes, "application/pdf");
       versions.push(versionKey);
     } catch (e) {
       console.error(`Revision ${reportId}: version copy failed:`, e);
@@ -330,14 +360,23 @@ export function revisionStamp(archive: AssessmentArchive): string {
  * the ALREADY-CORRECTED PDF over it, destroying the only surviving copy of the
  * version a customer may be holding. So probe, and never overwrite a version.
  *
- * @returns the free key, or null if the run of taken keys is implausibly long,
- *   which is a broken bucket rather than a report with 50 revisions.
+ * FAILS CLOSED on an unreadable probe. "I could not check whether this key is
+ * taken" is not the same as "this key is free", and treating it as free would
+ * overwrite a stored version — potentially the only surviving copy of a PDF a
+ * customer is already holding. If storage can't answer, we take no key at all
+ * and the caller aborts without touching anything.
+ *
+ * @returns the free key, or null if a probe failed or the run of taken keys is
+ *   implausibly long, which is a broken bucket rather than a report with 50
+ *   revisions.
  */
 async function freeVersionKey(pdfPath: string, from: number): Promise<string | null> {
   const stem = pdfPath.replace(/\.pdf$/i, "");
   for (let n = from; n < from + 50; n++) {
     const key = `${stem}-v${n}.pdf`;
-    if (!(await readObjectBytes(key))) return key;
+    const probe = await readObjectBytes(key);
+    if (probe.status === "unavailable") return null; // can't verify — take nothing
+    if (probe.status === "absent") return key;
   }
   return null;
 }

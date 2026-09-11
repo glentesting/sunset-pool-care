@@ -114,10 +114,26 @@ export function buildTicketBody(
 
   // Report links, last. The first is what a customer may be sent; the second is
   // the internal review screen and must never be forwarded — hence the labels.
-  // A missing upload is made obvious rather than silent.
-  const link = reportUrl ?? pdfUrl ?? "(PDF upload failed — see submit log)";
-  out.push(`View full report: ${link}`);
-  if (reviewUrl) out.push(`Office review: ${reviewUrl}`);
+  //
+  // When NEITHER link exists, storage was down for the whole submit and the only
+  // copy of this assessment in existence is the PDF that downloaded to the
+  // technician's phone. That is a race against them clearing their downloads, so
+  // the ticket says so plainly and names the one action that recovers it.
+  //
+  // It deliberately points at a PERSON, not a screen. The previous wording sent
+  // the office to a "submit log" that does not exist — it meant the technical
+  // details on the tech's submit screen, which is gone the moment they start the
+  // next job. Naming an unreachable thing is worse than naming nothing.
+  const link = reportUrl ?? pdfUrl;
+  if (link) {
+    out.push(`View full report: ${link}`);
+    if (reviewUrl) out.push(`Office review: ${reviewUrl}`);
+  } else {
+    out.push("REPORT NOT SAVED — this report never reached the office.");
+    out.push(
+      "The technician's phone has the only copy. Call them and ask them to send the PDF before it's deleted."
+    );
+  }
 
   return out.join("\n").trim();
 }

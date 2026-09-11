@@ -348,14 +348,6 @@ export const SECTIONS: SectionConfig[] = [
     items: [
       { id: "lines", label: "Visible Plumbing Lines", kind: "condition", desc: "UV degradation, cracking, visible wear" },
       { id: "main", label: "Main Drain", kind: "condition", desc: "Cover compliance, flow, condition" },
-      {
-        id: "draincover",
-        label: "Drain Cover Compliance",
-        kind: "binary",
-        goodAnswer: "yes",
-        staticNote:
-          "If Yes, drain covers appear to be anti-entrapment covers featuring curved, non-flush, or domed designs that prevent body-part blockage and hair entanglement. Compliance cannot be 100% determined without reading the writing on the drain covers themselves.",
-      },
       { id: "deck", label: "Deckside Main Drain Canister", kind: "condition", desc: "Condition, seal, accessibility" },
       { id: "leaf", label: "In-Line Leaf Canister", kind: "condition", desc: "Condition, basket, seal" },
       { id: "skim", label: "Skimmers", kind: "condition", desc: "Baskets, weir doors, flow, throat condition" },
@@ -388,10 +380,8 @@ export const SECTIONS: SectionConfig[] = [
       {
         id: "gfci",
         label: "GFCI Outlets & Switch Covers",
-        kind: "binary",
-        goodAnswer: "yes",
-        desc: "Present, intact, and tripping correctly",
-        staticNote: "All outlets within 20 ft of the water need GFCI protection.",
+        kind: "condition",
+        desc: "Present, intact, tripping correctly — all outlets within 20 ft of the water need GFCI protection",
       },
       { id: "rem", label: "Remote / App Connectivity", kind: "condition", desc: "Connection, firmware, function" },
     ],
@@ -448,6 +438,10 @@ export const SECTIONS: SectionConfig[] = [
       { id: "surf", label: "Spa Surface / Shell Condition", kind: "condition", desc: "Cracks, staining, etching" },
       { id: "water", label: "Spa Water Clarity & Chemistry", kind: "condition", desc: "Tested separately if stand-alone" },
       { id: "jets", label: "Jets", kind: "condition", desc: "All operational — no loose, missing, or damaged eyelets" },
+      // Spa's own main drain — distinct from the pool's "Main Drain" under Plumbing.
+      // Labelled "(Spa)" so the two never read ambiguously side by side in the PDF,
+      // the review screen or the flattened ticket body.
+      { id: "maindrain", label: "Main Drain (Spa)", kind: "condition", desc: "Cover condition, suction fitting, flow" },
       { id: "blow", label: "Spa Blower / Air System", kind: "condition", desc: "Operational, no water back-flow" },
       { id: "heat", label: "Spa Heater / Thermostat", kind: "condition", desc: "Reaches set temp, thermostat accurate" },
       { id: "div", label: "Spa Diverter / Valves", kind: "condition", desc: "Spa-to-pool transition, operational" },
