@@ -294,6 +294,10 @@ function pastDate(years: number): string {
  */
 export function buildDemoState(makePhoto: (label: string) => string): AssessmentState {
   const s = initialState();
+  // Marks every field below as sample data for the rest of its life. state.tsx
+  // reads this to keep the demo out of localStorage, so a demo run can never
+  // come back as a resumable draft on a later, non-demo visit.
+  s.demo = true;
 
   // How rough this whole report reads. Drawn once so the overall condition
   // varies between runs instead of always landing on Attention.

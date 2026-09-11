@@ -157,6 +157,10 @@ export type AssessmentState = {
   certification: { certified: boolean };
   submitting: boolean;
   submitted: boolean;
+  /** True when this state came from the ?demo=1 sample loader (see demo.ts).
+   *  Sample data must never become a resumable draft, so this flag keeps it
+   *  out of localStorage entirely. */
+  demo: boolean;
   results: SubmitResults | null;
   error: string | null;
 };
@@ -252,6 +256,7 @@ export function initialState(): AssessmentState {
     certification: { certified: false },
     submitting: false,
     submitted: false,
+    demo: false,
     results: null,
     error: null,
   };
@@ -557,6 +562,12 @@ function loadDraft(): AssessmentState | null {
     draft.sections = safeSections;
     // A finished submission is not a resumable draft.
     if (draft.submitted) return null;
+    // Nor is sample data. The flag covers drafts written by this build; the
+    // test-domain address catches ones left by an older build, from before
+    // demo state was kept out of storage. No real customer can hold that
+    // domain (see demo.ts), so this can not drop a genuine draft.
+    if (draft.demo) return null;
+    if (draft.property?.customerEmail?.endsWith("@sunsetpoolcare-test.com")) return null;
     return draft;
   } catch {
     return null;
@@ -642,6 +653,11 @@ export function AssessmentProvider({ children }: { children: ReactNode }) {
   // mode failures are swallowed so they never break the wizard).
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Sample data is deliberately NOT written. Persisting it would let a demo
+    // run resume as a draft on the next visit, with canned findings sitting in
+    // a wizard the tech believes is fresh. Skipping the write also leaves any
+    // genuine in-progress draft intact underneath the demo.
+    if (state.demo) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
