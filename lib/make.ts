@@ -43,6 +43,7 @@ const TIMEOUT_MS = 15000;
  * short — the PDF is the report; this just lets someone triage from the board.
  * Shape:
  *
+ *   Standard inspection            (or "RE Pre-Purchase inspection")
  *   Name · Address, City ZIP
  *   email · phone
  *
@@ -70,7 +71,17 @@ export function buildTicketBody(
   const p = data.property;
   const out: string[] = [];
 
-  // Line 1: name · address, city zip
+  // Line 1: what kind of visit this is.
+  //
+  // FIRST, because it changes what the office does next — a pre-purchase
+  // inspection is a different workflow from routine work — and HubSpot hides
+  // everything past the first few lines behind "See more". Printed for Standard
+  // too, so the absence of a pre-purchase tag is a statement rather than an
+  // ambiguity about whether the field was filled in. Not shouted: the overall
+  // condition line dropped its capitals for the same reason.
+  out.push(`${data.details.inspectionType} inspection`);
+
+  // Line 2: name · address, city zip
   const cityZip = [p.city, p.zip].map((x) => x?.trim()).filter(Boolean).join(" ");
   const addr = [p.serviceAddress?.trim(), cityZip].filter(Boolean).join(", ");
   out.push([p.customerName?.trim() || "—", addr].filter(Boolean).join(" · "));
@@ -153,6 +164,9 @@ function buildWebhookBody(
   return {
     ...data,
     reportId,
+    // Visit type, promoted to a top-level snake_case key alongside pdf_url and
+    // ticket_body so the scenario can branch on it without walking into details.
+    inspection_type: data.details.inspectionType,
     // Omit pdf_url entirely when the upload didn't happen (never send null/empty).
     ...(pdfUrl ? { pdf_url: pdfUrl } : {}),
     ticket_body: ticketBody,

@@ -97,6 +97,10 @@ export const assessmentSchema = z.object({
     date: z.string(),
     time: z.string(),
     inspectorName: z.string(),
+    // Mirrors INSPECTION_TYPES in the wizard config (re-declared here rather than
+    // imported, same as the rating values above). Defaulted so a client that
+    // predates the field still validates instead of failing the whole submit.
+    inspectionType: z.enum(["Standard", "RE Pre-Purchase"]).default("Standard"),
   }),
   config: z.object({
     surfaces: z.array(z.string()),

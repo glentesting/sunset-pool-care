@@ -40,6 +40,18 @@ export const RATING_LEGEND: { rating: Rating; meaning: string }[] = [
 
 // --- Property step ----------------------------------------------------------
 
+/**
+ * What kind of visit this is. "RE Pre-Purchase" is a real-estate pre-purchase
+ * inspection, which the office routes differently from routine work — so it
+ * travels to Make as a top-level `inspection_type`.
+ *
+ * The submit schema re-declares these values (lib/validation/assessment.ts), the
+ * same way it re-declares RATINGS: the validation layer deliberately doesn't
+ * import wizard config.
+ */
+export const INSPECTION_TYPES = ["Standard", "RE Pre-Purchase"] as const;
+export type InspectionType = (typeof INSPECTION_TYPES)[number];
+
 export const POOL_TYPES = [
   "Pool",
   "Pool/Spa",

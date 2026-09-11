@@ -330,6 +330,9 @@ export function buildDemoState(makePhoto: (label: string) => string): Assessment
     date,
     time,
     inspectorName: pick(INSPECTORS),
+    // Left at the default rather than randomised — a sample report shouldn't
+    // occasionally claim to be a pre-purchase inspection.
+    inspectionType: "Standard",
   };
 
   // --- Configuration ---

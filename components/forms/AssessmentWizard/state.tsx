@@ -19,7 +19,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import type { BinaryAnswer, Rating } from "./config";
+import type { BinaryAnswer, InspectionType, Rating } from "./config";
 
 // --- Shape ------------------------------------------------------------------
 
@@ -116,7 +116,14 @@ export type AssessmentState = {
     lastWaterChangeNote: string;
     additionalBodies: BodyOfWater[];
   };
-  details: { session: string; date: string; time: string; inspectorName: string };
+  details: {
+    session: string;
+    date: string;
+    time: string;
+    inspectorName: string;
+    /** Standard vs RE Pre-Purchase. Always set — defaults to Standard. */
+    inspectionType: InspectionType;
+  };
   /** True once the tech edits the inspection date by hand — then it stops being
    *  auto-restamped to today on load (persisted with the draft). */
   dateDirty: boolean;
@@ -228,7 +235,7 @@ export function initialState(): AssessmentState {
       lastWaterChangeNote: "",
       additionalBodies: [],
     },
-    details: { session: "", date: "", time: "", inspectorName: "" },
+    details: { session: "", date: "", time: "", inspectorName: "", inspectionType: "Standard" },
     dateDirty: false,
     config: { surfaces: [], sanitization: [], features: [], photos: {}, optionRatings: {} },
     sections: {},
@@ -529,6 +536,9 @@ function loadDraft(): AssessmentState | null {
     // Merge property over the base so a draft saved before a new field (e.g.
     // customerEmail) still loads with that key present.
     draft.property = { ...base.property, ...parsed.property };
+    // Same for details: a draft saved before inspectionType existed must still
+    // come back with the default rather than an undefined dropdown.
+    draft.details = { ...base.details, ...parsed.details };
     // Photos are { dataUrl, label } objects; be defensive about older/partial shapes.
     draft.config = {
       ...base.config,
