@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local agent/editor config (machine-specific)
+/.claude/
+
+# Glen's working briefs. Deliberately NOT committed: they are historical
+# drafts, and the code has since moved past them. See AGENTS.md.
+/SPC *Brief*.md

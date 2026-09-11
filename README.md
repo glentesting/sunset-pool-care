@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sunset Pool Care
 
-## Getting Started
+The Sunset Pool Care website and the field tools that run on top of it:
 
-First, run the development server:
+- **Marketing site** — services, service areas, FAQ, and a quote qualifier.
+- **Assessment wizard** (`/assessment`) — what a tech fills in on a phone at the
+  poolside. Four phases, ten inspection sections, photo capture, and a draft that
+  survives a reload.
+- **Customer report** (`/r/<reportId>`) — the rendered result, plus a PDF. The
+  link is stable, so a corrected report reuses the one the customer already has.
+- **Office review** (`/assessment/review/<reportId>`) — fix a sent report and
+  regenerate it. See [docs/fixing-a-report.md](docs/fixing-a-report.md).
+- **Post-service review** (`/review`, short alias `/r`) — star rating that sends
+  happy customers to Google.
+
+## Stack
+
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 ·
+[`@react-pdf/renderer`](https://react-pdf.org/) for the PDF · Zod for validation ·
+Supabase Storage for reports and photos · deployed on Vercel.
+
+Type is Bricolage Grotesque (display) and Inter (body), loaded via `next/font`.
+
+## Running it locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build   # production build
+npm run lint    # eslint
+npx tsc --noEmit
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`npm run lint` currently reports warnings for unused parameters in
+`lib/hubspot.ts` and `lib/google-drive.ts`. Those are deliberate — both are stubs
+awaiting real integrations.
 
-## Learn More
+## Environment
 
-To learn more about Next.js, take a look at the following resources:
+Copy `.env.example` to `.env.local` and fill it in. That file is the reference:
+every variable is documented there, including which are optional and why two of
+them are deliberately left unset. Names only, in brief:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Variable | For |
+| --- | --- |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Report, photo, and PDF storage |
+| `CRON_SECRET` | Required in production; authorizes the daily keep-alive cron |
+| `REVIEW_ACCESS_CODE` | Unlocks the office review screen |
+| `MAKE_ASSESSMENT_WEBHOOK_URL` | Make.com scenario that files the HubSpot ticket |
+| `HUBSPOT_PRIVATE_APP_TOKEN` | HubSpot REST API |
+| `GOOGLE_SERVICE_ACCOUNT_JSON`, `GDRIVE_ASSESSMENT_FOLDER_ID` | Drive archive |
+| `REPORT_BASE_URL` | Absolute base for customer links; set at domain cutover |
+| `HEALTHCHECK_TOKEN` | Optional gate on `/api/health/*` — read the note first |
+| `NEXT_PUBLIC_GOOGLE_REVIEW_URL` | Where the review page sends 4–5 star ratings |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+With none of these set the site still builds and runs, and the wizard still
+produces a PDF; only the storage and hand-off steps are inert.
 
-## Deploy on Vercel
+Two things worth knowing:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `content/site.ts` is the single source of truth for price, phone, address, and
+  service areas. Don't hardcode those anywhere else.
+- `GET /api/health/supabase` is the first place to look when reports stop saving.
+  The free-tier Supabase project auto-pauses after about a week of inactivity,
+  which is what the daily cron in `vercel.json` exists to prevent.
