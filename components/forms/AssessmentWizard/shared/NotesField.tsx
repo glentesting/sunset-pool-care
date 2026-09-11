@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 /**
  * THE note field — used for every note in the wizard: item notes, section notes,
- * unit-item notes, config-option notes and the Overall Assessment Notes box.
+ * unit-item notes, config-option notes and the "What We Found" box on Review.
  *
  * Two behaviours every note gets:
  *  - AUTO-GROW: slim (one line) at rest, grows with the content up to a cap

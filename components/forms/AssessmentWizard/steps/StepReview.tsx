@@ -115,14 +115,23 @@ export default function StepReview() {
         </ul>
       </div>
 
-      {/* Overall assessment notes — moved here when the Recommendations step was
-          removed (spec 1.6). Final step is now: notes → certification → submit. */}
+      {/* The tech's overall write-up — moved here when the Recommendations step
+          was removed (spec 1.6). Final step is now: write-up → certification →
+          submit.
+
+          Labelled "What We Found" to match the heading it prints under in the
+          PDF, where it now opens the report directly beneath the condition
+          band. The old label ("Overall Assessment Notes") read as an optional
+          notes box a tech could skip; this field is the only prose a customer
+          gets, so the label and placeholder both ask for the paragraph we
+          actually want. NotesField has no separate helper-text slot — the
+          placeholder is what carries the instruction. */}
       <div className="rounded-xl border border-wiz-line p-4">
         <NotesField
-          label="Overall Assessment Notes"
+          label="What We Found"
           value={state.overallNotes}
           onChange={(notes) => dispatch({ type: "setOverallNotes", notes })}
-          placeholder="Anything the homeowner should know overall…"
+          placeholder="A few sentences for the homeowner: what you found today and what it means for their pool…"
         />
       </div>
 

@@ -104,6 +104,7 @@ const s = StyleSheet.create({
   countLabel: { fontSize: 6.5, color: GREY },
 
   // Two-column meta
+  summaryNote: { marginBottom: 12 },
   metaRow: { flexDirection: "row" },
   metaCol: { flex: 1 },
   metaColGap: { width: 18 },
@@ -381,6 +382,28 @@ function AssessmentReport({ data, revisedOn }: { data: AssessmentData; revisedOn
           </View>
         </View>
 
+        {/* "What We Found" — the tech's own words, in the slot the removed AI
+            summary used to hold. A homeowner should meet the human explanation
+            of the condition band immediately below it, not after ten section
+            tables. Conditional: a report with no note renders nothing here,
+            never a bare heading.
+
+            Headed "What We Found", not the wizard's field name: at the top of
+            the document this is the first prose a customer reads and it is
+            doing a summary's job, which "notes" undersells. The wizard label
+            matches (StepReview.tsx) so the tech knows what is being asked for.
+
+            `wrap` is left at its default (true) deliberately. A long note is
+            allowed to break across pages; what must NOT happen is the note
+            shunting the property table onto page two as an unbreakable lump,
+            so this block is never given wrap={false}. */}
+        {overallNotes ? (
+          <View style={s.summaryNote}>
+            <Text style={[s.sectionTitle, { marginTop: 0 }]}>What We Found</Text>
+            <Text>{overallNotes}</Text>
+          </View>
+        ) : null}
+
         {/* Two-column meta: Property | Inspection + Configuration */}
         <View style={s.metaRow}>
           <View style={s.metaCol}>
@@ -465,13 +488,9 @@ function AssessmentReport({ data, revisedOn }: { data: AssessmentData; revisedOn
         )}
 
         {/* The Recommendations block is gone (spec 1.6) — pricing lives in the
-            client's Skimmer quote, not the report. */}
-        {overallNotes ? (
-          <>
-            <Text style={s.sectionTitle}>Overall Assessment Notes</Text>
-            <Text>{overallNotes}</Text>
-          </>
-        ) : null}
+            client's Skimmer quote, not the report. The tech's overall write-up
+            used to sit here too; it now runs directly under the condition band
+            as "What We Found". */}
 
         {/* Certification */}
         <View style={s.certBox} wrap={false}>
