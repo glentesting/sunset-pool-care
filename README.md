@@ -36,6 +36,10 @@ npm run lint    # eslint
 npx tsc --noEmit
 ```
 
+Filling in sixteen steps by hand to test a change gets old fast: open
+`/assessment?demo=1` for a "Load sample data" button that populates the whole
+wizard and jumps to Review & Submit. It only appears with that query string.
+
 `npm run lint` currently reports warnings for unused parameters in
 `lib/hubspot.ts` and `lib/google-drive.ts`. Those are deliberate — both are stubs
 awaiting real integrations.
@@ -58,8 +62,17 @@ them are deliberately left unset. Names only, in brief:
 | `HEALTHCHECK_TOKEN` | Optional gate on `/api/health/*` — read the note first |
 | `NEXT_PUBLIC_GOOGLE_REVIEW_URL` | Where the review page sends 4–5 star ratings |
 
-With none of these set the site still builds and runs, and the wizard still
-produces a PDF; only the storage and hand-off steps are inert.
+With none of these set the site runs and the wizard works end to end: the
+marketing pages render, and a submit still generates the full PDF — photos
+embedded — and downloads it in the browser.
+
+The submit does **not** report success, though, and this trips people up. With
+no Supabase and no Make webhook there is nowhere to put the report, so
+`/api/submit-assessment` returns `ok: false` and the tech-facing screen reads
+"Report didn't reach the office", with the upload, save, and hand-off steps
+marked skipped. That is the correct behaviour for a credential-less machine,
+not a broken checkout — the PDF in your downloads folder is the real thing.
+Add the Supabase pair to make the submit go green.
 
 Two things worth knowing:
 
