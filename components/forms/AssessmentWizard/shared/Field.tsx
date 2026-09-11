@@ -68,26 +68,36 @@ export function SelectField({
   onChange,
   options,
   placeholder = "Select…",
+  required = false,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: readonly string[];
   placeholder?: string;
+  /** Marks the field with the same * as TextField AND drops the empty option,
+   *  so a required select can't be blanked back out once it has a value. */
+  required?: boolean;
 }) {
   const id = useId();
   return (
     <div>
       <label htmlFor={id} className={labelCls}>
         {label}
+        {required && (
+          <span className="text-attention" aria-hidden="true">
+            {" *"}
+          </span>
+        )}
       </label>
       <select
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        aria-required={required || undefined}
         className={inputCls}
       >
-        <option value="">{placeholder}</option>
+        {!required && <option value="">{placeholder}</option>}
         {options.map((o) => (
           <option key={o} value={o}>
             {o}

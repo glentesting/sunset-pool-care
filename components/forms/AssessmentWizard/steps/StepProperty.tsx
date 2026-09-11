@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useAssessment, type BodyOfWater } from "../state";
-import { POOL_TYPES } from "../config";
+import { INSPECTION_TYPES, POOL_TYPES, type InspectionType } from "../config";
 import { EMAIL_ERROR } from "../summary";
 import { isValidEmail } from "@/lib/validation/email";
 import { TextField, SelectField } from "../shared/Field";
@@ -25,6 +25,17 @@ export default function StepProperty() {
 
   return (
     <div className="space-y-4">
+      {/* What kind of visit this is. First, because it classifies the whole job
+          — an RE pre-purchase is a different engagement from routine work. */}
+      <SelectField
+        label="Inspection Type"
+        value={d.inspectionType}
+        options={INSPECTION_TYPES}
+        required
+        onChange={(v) =>
+          dispatch({ type: "setDetails", patch: { inspectionType: v as InspectionType } })
+        }
+      />
       <TextField
         label="Customer Name"
         value={p.customerName}
