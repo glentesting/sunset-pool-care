@@ -29,7 +29,9 @@ is what the tech answered and what the report prints. The Good or Attention
 behind it follows automatically from your answer.
 
 **You can't change:** the chemistry readings, the photos themselves, or the
-inspector's name and certification. Chemistry numbers are measurements the tech
+inspector's name and certification. You can see them, though: each photo's
+caption box has the photo beside it, and clicking it opens it full size in a new
+tab, so you can check what you're captioning without losing your edits. Chemistry numbers are measurements the tech
 took at the pool — if one is wrong, the pool needs re-testing, not retyping.
 
 If you change a rating, the summary at the top of the report and the counts

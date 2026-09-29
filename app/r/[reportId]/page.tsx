@@ -6,7 +6,9 @@ import ReportPdfSection from "@/components/report/ReportPdfSection";
 import { buttonClasses } from "@/components/ui/Button";
 import { SITE } from "@/content/site";
 import { telHref } from "@/components/layout/navLinks";
-import { readReportIndex } from "@/lib/assessment-archive";
+import { readReportIndex, type AssessmentArchive } from "@/lib/assessment-archive";
+import { numberArchivePhotos, reportPhotoPath, type NumberedPhoto } from "@/lib/report-photos";
+import { readJsonObject } from "@/lib/supabase";
 import { toDisplayCase } from "@/lib/display-case";
 import { isReportId } from "@/lib/report-id";
 
@@ -66,6 +68,7 @@ export default async function ReportViewerPage({
     .join(" ");
   const address = [toDisplayCase(report.serviceAddress), cityZip].filter(Boolean).join(", ");
   const pdfHref = `/r/${reportId}/pdf`;
+  const photoGroups = await readPhotoGroups(report.jsonPath);
 
   return (
     <div className="flex min-h-screen flex-col bg-sand">
@@ -108,10 +111,91 @@ export default async function ReportViewerPage({
             </p>
           </>
         )}
+
+        {photoGroups.length > 0 && <ReportPhotos reportId={reportId} groups={photoGroups} />}
       </main>
 
       <SiteFooter />
     </div>
+  );
+}
+
+type PhotoGroup = { where: string; photos: NumberedPhoto[] };
+
+/**
+ * The report's photos, grouped the way the report groups them, for the photo
+ * grid below. Read from the archive rather than the PDF so it works for every
+ * report on file — including ones generated before the PDF's own thumbnails
+ * became links, which are never regenerated just to add them.
+ *
+ * Best effort: the PDF is the report, the grid is a convenience. If the archive
+ * can't be read, the page renders exactly as it did before, without the grid.
+ */
+async function readPhotoGroups(jsonPath: string): Promise<PhotoGroup[]> {
+  const read = await readJsonObject<AssessmentArchive>(jsonPath);
+  if (read.status !== "ok") {
+    if (read.status === "unavailable") console.error(`Photo grid: archive ${jsonPath} unavailable:`, read.error);
+    return [];
+  }
+  const groups: PhotoGroup[] = [];
+  for (const entry of numberArchivePhotos(read.value)) {
+    if (!entry.photo.storageKey) continue; // upload failed at submit — nothing to show
+    const last = groups.at(-1);
+    if (last && last.where === entry.where) last.photos.push(entry);
+    else groups.push({ where: entry.where, photos: [entry] });
+  }
+  return groups;
+}
+
+/**
+ * Every photo from the inspection, each opening full size on a tap — in the
+ * phone's own image viewer, so it can be pinched and zoomed. This exists because
+ * the thumbnails inside the PDF are too small to see detail in, and a phone
+ * can't enlarge part of a PDF page the way it can a photo.
+ */
+function ReportPhotos({ reportId, groups }: { reportId: string; groups: PhotoGroup[] }) {
+  return (
+    <section className="mt-12" aria-labelledby="report-photos">
+      <h2 id="report-photos" className="text-[22px] leading-tight text-navy">
+        Photos from your inspection
+      </h2>
+      <p className="mt-1.5 text-[14px] text-navy/65">Tap any photo to see it full size.</p>
+
+      {groups.map((g) => (
+        <div key={`${g.where}-${g.photos[0].n}`} className="mt-7">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/55">
+            {g.where}
+          </h3>
+          <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {g.photos.map((p, i) => {
+              const caption = p.photo.label.trim();
+              const href = reportPhotoPath(reportId, p.n);
+              return (
+                <li key={p.n}>
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group block focus:outline-none"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={href}
+                      alt={caption ? `${g.where}: ${caption}` : `${g.where}, photo ${i + 1}`}
+                      loading="lazy"
+                      className="aspect-[4/3] w-full rounded-lg border border-line bg-white object-cover transition-opacity group-hover:opacity-90 group-focus-visible:ring-2 group-focus-visible:ring-orange"
+                    />
+                    {caption && (
+                      <span className="mt-1.5 block truncate text-[13px] text-navy/70">{caption}</span>
+                    )}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </section>
   );
 }
 

@@ -17,9 +17,21 @@ import "server-only";
 import type { AssessmentData } from "@/lib/validation/assessment";
 import type { AssessmentArchive, ArchivedPhoto } from "@/lib/assessment-archive";
 import { readObjectBytes } from "@/lib/supabase";
+import type { PhotoNumbers } from "@/lib/report-photos";
 
 export type RebuildResult =
-  | { ok: true; data: AssessmentData; photosDropped: string[] }
+  | {
+      ok: true;
+      data: AssessmentData;
+      photosDropped: string[];
+      /**
+       * Each rebuilt photo's number in the ARCHIVE (lib/report-photos.ts), laid
+       * out like `data`'s photos. Not the same as its position in `data`: a photo
+       * lost at submit time is dropped from the payload but keeps its number, so
+       * every photo after it would otherwise link to its neighbour.
+       */
+      photoNumbers: PhotoNumbers;
+    }
   | { ok: false; error: string };
 
 /** Fetch one archived photo back as a data URL. null = never stored. */
@@ -58,28 +70,38 @@ export async function rebuildAssessmentData(
     };
   }
 
-  // Walk the same order to pair each result with its photo.
+  // Walk the same order to pair each result with its photo. That order is the
+  // archive's canonical one, so cursor + 1 is also the photo's number.
   let cursor = 0;
-  const take = (photo: ArchivedPhoto): { label: string; dataUrl: string }[] => {
+  const take = (
+    photo: ArchivedPhoto,
+    numbers: (number | null)[]
+  ): { label: string; dataUrl: string }[] => {
     const result = results[cursor];
     const where = refs[cursor].where;
     cursor += 1;
-    if (result.kind === "ok") return [{ label: photo.label, dataUrl: result.dataUrl }];
+    if (result.kind === "ok") {
+      numbers.push(cursor);
+      return [{ label: photo.label, dataUrl: result.dataUrl }];
+    }
     photosDropped.push(where); // never stored at submit time — unrecoverable
     return [];
   };
 
-  const configPhotos = archive.configPhotos.flatMap(take);
-  const sections = archive.sections.map((s) => ({
-    ...s,
-    photos: s.photos.flatMap(take),
-  }));
+  const photoNumbers: PhotoNumbers = { config: [], sections: [] };
+  const configPhotos = archive.configPhotos.flatMap((p) => take(p, photoNumbers.config));
+  const sections = archive.sections.map((s) => {
+    const numbers: (number | null)[] = [];
+    photoNumbers.sections.push(numbers);
+    return { ...s, photos: s.photos.flatMap((p) => take(p, numbers)) };
+  });
   // photoCount must describe what the report actually shows.
   for (const s of sections) s.photoCount = s.photos.length;
 
   return {
     ok: true,
     photosDropped,
+    photoNumbers,
     data: {
       jobId: archive.jobId,
       property: archive.property,

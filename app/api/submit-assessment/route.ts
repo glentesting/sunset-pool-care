@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { assessmentSchema } from "@/lib/validation/assessment";
 import { generateAssessmentPdf } from "@/lib/pdf-generator";
-import { uploadPdfToSupabase } from "@/lib/supabase";
+import { isSupabaseConfigured, uploadPdfToSupabase } from "@/lib/supabase";
 import { archiveAssessment } from "@/lib/assessment-archive";
 import { generateReportId } from "@/lib/report-id";
-import { reportReviewUrl, reportViewerUrl } from "@/lib/site-url";
+import { reportReviewUrl, reportViewerUrl, siteBaseUrl } from "@/lib/site-url";
+import { numberPayloadPhotos, photoLinksFor } from "@/lib/report-photos";
 import { logAssessmentToMake } from "@/lib/make";
 
 /**
@@ -55,7 +56,15 @@ export async function POST(req: NextRequest) {
   //    between the wizard and the report any more.
   let pdf: Buffer | null = null;
   try {
-    pdf = await generateAssessmentPdf(data);
+    // Each thumbnail links to the photo's permanent full-size address — but only
+    // when the photos are going to be stored. Without storage there is nothing
+    // behind that address, and a dead link on a customer's report is worse than
+    // a thumbnail that simply isn't clickable. (If storage is configured but a
+    // single photo upload fails below, its link answers "not available".)
+    const photoLinks = isSupabaseConfigured()
+      ? photoLinksFor(siteBaseUrl(), reportId, numberPayloadPhotos(data))
+      : undefined;
+    pdf = await generateAssessmentPdf(data, { photoLinks });
     results.pdf = true;
   } catch (e) {
     console.error("PDF step failed:", e);

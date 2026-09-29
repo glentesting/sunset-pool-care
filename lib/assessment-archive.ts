@@ -145,6 +145,29 @@ export function readReportIndex(reportId: string): Promise<StorageRead<ReportInd
   return readJsonObject<ReportIndex>(reportIndexPath(reportId));
 }
 
+/**
+ * A report load, with "it isn't there" kept strictly separate from "we couldn't
+ * look". Callers must render those differently: one is a dead link, the other is
+ * a live report behind an outage.
+ */
+export type LoadReportResult =
+  | { status: "ok"; index: ReportIndex; archive: AssessmentArchive }
+  | { status: "absent" }
+  | { status: "unavailable"; error: string };
+
+/**
+ * Read a report's pointer and then its archive, propagating absent vs
+ * unavailable. Lives here rather than in report-revision.ts so read-only
+ * callers (the photo route, the /r photo grid) don't pull in the PDF renderer.
+ */
+export async function readReportArchive(reportId: string): Promise<LoadReportResult> {
+  const index = await readReportIndex(reportId);
+  if (index.status !== "ok") return index;
+  const archive = await readJsonObject<AssessmentArchive>(index.value.jsonPath);
+  if (archive.status !== "ok") return archive;
+  return { status: "ok", index: index.value, archive: archive.value };
+}
+
 const MIME_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/jpg": "jpg",

@@ -15,7 +15,8 @@
  * public /r/<reportId> page. Changing a value back is two entries, not zero —
  * the tech's original finding always stands and every edit is attributable.
  */
-import type { AssessmentArchive } from "@/lib/assessment-archive";
+import type { AssessmentArchive, ArchivedPhoto } from "@/lib/assessment-archive";
+import { numberArchivePhotos } from "@/lib/report-photos";
 import type { Rating } from "@/lib/report-scoring";
 
 /** One field changed by one person at one moment. Never edited or removed. */
@@ -83,6 +84,12 @@ export type FieldDef = {
    * anything else is rejected.
    */
   kind: "text" | "rating" | "binary";
+  /**
+   * Caption fields only: the photo's number (lib/report-photos.ts), so the
+   * review screen can show the photo being captioned and open it full size.
+   * Absent when the photo's upload failed and there are no bytes to show.
+   */
+  photoN?: number;
   get: () => string;
   set: (value: string) => void;
 };
@@ -92,8 +99,8 @@ export type SerializedField = Omit<FieldDef, "get" | "set"> & { value: string };
 
 export function serializeFields(a: AssessmentArchive): SerializedField[] {
   return editableFields(a).map((f) => {
-    const { path, label, group, row, slot, kind } = f;
-    return { path, label, group, row, slot, kind, value: f.get() };
+    const { path, label, group, row, slot, kind, photoN } = f;
+    return { path, label, group, row, slot, kind, ...(photoN ? { photoN } : {}), value: f.get() };
   });
 }
 
@@ -118,6 +125,19 @@ export function editableFields(a: AssessmentArchive): FieldDef[] {
     set: (v: string) => void
   ) => out.push({ path, label, group, row, slot, kind, get, set });
 
+  // Photo numbers for the caption rows, keyed by the archive's own photo objects.
+  // Photos with no stored bytes get none, so the screen shows no broken image.
+  const photoNumber = new Map<ArchivedPhoto, number>(
+    numberArchivePhotos(a)
+      .filter((p) => p.photo.storageKey)
+      .map((p) => [p.photo, p.n])
+  );
+  const caption = (photo: ArchivedPhoto, path: string, group: string, row: string, label: string) => {
+    add("caption", "text", path, group, row, label, () => photo.label, (v) => (photo.label = v));
+    const n = photoNumber.get(photo);
+    if (n) out[out.length - 1].photoN = n;
+  };
+
   // --- Customer & property ---
   const PROPERTY = "Customer & property";
   const p = a.property;
@@ -133,6 +153,16 @@ export function editableFields(a: AssessmentArchive): FieldDef[] {
   // Inspector NAME is deliberately not editable; the date is.
   add("value", "text", "details.date", PROPERTY, "Inspection date", "Inspection date",
     () => a.details.date, (v) => (a.details.date = v));
+  // The recommendation saved when the tech marked the pool's last water change
+  // Unknown. It prints under "Last Change: Unknown" on the report, so it is only
+  // offered when the date IS unknown — editing it otherwise would change nothing
+  // the customer sees. (The spa's and each filter's equivalents are already
+  // editable in their own sections, as an item note and a unit note.)
+  if (p.lastWaterChangeUnknown) {
+    add("note", "text", "property.lastWaterChangeNote", PROPERTY, "Last water change (unknown)",
+      "Last water change note",
+      () => p.lastWaterChangeNote ?? "", (v) => (p.lastWaterChangeNote = v));
+  }
 
   // --- Configuration ---
   const CONFIG = "Configuration";
@@ -144,8 +174,8 @@ export function editableFields(a: AssessmentArchive): FieldDef[] {
       `${CONFIG} > ${opt.label} > note`, () => opt.note, (v) => (opt.note = v));
   });
   a.configPhotos.forEach((photo, i) => {
-    add("caption", "text", `configPhotos[${i}].label`, CONFIG, `photo ${i + 1}`,
-      `${CONFIG} > photo ${i + 1} caption`, () => photo.label, (v) => (photo.label = v));
+    caption(photo, `configPhotos[${i}].label`, CONFIG, `photo ${i + 1}`,
+      `${CONFIG} > photo ${i + 1} caption`);
   });
 
   // --- Sections, in report order ---
@@ -193,17 +223,18 @@ export function editableFields(a: AssessmentArchive): FieldDef[] {
     });
 
     section.photos.forEach((photo, i) => {
-      add("caption", "text", `sections[${s}].photos[${i}].label`, title, `photo ${i + 1}`,
-        `${title} > photo ${i + 1} caption`, () => photo.label, (v) => (photo.label = v));
+      caption(photo, `sections[${s}].photos[${i}].label`, title, `photo ${i + 1}`,
+        `${title} > photo ${i + 1} caption`);
     });
   });
 
-  // --- Overall ---
+  // --- What We Found ---
   // Named for what the tech and the customer both see: the wizard labels this
   // field "What We Found" and the PDF heads the block with it. The office is
-  // where a report gets corrected, so the log should not call the field
-  // something neither of them recognises.
-  add("note", "text", "overallNotes", "Overall", "", "What We Found",
+  // where a report gets corrected, so neither the section heading on the review
+  // form (the group) nor the log (the label) should call it something else.
+  // It is the only field in this group.
+  add("note", "text", "overallNotes", "What We Found", "", "What We Found",
     () => a.overallNotes, (v) => (a.overallNotes = v));
 
   return out;

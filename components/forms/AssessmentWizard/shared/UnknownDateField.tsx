@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * A date field with an "Unknown" toggle (spec 1.3).
@@ -87,7 +88,12 @@ export default function UnknownDateField({
         </button>
       )}
 
-      {open && (
+      {/* Portalled to <body>. Rendered in place, this fixed dialog was positioned
+          against the step body (which animates with a transform), not the
+          screen — on a phone its Cancel/Save row sat under the wizard's sticky
+          Next bar, so a tap on "Save" hit Next: the step advanced and the
+          recommendation was never saved. */}
+      {open && createPortal(
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
           <div
             role="dialog"
@@ -131,7 +137,8 @@ export default function UnknownDateField({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

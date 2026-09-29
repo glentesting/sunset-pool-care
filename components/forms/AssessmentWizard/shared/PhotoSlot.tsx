@@ -1,5 +1,6 @@
 "use client";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { compressImage } from "@/lib/image-compress";
 import type { Photo } from "../state";
 
@@ -40,6 +41,7 @@ export default function PhotoSlot({
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [viewing, setViewing] = useState(false);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -72,8 +74,18 @@ export default function PhotoSlot({
       {value ? (
         <>
           <div className="relative overflow-hidden rounded-lg border border-wiz-line">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={value} alt={label} className="h-20 w-full object-cover" />
+            {/* Tap to check the shot full size. The thumbnail did nothing on tap
+                before, so this takes no gesture away from the tech: Remove is its
+                own button on top, and retaking still goes through Remove. */}
+            <button
+              type="button"
+              onClick={() => setViewing(true)}
+              aria-label={`View ${label} photo full size`}
+              className="block w-full"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={value} alt={label} className="h-20 w-full object-cover" />
+            </button>
             <span className="absolute inset-x-0 bottom-0 bg-wiz-ink/70 px-2 py-0.5 text-[11px] font-medium text-white">
               {label}
             </span>
@@ -95,6 +107,9 @@ export default function PhotoSlot({
               aria-label={`Label for ${label} photo`}
               className="mt-1.5 w-full rounded-md border border-wiz-field bg-white px-2 py-1.5 text-[13px] text-wiz-ink placeholder:text-wiz-ink/55 focus:border-wiz-accent focus:outline-none focus:ring-1 focus:ring-wiz-accent/30"
             />
+          )}
+          {viewing && (
+            <PhotoViewer src={value} label={photo?.label?.trim() || label} onClose={() => setViewing(false)} />
           )}
         </>
       ) : (
@@ -118,5 +133,51 @@ export default function PhotoSlot({
         </label>
       )}
     </div>
+  );
+}
+
+/**
+ * Full-screen look at one captured photo. Any tap closes it (as does Escape),
+ * so checking a shot costs two taps and can never strand the tech in a dialog.
+ *
+ * Portalled to <body>: the step body animates with a transform, and a fixed
+ * element inside a transformed ancestor is positioned against that ancestor,
+ * not the screen — it ended up under the wizard's sticky header and Next bar,
+ * with its own Close button hidden behind them.
+ */
+function PhotoViewer({ src, label, onClose }: { src: string; label: string; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${label} — full size`}
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex flex-col bg-black/90 p-3"
+    >
+      <div className="flex items-center justify-between gap-3 pb-2">
+        <span className="truncate text-[13px] font-medium text-white/85">{label}</span>
+        <button
+          ref={closeRef}
+          type="button"
+          onClick={onClose}
+          className="rounded-wiz bg-white/95 px-3 py-1.5 text-[13px] font-semibold text-wiz-ink"
+        >
+          Close
+        </button>
+      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={label} className="min-h-0 flex-1 object-contain" />
+    </div>,
+    document.body
   );
 }

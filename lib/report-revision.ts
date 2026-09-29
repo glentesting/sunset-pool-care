@@ -29,16 +29,22 @@
  */
 import "server-only";
 import type { AssessmentArchive } from "@/lib/assessment-archive";
-import { readReportIndex, reportIndexPath, type ReportIndex } from "@/lib/assessment-archive";
+import {
+  readReportArchive,
+  reportIndexPath,
+  type LoadReportResult,
+  type ReportIndex,
+} from "@/lib/assessment-archive";
 import { isSpaAbsent, overallFromSectionRatings, rescoreAssessment } from "@/lib/archive-scoring";
 import { splitCustomerName } from "@/lib/customer-name";
 import { generateAssessmentPdf } from "@/lib/pdf-generator";
+import { photoLinksFor } from "@/lib/report-photos";
+import { siteBaseUrl } from "@/lib/site-url";
 import { rebuildAssessmentData } from "@/lib/report-rebuild";
 import { applyAndDiff, stampEntries, type RevisionEntry } from "@/lib/revision-log";
 import {
   isStorageAsleepError,
   isSupabaseConfigured,
-  readJsonObject,
   readObjectBytes,
   uploadObject,
 } from "@/lib/supabase";
@@ -53,23 +59,11 @@ const CUSTOMER_FIELD_PATHS: Record<string, string> = {
   "property.zip": "ZIP",
 };
 
-/**
- * A report load, with "it isn't there" kept strictly separate from "we couldn't
- * look". Callers must render those differently: one is a dead link, the other is
- * a live report behind an outage.
- */
-export type LoadReportResult =
-  | { status: "ok"; index: ReportIndex; archive: AssessmentArchive }
-  | { status: "absent" }
-  | { status: "unavailable"; error: string };
+export type { LoadReportResult };
 
 /** Read a report's pointer and its archive, propagating absent vs unavailable. */
-export async function loadReport(reportId: string): Promise<LoadReportResult> {
-  const index = await readReportIndex(reportId);
-  if (index.status !== "ok") return index;
-  const archive = await readJsonObject<AssessmentArchive>(index.value.jsonPath);
-  if (archive.status !== "ok") return archive;
-  return { status: "ok", index: index.value, archive: archive.value };
+export function loadReport(reportId: string): Promise<LoadReportResult> {
+  return readReportArchive(reportId);
 }
 
 export type ReviseResult = {
@@ -239,7 +233,12 @@ export async function reviseAndRegenerate(opts: {
 
   let pdf: Buffer;
   try {
-    pdf = await generateAssessmentPdf(rebuilt.data, { revisedOn: todayIso() });
+    // Regenerated reports link their photos too. Numbers come from the archive,
+    // not from positions in the rebuilt payload — see RebuildResult.photoNumbers.
+    pdf = await generateAssessmentPdf(rebuilt.data, {
+      revisedOn: todayIso(),
+      photoLinks: photoLinksFor(siteBaseUrl(), reportId, rebuilt.photoNumbers),
+    });
   } catch (e) {
     console.error(`Revision ${reportId}: PDF render failed:`, e);
     return { ok: false, status: "pdf-failed", message: "The report couldn't be rebuilt." };

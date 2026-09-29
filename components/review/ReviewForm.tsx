@@ -2,6 +2,7 @@
 import { useMemo, useReducer, useState } from "react";
 import type { SerializedField } from "@/lib/revision-log";
 import type { RevisionEntry } from "@/lib/revision-log";
+import { reportPhotoPath } from "@/lib/report-photos";
 
 /**
  * The office review form.
@@ -199,6 +200,7 @@ export default function ReviewForm({
               >
                 <div className="pt-1.5 text-[13px] text-wiz-ink/80">
                   {row.row || <span className="italic text-wiz-ink/50">whole section</span>}
+                  <RowPhoto reportId={reportId} fields={row.fields} label={`${group.name} ${row.row}`} />
                 </div>
                 <RowCell fields={row.fields} slot="rating" draft={draft} dispatch={dispatch} />
                 <RowCell fields={row.fields} slot="any" draft={draft} dispatch={dispatch} />
@@ -308,6 +310,43 @@ export default function ReviewForm({
         )}
       </section>
     </div>
+  );
+}
+
+/**
+ * The photo a caption row is about, so the office can see what they're
+ * captioning — and open it full size. A new tab, never this one: the form may
+ * be holding unsaved edits.
+ */
+function RowPhoto({
+  reportId,
+  fields,
+  label,
+}: {
+  reportId: string;
+  fields: SerializedField[];
+  label: string;
+}) {
+  const n = fields.find((f) => f.photoN)?.photoN;
+  if (!n) return null;
+  const href = reportPhotoPath(reportId, n);
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Open full size in a new tab"
+      className="mt-1.5 block w-28"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={href}
+        alt={`${label} — open full size`}
+        loading="lazy"
+        className="h-20 w-28 rounded border border-wiz-line object-cover"
+      />
+      <span className="mt-0.5 block text-[11px] font-medium text-wiz-accent-dark">Open full size ↗</span>
+    </a>
   );
 }
 

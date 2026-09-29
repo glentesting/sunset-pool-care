@@ -27,10 +27,12 @@ import {
   Text,
   View,
   Image,
+  Link,
   StyleSheet,
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { SITE } from "@/content/site";
+import type { PhotoLinks } from "@/lib/report-photos";
 import { toDisplayCase } from "@/lib/display-case";
 import type { AssessmentData } from "@/lib/validation/assessment";
 
@@ -118,6 +120,9 @@ const s = StyleSheet.create({
   colTitle: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: GREY, textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 },
 
   row: { flexDirection: "row", marginBottom: 1 },
+  // A note under an Info row, lined up with the value column (label width 74).
+  // Same size and colour as the filter/spa unknown-date notes in the sections.
+  infoNote: { fontSize: 8, color: GREY, marginLeft: 74, marginBottom: 2 },
   label: { width: 74, color: GREY },
   value: { flex: 1 },
 
@@ -233,16 +238,29 @@ function ItemRows({ items }: { items: Item[] }) {
   );
 }
 
-function PhotoStrip({ photos }: { photos: Section["photos"] }) {
+/**
+ * One photo thumbnail. When the report has somewhere permanent to send it (see
+ * lib/report-photos.ts) the image is a link to the full-size photo, so a tap in
+ * any PDF viewer opens it at full resolution. Only the image is linked: wrapping
+ * the caption would give it the viewer's default blue link styling.
+ */
+function PhotoThumb({ photo, href }: { photo: Section["photos"][number]; href?: string }) {
+  // eslint-disable-next-line jsx-a11y/alt-text
+  const image = <Image src={photo.dataUrl} style={s.thumb} />;
+  return (
+    <View style={s.thumbBox} wrap={false}>
+      {href ? <Link src={href}>{image}</Link> : image}
+      {photo.label?.trim() ? <Text style={s.thumbCap}>{photo.label.trim()}</Text> : null}
+    </View>
+  );
+}
+
+function PhotoStrip({ photos, links }: { photos: Section["photos"]; links?: (string | undefined)[] }) {
   if (!photos.length) return null;
   return (
     <View style={r.photoStrip}>
       {photos.map((p, i) => (
-        <View key={i} style={s.thumbBox} wrap={false}>
-          {/* eslint-disable-next-line jsx-a11y/alt-text */}
-          <Image src={p.dataUrl} style={s.thumb} />
-          {p.label?.trim() ? <Text style={s.thumbCap}>{p.label.trim()}</Text> : null}
-        </View>
+        <PhotoThumb key={i} photo={p} href={links?.[i]} />
       ))}
     </View>
   );
@@ -250,7 +268,15 @@ function PhotoStrip({ photos }: { photos: Section["photos"] }) {
 
 /** One inspection section as per-item rows (Pass 3). Renders nothing when the
  *  section has no rated items, units, note or photos. */
-function SectionBlock({ sec, note }: { sec: Section; note: string }) {
+function SectionBlock({
+  sec,
+  note,
+  photoLinks,
+}: {
+  sec: Section;
+  note: string;
+  photoLinks?: (string | undefined)[];
+}) {
   const hasContent =
     sec.items.length > 0 ||
     sec.units.some((u) => u.items.length > 0 || u.note?.trim()) ||
@@ -276,7 +302,7 @@ function SectionBlock({ sec, note }: { sec: Section; note: string }) {
       ))}
 
       {note.trim() ? <Text style={r.secNote}>{note.trim()}</Text> : null}
-      <PhotoStrip photos={sec.photos} />
+      <PhotoStrip photos={sec.photos} links={photoLinks} />
     </View>
   );
 }
@@ -291,34 +317,44 @@ function Info({ label, value }: { label: string; value?: string }) {
   );
 }
 
+/**
+ * A section's rating beside its heading. An UNRATED section shows nothing, never
+ * a dash — the same rule as ItemBadge, for the same reason: a dash in the rating
+ * spot reads as a rating nobody gave. The case that surfaced it is the spa: a
+ * tech records the spa's last water change (a row with a note and no rating of
+ * its own) without scoring any spa item, and the heading printed "—" above it.
+ */
 function RatingTag({ rating }: { rating?: Section["rating"] }) {
-  const color = RATING_COLOR[rating ?? "N/A"];
+  if (!rating) return null;
+  const color = RATING_COLOR[rating];
   return (
     <View style={s.ratingTag}>
-      {rating ? <View style={[s.dot, { backgroundColor: color }]} /> : null}
-      <Text style={[s.ratingText, { color: rating ? color : STONE }]}>
-        {rating ? RATING_LABEL[rating] : "—"}
-      </Text>
+      <View style={[s.dot, { backgroundColor: color }]} />
+      <Text style={[s.ratingText, { color }]}>{RATING_LABEL[rating]}</Text>
     </View>
   );
 }
 
-function Thumbs({ photos }: { photos: Section["photos"] }) {
+function Thumbs({ photos, links }: { photos: Section["photos"]; links?: (string | undefined)[] }) {
   if (!photos.length) return null;
   return (
     <View style={s.detailThumbs}>
       {photos.map((p, i) => (
-        <View key={i} style={s.thumbBox} wrap={false}>
-          {/* eslint-disable-next-line jsx-a11y/alt-text */}
-          <Image src={p.dataUrl} style={s.thumb} />
-          {p.label?.trim() ? <Text style={s.thumbCap}>{p.label.trim()}</Text> : null}
-        </View>
+        <PhotoThumb key={i} photo={p} href={links?.[i]} />
       ))}
     </View>
   );
 }
 
-function AssessmentReport({ data, revisedOn }: { data: AssessmentData; revisedOn?: string }) {
+function AssessmentReport({
+  data,
+  revisedOn,
+  photoLinks,
+}: {
+  data: AssessmentData;
+  revisedOn?: string;
+  photoLinks?: PhotoLinks;
+}) {
   const { property, details, config, configPhotos, configOptions, sections, chemistry, itemCounts, overallNotes, overall, certification } = data;
   // Display casing only — `data` still carries what the tech typed, and that is
   // what the archive and the Make payload keep. Fixes both a lowercase and a
@@ -330,6 +366,10 @@ function AssessmentReport({ data, revisedOn }: { data: AssessmentData; revisedOn
   // already drops reading-less ones — a status with no measurement is a false
   // claim). If none were tested, the whole chemistry section is omitted below.
   const chemRows = chemistry.filter((c) => (c.reading ?? "").trim() !== "");
+  // Only say photos open full size when at least one actually does.
+  const photosLinked = Boolean(
+    photoLinks && [...photoLinks.config, ...photoLinks.sections.flat()].some(Boolean)
+  );
 
   return (
     <Document title={`${SITE.shortName} Pool Assessment — ${customerName}`}>
@@ -414,6 +454,12 @@ function AssessmentReport({ data, revisedOn }: { data: AssessmentData; revisedOn
             <Info label="Pool Type" value={property.poolType} />
             <Info label="Approx. Size" value={property.poolSize} />
             <Info label="Last Change" value={property.lastWaterChangeUnknown ? "Unknown" : property.lastWaterChange} />
+            {/* The recommendation the tech saved when marking the date Unknown —
+                printed like the spa and filter unknown-date notes. Before this it
+                was captured, archived, and never shown to anyone. */}
+            {property.lastWaterChangeUnknown && property.lastWaterChangeNote?.trim() ? (
+              <Text style={s.infoNote}>{property.lastWaterChangeNote.trim()}</Text>
+            ) : null}
             {property.additionalBodies.map((b, i) => (
               <Info key={i} label={`Body #${i + 1}`} value={[b.poolType, b.size].filter(Boolean).join(" · ") || "—"} />
             ))}
@@ -436,7 +482,7 @@ function AssessmentReport({ data, revisedOn }: { data: AssessmentData; revisedOn
 
         {configPhotos.length > 0 && (
           <View style={{ marginTop: 6 }}>
-            <Thumbs photos={configPhotos} />
+            <Thumbs photos={configPhotos} links={photoLinks?.config} />
           </View>
         )}
 
@@ -455,11 +501,12 @@ function AssessmentReport({ data, revisedOn }: { data: AssessmentData; revisedOn
         )}
 
         {/* Inspection sections — per-item rows (unrated items render nothing). */}
-        {sections.map((sec) => (
+        {sections.map((sec, i) => (
           <SectionBlock
             key={sec.id}
             sec={sec}
             note={sec.notes}
+            photoLinks={photoLinks?.sections[i]}
           />
         ))}
 
@@ -512,6 +559,7 @@ function AssessmentReport({ data, revisedOn }: { data: AssessmentData; revisedOn
 
         <Text style={s.footer} fixed>
           {SITE.name} · {SITE.phone} · {SITE.email} — Prepared for {customerName}
+          {photosLinked ? " · Tap any photo to see it full size" : ""}
         </Text>
       </Page>
     </Document>
@@ -522,10 +570,15 @@ function AssessmentReport({ data, revisedOn }: { data: AssessmentData; revisedOn
  * @param options.revisedOn date to print as a quiet "Revised …" line by the
  *   certification. Omitted for a first-generation report, which must carry no
  *   such line at all.
+ * @param options.photoLinks permanent full-size address for each photo, in the
+ *   payload's own shape (lib/report-photos.ts). Omitted when the photos won't
+ *   be stored anywhere — then thumbnails simply aren't links.
  */
 export async function generateAssessmentPdf(
   data: AssessmentData,
-  options?: { revisedOn?: string }
+  options?: { revisedOn?: string; photoLinks?: PhotoLinks }
 ): Promise<Buffer> {
-  return renderToBuffer(<AssessmentReport data={data} revisedOn={options?.revisedOn} />);
+  return renderToBuffer(
+    <AssessmentReport data={data} revisedOn={options?.revisedOn} photoLinks={options?.photoLinks} />
+  );
 }
