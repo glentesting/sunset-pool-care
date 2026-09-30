@@ -136,7 +136,6 @@ const s = StyleSheet.create({
   detailRow: { flexDirection: "row", alignItems: "flex-start" },
   detailMain: { flex: 1, paddingRight: 8 },
   detailHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  detailThumbs: { flexDirection: "row", flexWrap: "wrap", width: 200, justifyContent: "flex-end" },
 
   ratingTag: { flexDirection: "row", alignItems: "center" },
   ratingText: { fontSize: 8.5, fontFamily: "Helvetica-Bold" },
@@ -335,16 +334,6 @@ function RatingTag({ rating }: { rating?: Section["rating"] }) {
   );
 }
 
-function Thumbs({ photos, links }: { photos: Section["photos"]; links?: (string | undefined)[] }) {
-  if (!photos.length) return null;
-  return (
-    <View style={s.detailThumbs}>
-      {photos.map((p, i) => (
-        <PhotoThumb key={i} photo={p} href={links?.[i]} />
-      ))}
-    </View>
-  );
-}
 
 function AssessmentReport({
   data,
@@ -480,9 +469,15 @@ function AssessmentReport({
           </View>
         </View>
 
+        {/* Same left-aligned strip as every section's photos. These used to sit
+            in a 200pt box aligned to the RIGHT — built when photos rode beside
+            each section's title — so under the property table a lone photo
+            landed in the second slot with an empty first one beside it, and a
+            third wrapped to the right. marginTop 2 + the strip's own 4 keeps
+            the 6pt gap they had. */}
         {configPhotos.length > 0 && (
-          <View style={{ marginTop: 6 }}>
-            <Thumbs photos={configPhotos} links={photoLinks?.config} />
+          <View style={{ marginTop: 2 }}>
+            <PhotoStrip photos={configPhotos} links={photoLinks?.config} />
           </View>
         )}
 
