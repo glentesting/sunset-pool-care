@@ -86,6 +86,7 @@ export default async function ReviewPage({
       revisions={archive.revisions ?? []}
       loadedAt={revisionStamp(archive)}
       viewerUrl={reportViewerUrl(reportId)}
+      driveCopyFailed={Boolean(archive.driveCopyFailedAt)}
     />
   );
 }

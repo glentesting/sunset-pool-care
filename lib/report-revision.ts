@@ -39,6 +39,7 @@ import { isSpaAbsent, overallFromSectionRatings, rescoreAssessment } from "@/lib
 import { splitCustomerName } from "@/lib/customer-name";
 import { generateAssessmentPdf } from "@/lib/pdf-generator";
 import { photoLinksFor } from "@/lib/report-photos";
+import { scheduleDriveCopy } from "@/lib/drive-copy";
 import { siteBaseUrl } from "@/lib/site-url";
 import { rebuildAssessmentData } from "@/lib/report-rebuild";
 import { applyAndDiff, stampEntries, type RevisionEntry } from "@/lib/revision-log";
@@ -303,6 +304,18 @@ export async function reviseAndRegenerate(opts: {
         "The corrected report couldn't be saved. The customer's link still shows the original — nothing was changed.",
     };
   }
+
+  // The customer's copy has changed, so the Drive copy follows it — the SAME
+  // Drive file, updated in place; a report filed before Drive existed gets its
+  // file created now. Runs after the response (lib/drive-copy.ts): the office
+  // never waits on it, and its outcome can't change any result below.
+  scheduleDriveCopy({
+    reportId,
+    pdf,
+    filename: pdfPath.split("/").pop() ?? pdfPath,
+    jsonPath: index.jsonPath,
+    fileId: archive.driveFileId,
+  });
 
   try {
     await uploadObject(index.jsonPath, JSON.stringify(next), "application/json");

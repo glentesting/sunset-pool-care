@@ -7,6 +7,7 @@ import { generateReportId } from "@/lib/report-id";
 import { reportReviewUrl, reportViewerUrl, siteBaseUrl } from "@/lib/site-url";
 import { numberPayloadPhotos, photoLinksFor } from "@/lib/report-photos";
 import { logAssessmentToMake } from "@/lib/make";
+import { scheduleDriveCopy } from "@/lib/drive-copy";
 
 /**
  * Assessment Wizard submit. Four real outputs, each in its own try/catch so a
@@ -20,6 +21,11 @@ import { logAssessmentToMake } from "@/lib/make";
  *   4. Make webhook           — posts the assessment (photo base64 stripped) +
  *                               reportId + pdf_url + ticket_body; Make creates
  *                               the HubSpot ticket.
+ *   5. Google Drive copy      — the same PDF, same file name, into SPC's Drive
+ *                               folder. Scheduled for AFTER the response
+ *                               (lib/drive-copy.ts), so the tech never waits on
+ *                               it and it can't affect any result above. Skipped
+ *                               silently until Drive is configured.
  *
  * Everything is keyed by `reportId` — a random, unguessable public handle minted
  * here (lib/report-id.ts). It names the stored pair and it is the URL of the
@@ -127,6 +133,16 @@ export async function POST(req: NextRequest) {
     console.error("Make webhook step failed:", e);
   }
 
+  // 5. Drive copy — after the response. Uploads even when storage failed: then
+  //    it's the office's only other copy. The file ID can only be remembered
+  //    when the archive landed (jsonPath), which is also the only case a later
+  //    regenerate could happen in.
+  if (pdf) {
+    scheduleDriveCopy({ reportId, pdf, filename: pdfPath, jsonPath: archive.jsonPath ?? null });
+  }
+
+  // Drive is deliberately not part of `ok`: it isn't the tech's concern and
+  // hasn't happened yet. The office sees its outcome on the review screen.
   const allOk = results.pdf && results.supabase && results.data && results.make;
   return NextResponse.json(
     {

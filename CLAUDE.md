@@ -158,8 +158,10 @@ Health check, most useful diagnostic in the build: `GET /api/health/supabase`.
 ```
 npm run dev      # Turbopack dev server, port 3000
 npm run build    # production build
-npm run lint     # eslint (6 pre-existing no-unused-vars warnings, 0 errors)
+npm run lint     # eslint (4 pre-existing no-unused-vars warnings, 0 errors)
+npm test         # vitest (server-side; Supabase, Drive and Make are faked)
 ```
 
-`npm run lint` warnings in `lib/google-drive.ts` and `lib/hubspot.ts` are
-underscore-prefixed stub parameters. Pre-existing; not a regression.
+`npm run lint` warnings in `lib/hubspot.ts` are underscore-prefixed stub
+parameters. Pre-existing; not a regression. (`lib/google-drive.ts` was a stub
+too until Open Item 22; it's real now.)

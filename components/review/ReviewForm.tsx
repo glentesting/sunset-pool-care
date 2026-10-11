@@ -64,6 +64,7 @@ export default function ReviewForm({
   revisions,
   loadedAt,
   viewerUrl,
+  driveCopyFailed = false,
 }: {
   reportId: string;
   fields: SerializedField[];
@@ -71,6 +72,8 @@ export default function ReviewForm({
   revisions: RevisionEntry[];
   loadedAt: string;
   viewerUrl: string;
+  /** The last attempt to copy this report's PDF to Google Drive failed. */
+  driveCopyFailed?: boolean;
 }) {
   const initial = useMemo(() => Object.fromEntries(fields.map((f) => [f.path, f.value])), [fields]);
   const [draft, dispatch] = useReducer(reducer, initial);
@@ -136,6 +139,17 @@ export default function ReviewForm({
             {viewerUrl}
           </a>
         </p>
+        {/* Only ever shown once Drive is set up and a copy actually failed —
+            never while Drive is unconfigured. The report itself is unaffected;
+            the next regenerate retries the Drive copy. */}
+        {driveCopyFailed && (
+          <p role="status" className="mt-3 rounded-lg border border-monitor-dark/40 bg-monitor/10 px-3 py-2 text-[13px] text-wiz-ink">
+            <span className="font-semibold">Drive copy failed.</span>{" "}
+            The report is fine — only
+            its copy in Google Drive didn&apos;t save. It&apos;s tried again the next time this
+            report is regenerated.
+          </p>
+        )}
       </header>
 
       {/* Read-only context: measured values and the tech's certification. */}

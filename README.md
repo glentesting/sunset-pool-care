@@ -33,6 +33,7 @@ Then open http://localhost:3000.
 ```bash
 npm run build   # production build
 npm run lint    # eslint
+npm test        # vitest — server-side tests, all outside services faked
 npx tsc --noEmit
 ```
 
@@ -41,7 +42,7 @@ Filling in sixteen steps by hand to test a change gets old fast: open
 wizard and jumps to Review & Submit. It only appears with that query string.
 
 `npm run lint` currently reports warnings for unused parameters in
-`lib/hubspot.ts` and `lib/google-drive.ts`. Those are deliberate — both are stubs
+`lib/hubspot.ts`. Those are deliberate — it's a stub
 awaiting real integrations.
 
 ## Environment
@@ -57,7 +58,7 @@ them are deliberately left unset. Names only, in brief:
 | `REVIEW_ACCESS_CODE` | Unlocks the office review screen |
 | `MAKE_ASSESSMENT_WEBHOOK_URL` | Make.com scenario that files the HubSpot ticket |
 | `HUBSPOT_PRIVATE_APP_TOKEN` | HubSpot REST API |
-| `GOOGLE_SERVICE_ACCOUNT_JSON`, `GDRIVE_ASSESSMENT_FOLDER_ID` | Drive archive |
+| `GOOGLE_SERVICE_ACCOUNT_JSON`, `GDRIVE_ASSESSMENT_FOLDER_ID` | Copy of each report PDF in SPC's Google Drive; skipped until both are set |
 | `REPORT_BASE_URL` | Absolute base for customer links; set at domain cutover |
 | `HEALTHCHECK_TOKEN` | Optional gate on `/api/health/*` — read the note first |
 | `NEXT_PUBLIC_GOOGLE_REVIEW_URL` | Where the review page sends 4–5 star ratings |

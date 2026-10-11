@@ -53,8 +53,11 @@ import type { RevisionEntry } from "@/lib/revision-log";
  *       archives may still carry that key; readers can ignore it.
  *   3 — `revisions` added: the append-only office edit log. Absent on 1 and 2,
  *       which simply means the report has never been revised.
+ *   4 — `driveFileId` / `driveCopyFailedAt` added: the report's copy in SPC's
+ *       Google Drive folder. Both optional and absent on 1–3, which means no
+ *       Drive copy was ever recorded — the next regenerate creates one.
  */
-export const ARCHIVE_SCHEMA_VERSION = 3;
+export const ARCHIVE_SCHEMA_VERSION = 4;
 
 /** A photo in the archive: its caption plus the bucket key holding the bytes. */
 export type ArchivedPhoto = {
@@ -98,6 +101,18 @@ export type AssessmentArchive = {
    * destroyed.
    */
   pdfVersions?: string[];
+  /**
+   * The report's PDF in SPC's Google Drive folder (lib/google-drive.ts). Set
+   * when the copy is first created; a regenerate updates THIS file in place
+   * rather than adding another. Absent until a copy has been made.
+   */
+  driveFileId?: string;
+  /**
+   * ISO-8601 time of the last Drive copy attempt that FAILED; cleared by the
+   * next one that succeeds. The office review screen shows a "Drive copy
+   * failed" note while it is set. Details are in the server logs, not here.
+   */
+  driveCopyFailedAt?: string;
 };
 
 /**
@@ -125,6 +140,8 @@ export type ArchiveResult = {
   ok: boolean;
   reason?: "not-configured" | "error";
   photos: { total: number; uploaded: number };
+  /** Bucket key of the archive JSON, when it landed. */
+  jsonPath?: string;
 };
 
 const INDEX_PREFIX = "index/";
@@ -310,9 +327,44 @@ export async function archiveAssessment(opts: {
     };
     await uploadObject(reportIndexPath(reportId), JSON.stringify(index), "application/json");
 
-    return { ok: true, photos };
+    return { ok: true, photos, jsonPath };
   } catch (e) {
     console.error("Assessment archive failed:", e);
     return { ok: false, reason: "error", photos };
+  }
+}
+
+/**
+ * Write the outcome of a Drive copy onto a report's archive.
+ *
+ * Read-modify-write of ONLY the two Drive fields, so it can't clobber anything
+ * else — this runs after the response, and the archive it reads is whatever is
+ * stored at that moment, including an office edit saved in between.
+ *
+ * Never throws: a Drive outcome that can't be recorded is logged and dropped.
+ * Losing the ID means the next regenerate creates a second Drive file rather
+ * than updating the first; nothing customer-facing is affected.
+ */
+export async function recordDriveOutcome(
+  jsonPath: string,
+  outcome: { fileId: string } | { failedAt: string }
+): Promise<void> {
+  try {
+    const read = await readJsonObject<AssessmentArchive>(jsonPath);
+    if (read.status !== "ok") {
+      console.error(`Drive outcome for ${jsonPath} not recorded: archive ${read.status}`);
+      return;
+    }
+    const archive = read.value;
+    if ("fileId" in outcome) {
+      if (archive.driveFileId === outcome.fileId && !archive.driveCopyFailedAt) return;
+      archive.driveFileId = outcome.fileId;
+      delete archive.driveCopyFailedAt;
+    } else {
+      archive.driveCopyFailedAt = outcome.failedAt;
+    }
+    await uploadObject(jsonPath, JSON.stringify(archive), "application/json");
+  } catch (e) {
+    console.error(`Drive outcome for ${jsonPath} not recorded:`, e);
   }
 }
