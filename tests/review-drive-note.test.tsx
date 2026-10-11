@@ -14,8 +14,14 @@ const props = {
 describe("office review screen — Drive note", () => {
   it('shows a short "Drive copy failed" note when the last Drive copy failed', () => {
     const html = renderToStaticMarkup(<ReviewForm {...props} driveCopyFailed />);
-    expect(html).toContain("Drive copy failed.</span> The report is fine");
-    expect(html).toContain("tried again the next time this");
+    // The exact wording, as one sentence-run of text.
+    const text = html
+      .replace(/<[^>]+>/g, "")
+      .replace(/&#x27;/g, "'")
+      .replace(/\s+/g, " ");
+    expect(text).toContain(
+      "Drive copy failed. The report is fine. Only its copy in Google Drive didn't save, and it tries again the next time this report is regenerated."
+    );
   });
 
   it("shows nothing about Drive otherwise — including before Drive is set up", () => {

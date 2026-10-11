@@ -145,9 +145,8 @@ export default function ReviewForm({
         {driveCopyFailed && (
           <p role="status" className="mt-3 rounded-lg border border-monitor-dark/40 bg-monitor/10 px-3 py-2 text-[13px] text-wiz-ink">
             <span className="font-semibold">Drive copy failed.</span>{" "}
-            The report is fine — only
-            its copy in Google Drive didn&apos;t save. It&apos;s tried again the next time this
-            report is regenerated.
+            The report is fine. Only its copy in Google Drive didn&apos;t save, and it tries
+            again the next time this report is regenerated.
           </p>
         )}
       </header>
