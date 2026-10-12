@@ -146,7 +146,9 @@ async function readReportPhotos(jsonPath: string): Promise<NumberedPhoto[]> {
  * the thumbnails inside the PDF are too small to see detail in, and a phone
  * can't enlarge part of a PDF page the way it can a photo.
  *
- * ONE grid, three across at every width, each photo labelled with its section.
+ * ONE grid, three across at every width, each photo labelled with its section
+ * (one line) and its caption (wrapping to three lines on a phone, two on a
+ * computer, then cut short).
  * It used to be a heading and a grid per section; most sections have one photo,
  * so a typical report read as a single long column of photos and headings.
  */
@@ -184,8 +186,14 @@ function ReportPhotos({ reportId, photos }: { reportId: string; photos: Numbered
                 >
                   {p.where}
                 </span>
+                {/* Captions wrap before they're cut short — three lines on a phone,
+                    where the tiles are narrow, two on a computer. A tap opens only
+                    the photo, so this is the one place a customer reads it. */}
                 {caption && (
-                  <span title={caption} className="mt-0.5 block truncate text-[12px] text-navy/70 sm:text-[13px]">
+                  <span
+                    title={caption}
+                    className="mt-0.5 line-clamp-3 break-words text-[12px] leading-snug text-navy/70 sm:line-clamp-2 sm:text-[13px]"
+                  >
                     {caption}
                   </span>
                 )}
