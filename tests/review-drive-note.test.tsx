@@ -5,7 +5,7 @@ import ReviewForm from "@/components/review/ReviewForm";
 const props = {
   reportId: "abc1234567",
   fields: [],
-  readOnly: { chemistry: [], inspectorName: "Test Tech", certificationDate: "2026-10-10", photoCount: 0 },
+  readOnly: { chemistry: [], inspectorName: "OrangeCore", certificationDate: "2026-10-10", photoCount: 0 },
   revisions: [],
   loadedAt: "0",
   viewerUrl: "https://go.sunsetpoolcare.com/r/abc1234567",

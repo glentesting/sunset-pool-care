@@ -66,7 +66,7 @@ async function regenerate(reportId: string, overallNotes: string) {
   if (loaded.status !== "ok") throw new Error(`report ${reportId} not loadable`);
   return reviseAndRegenerate({
     reportId,
-    editor: "Office Tester",
+    editor: "TEST OrangeCore",
     fields: { overallNotes },
     loadedAt: revisionStamp(loaded.archive),
   });

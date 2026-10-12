@@ -46,6 +46,20 @@ docs/fixing-a-report.md   office-facing runbook for correcting a sent report
 HubSpot and Make.com work happens in a different chat. If something here depends
 on either, say what it needs — don't try to build it.
 
+## Test data: TEST and OrangeCore — never Claude (standing rule)
+
+Nothing you put into a test, a test report, a form submission, or any other
+data that can reach SPC's systems — HubSpot, Make, report storage (Supabase),
+email — may mention Claude. That covers every field: customer and inspector
+names, notes, captions, What We Found, the editor name on the office review
+screen, anything typed into /review, and fixtures in `tests/`.
+
+- Label test data **TEST** (e.g. customer "TEST Photo Links Check").
+- If something needs a name, use **OrangeCore** (inspector, editor, customer:
+  "TEST OrangeCore …").
+- Applies to local runs against stand-in storage too — local data gets copied,
+  screenshotted and pasted into reports.
+
 ## Design
 
 Clean hierarchy, generous whitespace, one dominant action per screen. **Light

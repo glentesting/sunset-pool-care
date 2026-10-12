@@ -140,10 +140,10 @@ export function stubConfiguredEnv({ drive = true }: { drive?: boolean } = {}) {
 export function samplePayload(): AssessmentData {
   return {
     property: {
-      customerName: "TEST Drive Copy",
+      customerName: "TEST OrangeCore Drive Copy",
       customerEmail: "test@example.com",
       customerFirstName: "TEST",
-      customerLastName: "Drive Copy",
+      customerLastName: "OrangeCore Drive Copy",
       customerPhone: "",
       serviceAddress: "1 Test St",
       city: "Chandler",
@@ -159,7 +159,7 @@ export function samplePayload(): AssessmentData {
       session: "SPC-20261010-0900",
       date: "2026-10-10",
       time: "09:00",
-      inspectorName: "Test Tech",
+      inspectorName: "OrangeCore",
       inspectionType: "Standard",
     },
     config: { surfaces: ["Plaster"], sanitization: ["Salt System"], features: ["None"] },
@@ -185,6 +185,6 @@ export function samplePayload(): AssessmentData {
     spaType: "N/A — No Spa",
     overallNotes: "All good.",
     overall: { key: "good", label: "Good Condition", counts: { GOOD: 1, MONITOR: 0, ATTENTION: 0, "N/A": 0 } },
-    certification: { inspectorName: "Test Tech", date: "2026-10-10", certified: true },
+    certification: { inspectorName: "OrangeCore", date: "2026-10-10", certified: true },
   };
 }

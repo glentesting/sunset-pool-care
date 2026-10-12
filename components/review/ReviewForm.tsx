@@ -3,6 +3,7 @@ import { useMemo, useReducer, useState } from "react";
 import type { SerializedField } from "@/lib/revision-log";
 import type { RevisionEntry } from "@/lib/revision-log";
 import { reportPhotoPath } from "@/lib/report-photos";
+import CopyLinkButton from "@/components/report/CopyLinkButton";
 
 /**
  * The office review form.
@@ -259,6 +260,26 @@ export default function ReviewForm({
             }`}
           >
             <p className="font-semibold">{done.message}</p>
+            {/* Hand the office the report right here. The customer's link at the
+                top of the screen has scrolled out of sight by the time they reach
+                Regenerate, and without it they went hunting for it in HubSpot. */}
+            {done.ok && (
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <a
+                  href={viewerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-lg bg-wiz-ink px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-wiz-ink-light"
+                >
+                  Open the updated report
+                </a>
+                <CopyLinkButton
+                  url={viewerUrl}
+                  copiedLabel="Copied"
+                  className="rounded-lg border border-wiz-field bg-white px-3.5 py-2 text-[13px] font-semibold text-wiz-ink transition-colors hover:bg-wiz-surface"
+                />
+              </div>
+            )}
             {done.ok && (
               <ul className="mt-2 list-disc space-y-1 pl-5 text-wiz-ink/80">
                 {done.customerFieldsChanged && done.customerFieldsChanged.length > 0 && (
@@ -270,8 +291,8 @@ export default function ReviewForm({
                 )}
                 {done.findingsChanged && (
                   <li>
-                    The summary text on the job ticket still shows the original findings. The report
-                    behind the link is the current one.
+                    The link in the HubSpot ticket already shows this version. Only the
+                    ticket&apos;s summary text still lists the original findings.
                   </li>
                 )}
                 {done.photosDropped && done.photosDropped.length > 0 && (

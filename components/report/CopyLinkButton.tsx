@@ -5,14 +5,27 @@ import { useEffect, useState } from "react";
  * "Copy link" for the public report viewer — puts the /r/<reportId> URL on the
  * clipboard so the office can paste it straight into a customer email.
  *
- * The URL is read from the address bar rather than passed in, so it is correct
- * on whatever host the page is actually being served from (preview deploy,
- * localhost, the production domain after cutover) with no env var involved.
- * Query and hash are dropped — only the shareable address is copied.
+ * By default the URL is read from the address bar rather than passed in, so it
+ * is correct on whatever host the page is actually being served from (preview
+ * deploy, localhost, the production domain after cutover) with no env var
+ * involved. Query and hash are dropped — only the shareable address is copied.
+ *
+ * Pass `url` to copy a different address — the office review screen does, to
+ * hand over the CUSTOMER's link rather than its own.
  */
 type State = "idle" | "copied" | "failed";
 
-export default function CopyLinkButton({ className = "" }: { className?: string }) {
+export default function CopyLinkButton({
+  className = "",
+  url: fixedUrl,
+  copiedLabel = "Link copied",
+}: {
+  className?: string;
+  /** Copy this address instead of the current page's. */
+  url?: string;
+  /** What the button says for a moment after a successful copy. */
+  copiedLabel?: string;
+}) {
   const [state, setState] = useState<State>("idle");
 
   // Reset the confirmation after a beat so the button doesn't read "Copied!"
@@ -24,7 +37,7 @@ export default function CopyLinkButton({ className = "" }: { className?: string 
   }, [state]);
 
   async function copy() {
-    const url = `${window.location.origin}${window.location.pathname}`;
+    const url = fixedUrl ?? `${window.location.origin}${window.location.pathname}`;
     // navigator.clipboard needs a secure context, which an office iPad on an
     // http preview won't always have — fall back to the old selection trick.
     try {
@@ -44,7 +57,7 @@ export default function CopyLinkButton({ className = "" }: { className?: string 
       aria-live="polite"
       className={className}
     >
-      {state === "copied" ? "Link copied" : state === "failed" ? "Press Ctrl/⌘ + C" : "Copy link"}
+      {state === "copied" ? copiedLabel : state === "failed" ? "Press Ctrl/⌘ + C" : "Copy link"}
     </button>
   );
 }
