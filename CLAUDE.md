@@ -25,7 +25,7 @@ Sunset Pool Care — pool service company in Chandler, Arizona.
 
 ## Stack
 
-Next.js App Router (16.4.0, Turbopack) · TypeScript · Tailwind v4 · React 19.
+Next.js App Router (16.4.3, Turbopack) · TypeScript · Tailwind v4 · React 19.
 Deployed on Vercel, auto-deploy from `github.com/glentesting/sunset-pool-care`.
 Supabase for assessment storage (private `assessment-pdfs` bucket, signed URLs).
 
